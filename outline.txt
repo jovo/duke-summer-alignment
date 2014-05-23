@@ -1,0 +1,7 @@
+1) 'init': communicate with API and output a matrix of images.
+
+2) 'enhancement': remove folds and other misc. errors.
+
+3) 'rough_alignment': 
+
+4) 'detailed_alignment':
