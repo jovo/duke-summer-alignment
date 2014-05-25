@@ -1,23 +1,18 @@
-function [ T_new, A_new, Merged ]= xcorr_2imgs( template, A )
+function [ T_new, A_new, Merged, TranslateY, TranslateX ]= xcorr_2imgs( template, A )
 %XCORR_2IMGS Rough alignment by 2D cross-correlation
-%   Very basic right now; can only support translations, no rotations :(
-
-% add zero padding as necessary for same image size.
-maxy = max(size(template, 1), size(A, 1));
-maxx = max(size(template, 2), size(A, 2));
-Amod = zeros(maxy, maxx);
-Tmod = Amod;
-Amod(1:size(A, 1), 1:size(A, 2)) = A;
-Tmod(1:size(template, 1), 1:size(template, 2)) = template;
-A = Amod;
-template = Tmod;
+%   Very basic right now. There are plenty of assumptions:
+%   1) template should be smaller than A or same size. 
+%   2) there can not be much zero padding.
+%   3) only supports translations. Will add rotation/scaling support soon.
 
 % 2d cross correlation
 c = normxcorr2(template, A);
 [ypeak, xpeak] = find(c==max(c(:)));
 
-TranslateY = ypeak-size(template,1);
-TranslateX = xpeak-size(template,2);
+% determine how much to translate
+TranslateY = ypeak-size(template, 1);
+TranslateX = xpeak-size(template, 2);
+
 Asizey = size(A, 1);
 Asizex = size(A, 2);
 Tsizey = size(template, 1);
@@ -27,6 +22,7 @@ new_x = max(Asizex, abs(TranslateX) + Tsizex);
 A_new = zeros(new_y, new_x);
 T_new = A_new;
 
+% translate
 if TranslateY > 0
     Ayrange = 1:Asizey;
 	Tyrange = (1:Tsizey) + TranslateY;
@@ -59,13 +55,26 @@ end
 
 % remove padded zeros from final image.
 Merged = A_new;
-empty = find(Merged==0);
+empty = find(T_new~=0);
 Merged(empty) = T_new(empty);
+[A_new, T_new, Merged] = removezeropadding(A_new, T_new, Merged);
 
-[ycoord, xcoord] = find(Merged);
-A_new = A_new(min(ycoord):max(ycoord), min(xcoord):max(xcoord));
-T_new = T_new(min(ycoord):max(ycoord), min(xcoord):max(xcoord));
-Merged = Merged(min(ycoord):max(ycoord), min(xcoord):max(xcoord));
+
+
+% great debugging tool below.
+% figure
+% imshow(c, [min(c(:)), max(c(:))]);
+% figure
+% imshow(c, [0, 255]);
+% ycoords = (1:size(A,1))+floor(size(template,1)/2)
+% xcoords = (1:size(A,2))+floor(size(template,2)/2)
+% c(ycoords, xcoords) = A;
+% imshow(c, [0, 255]);
+% 
+% ytrans = (1:size(template,1))+ypeak-floor(size(template,1)/2);
+% xtrans = (1:size(template,2))+xpeak-floor(size(template,2)/2);
+% c(ytrans, xtrans) = template;
+% imshow(c, [0, 255]);
 
 end
 
