@@ -4,17 +4,34 @@ function [ M_new ] = roughalign( M )
 
 M_new = roughalignhelper(M);
 
-
-
-
-    % helper, not recursive
+    % helper method that performs the image alignment with a queue
+    % structure. O(n) time, space complexity.
     function [ N_new ] = roughalignhelper( N )
-        stack = java.util.Stack;
-        
+        depth = size(N,3);
+        queue = Queue(depth);
+        % initially add each image to Q
+        for i=1:queue.size
+          queue.push(N(:,:,i));
+        end
+        while(queue.size > 1)
+            queuesize = queue.size;
+            for i=1:2:queuesize
+                N1 = queue.pop;
+                N2 = queue.pop;
+                if isempty(N2)
+                    queue.push(N1);
+                else
+                    [~, N_merged] = xcorr2imgs(N1(:,:,size(N1,3)), N2(:,:,1), N1, N2); 
+                    queue.push(N_merged);
+                end
+            end   
+        end
+        N_new = queue.pop;
     end
         
         
-    % recursive helper
+%   % recursive implementation... too much memory overhead probably unless 
+%   % split into small chunks.
 %     function [ N_new ] = roughalignhelper( N )
 %         
 %     switch size(N, 3)
@@ -30,4 +47,5 @@ M_new = roughalignhelper(M);
 %     end
 
 end
+
 

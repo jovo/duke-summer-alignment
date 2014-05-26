@@ -1,5 +1,5 @@
 classdef Stack < handle
-%STACK simple stack data structure.
+%STACK simple LIFO data structure.
     properties (SetAccess = private, GetAccess = private)
         container;
         top;
