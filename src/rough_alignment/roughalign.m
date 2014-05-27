@@ -22,7 +22,6 @@ M_new = roughalignhelper(M);
                 else
                     N2 = queue.pop();
                     [~, N_merged] = xcorr2imgs(N1(:,:,size(N1,3)), N2(:,:,1), N1, N2); 
-                    size(N_merged)
                     queue.push(N_merged);
                 end
             end
@@ -30,7 +29,12 @@ M_new = roughalignhelper(M);
         N_new = queue.pop();
     end
         
-        
+    % output error 
+    original = errorreport(M, 'Original', 'psnr');
+    aligned = errorreport(M_new, 'Aligned', 'psnr');
+    disp(original);
+    disp(aligned);
+    
 %   % recursive implementation... too much memory overhead probably unless 
 %   % split into small chunks.
 %     function [ N_new ] = roughalignhelper( N )

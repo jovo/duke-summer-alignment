@@ -104,7 +104,7 @@ Ty = size(T, 1);
 Tx = size(T, 2);
 new_y = max(Ay, max(abs(TranslateY) + Ty, abs(TranslateY) + Ay));
 new_x = max(Ax, max(abs(TranslateX) + Tx, abs(TranslateX) + Ax));
-A_new = zeros(new_y, new_x);
+A_new = uint8(zeros(new_y, new_x));
 T_new = A_new;
 
 depthA = size(AStack, 3);
@@ -115,8 +115,8 @@ TStacky = size(TStack, 1);
 TStackx = size(TStack, 2);
 newstack_y = max(AStacky, max(abs(TranslateY) + TStacky, abs(TranslateY) + AStacky));
 newstack_x = max(AStackx, max(abs(TranslateX) + TStackx, abs(TranslateX) + AStackx));
-AStack_new = zeros(newstack_y, newstack_x, depthA);
-TStack_new = zeros(newstack_y, newstack_x, depthT);
+AStack_new = uint8(zeros(newstack_y, newstack_x, depthA));
+TStack_new = uint8(zeros(newstack_y, newstack_x, depthT));
 
 if TranslateY > 0
     Ayrange = 1:Ay;
