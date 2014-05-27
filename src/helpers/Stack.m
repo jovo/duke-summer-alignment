@@ -20,31 +20,31 @@ classdef Stack < handle
         end
 
         function c = capacity(stack)    % stack capacity
-            c = size(stack, 1);
+            c = size(stack.container, 1);
         end
         
-        function s = size(stack)        % # elements in stack
+        function s = count(stack)        % # elements in stack
             s = stack.top;
         end
         
-        function e = isempty(stack)
-            e = ~size(stack);
+        function e = isclear(stack)
+            e = ~stack.count();
         end
         
         function f = isfull(stack)
-            f = size(stack) == capacity(stack);
+            f = stack.count() == stack.capacity();
         end
         
         function push(stack, obj)
-            if isfull(stack)
-                stack.container = [stack.container; cell(capacity(stack),1)];
+            if stack.isfull()
+                stack.container = [stack.container; cell(stack.capacity(),1)];
             end
             stack.top = stack.top + 1;
             stack.container{stack.top} = obj;
         end
         
         function obj = pop(stack)
-            if isempty(stack)
+            if stack.isclear()
                 obj = [];
                 warning('EmptyStackException: popping from empty stack');
             else
@@ -53,9 +53,9 @@ classdef Stack < handle
                 stack.top = stack.top - 1;
             end     
         end
-    
+        
         function obj = peek(stack)
-            if isempty(stack)
+            if stack.isclear()
                 obj = [];
                 warning('EmptyStackException: peeking from empty stack');
             else

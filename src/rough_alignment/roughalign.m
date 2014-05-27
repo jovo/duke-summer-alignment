@@ -10,23 +10,26 @@ M_new = roughalignhelper(M);
         depth = size(N,3);
         queue = Queue(depth);
         % initially add each image to Q
-        for i=1:queue.size
+        for i=1:depth
           queue.push(N(:,:,i));
         end
-        while(queue.size > 1)
-            queuesize = queue.size;
+        while queue.count() > 1
+            queuesize = queue.count()
             for i=1:2:queuesize
-                N1 = queue.pop;
-                N2 = queue.pop;
-                if isempty(N2)
+                N1 = queue.pop();
+                n1 = size(N1)
+                if queuesize == i
                     queue.push(N1);
                 else
+                    N2 = queue.pop();
+                    n2 = size(N2)
                     [~, N_merged] = xcorr2imgs(N1(:,:,size(N1,3)), N2(:,:,1), N1, N2); 
+                    size(N_merged)
                     queue.push(N_merged);
                 end
             end   
         end
-        N_new = queue.pop;
+        N_new = queue.pop();
     end
         
         

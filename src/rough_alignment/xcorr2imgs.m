@@ -98,19 +98,21 @@ TranslateX = floor(TranslateX);
 % Perform translation, rotation, scaling transformations to images
 T = imrotate(imresize(template, 1/SCALE), THETA, 'nearest', 'crop');
 TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
-
-Asizey = size(A, 1);
-Asizex = size(A, 2);
-Tsizey = size(T, 1);
-Tsizex = size(T, 2);
+Asizey = size(AStack, 1);
+Asizex = size(AStack, 2);
+Tsizey = size(TStack, 1);
+Tsizex = size(TStack, 2);
 new_y = max(Asizey, max(abs(TranslateY) + Tsizey, abs(TranslateY) + Asizey));
 new_x = max(Asizex, max(abs(TranslateX) + Tsizex, abs(TranslateX) + Asizex));
 A_new = zeros(new_y, new_x);
 T_new = A_new;
-depthA = size(A, 3);
-depthT = size(template, 3);
-AStack_new = zeros(new_y, new_x, depthA);
-TStack_new = zeros(new_y, new_x, depthT);
+
+depthA = size(AStack, 3);
+depthT = size(TStack, 3);
+newstack_y = max(Asizey, max(abs(TranslateY) + Tsizey, abs(TranslateY) + Asizey));
+newstack_x = max(Asizex, max(abs(TranslateX) + Tsizex, abs(TranslateX) + Asizex));
+AStack_new = zeros(newstack_y, newstack_x, depthA);
+TStack_new = zeros(newstack_y, newstack_x, depthT);
 
 if TranslateY > 0
     Ayrange = 1:Asizey;
@@ -133,10 +135,13 @@ else
         Txrange = 1:Tsizex;
     end
 end
+
 A_new(Ayrange, Axrange) = A;
 T_new(Tyrange, Txrange) = T;
-AStack_new(Ayrange, Axrange, depthA) = AStack;
-TStack_new(Tyrange, Txrange, deptT) = TStack;
+size(TStack_new)
+size(TStack)
+AStack_new(Ayrange, Axrange, :) = AStack;
+TStack_new(Tyrange, Txrange, :) = TStack;
 
 % remove padded zeros from final image.
 Merged = A_new;
@@ -144,7 +149,7 @@ empty = find(T_new~=0);
 Merged(empty) = T_new(empty);
 [ycoord, xcoord] = find(Merged);
 Merged = Merged(min(ycoord):max(ycoord), min(xcoord):max(xcoord));
-MergedStack = [TStack_new; AStack_new];
+MergedStack = cat(3, TStack_new, AStack_new);
 % MergedStack = MergedStack(min(ycoord):max(ycoord), min(xcoord):max(xcoord),:);
 
 

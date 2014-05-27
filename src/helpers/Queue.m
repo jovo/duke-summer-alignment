@@ -1,6 +1,6 @@
 classdef Queue < handle
-%QUEUE simple FIFO data structure.
-    properties (SetAccess = private, GetAccess = private)
+%QUEUE simple array-based FIFO data structure.
+    properties (SetAccess = public, GetAccess = public)
         container;
         first;
         last;
@@ -21,51 +21,52 @@ classdef Queue < handle
                 queue.last = 0;
         end
 
-        function c = capacity(queue)    % stack capacity
-            c = size(queue, 1);
+        function c = capacity(queue)    % how many elements it can hold
+            c = size(queue.container, 1)-queue.first;
         end
 
-        function s = size(queue)        % # elements in stack
+        function s = count(queue)        % # elements in queue
             s = queue.last - queue.first;
         end
 
-        function e = isempty(queue)
-            e = ~size(queue);
+        function e = isclear(queue)
+            e = ~queue.count();
         end
 
         function f = isfull(queue)
-            f = size(queue) == capacity(queue);
+            f = queue.count() == queue.capacity();
         end
 
         function push(queue, obj)
-            if isfull(queue)
-                queue.container = [queue.container; cell(capacity(queue),1)];
+            if queue.isfull()
+                queue.container = [queue.container; cell(queue.capacity(),1)];
             end
             queue.last = queue.last + 1;
             queue.container{queue.last} = obj;
         end
 
         function obj = pop(queue)
-            if isempty(queue)
+            if queue.isclear()
                 obj = [];
 %                 warning('EmptyStackException: popping from empty queue');
             else
                 queue.first = queue.first+1;
                 obj = queue.container{queue.first};
                 queue.container{queue.first} = [];
-
             end
-            if queue.first > size(queue)/4;    % cut the head of the queue
-                queue.container = queue.container(queue.first:capacity(queue));
+            if queue.first > queue.count()/4;    % cut the head of the queue
+                queue.container = queue.container(queue.first + 1: size(queue.container, 1));
+                queue.last = queue.last-queue.first;
+                queue.first = 0;
             end
         end
 
-        function obj = peek(stack)
-            if isempty(stack)
+        function obj = peek(queue)
+            if queue.isclear()
                 obj = [];
 %                 warning('EmptyStackException: peeking from empty queue');
             else
-                obj = stack.container{stack.first};
+                obj = queue.container{queue.first+1};
             end
         end
  
