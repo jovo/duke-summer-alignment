@@ -25,7 +25,7 @@ M_new = roughalignhelper(M);
                     size(N_merged)
                     queue.push(N_merged);
                 end
-            end   
+            end
         end
         N_new = queue.pop();
     end

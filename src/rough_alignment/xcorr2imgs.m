@@ -5,7 +5,7 @@ function [ Merged, MergedStack ] = xcorr2imgs( template, A, templateStack, AStac
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 %
-%   [ T_new, A_new, Merged, THETA, SCALE ] = XCORR2IMGS( template, A )
+%   [ Merged, MergedStack ] = XCORR2IMGS( template, A, templateStack, AStack )
 %   template is the image that should be matched to A. A should be
 %   larger than template or of same size. If that is not the case, will try to
 %   crop/swap images to satisfy these conditions.
