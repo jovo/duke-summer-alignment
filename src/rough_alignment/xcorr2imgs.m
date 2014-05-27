@@ -31,7 +31,7 @@ switch sum(size(A) >= size(template))
         A = templatetemp;
     case 1  % A is smaller than template in 1 dimension: crop template.
         miny = min(size(template, 1), size(A, 1));
-        minx = min(size(template, 1), size(A, 1));
+        minx = min(size(template, 2), size(A, 2));
         template = template(1:miny, 1:minx);
 end
 
@@ -98,50 +98,64 @@ TranslateX = floor(TranslateX);
 % Perform translation, rotation, scaling transformations to images
 T = imrotate(imresize(template, 1/SCALE), THETA, 'nearest', 'crop');
 TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
-Asizey = size(AStack, 1);
-Asizex = size(AStack, 2);
-Tsizey = size(TStack, 1);
-Tsizex = size(TStack, 2);
-new_y = max(Asizey, max(abs(TranslateY) + Tsizey, abs(TranslateY) + Asizey));
-new_x = max(Asizex, max(abs(TranslateX) + Tsizex, abs(TranslateX) + Asizex));
+Ay = size(A, 1);
+Ax = size(A, 2);
+Ty = size(T, 1);
+Tx = size(T, 2);
+new_y = max(Ay, max(abs(TranslateY) + Ty, abs(TranslateY) + Ay));
+new_x = max(Ax, max(abs(TranslateX) + Tx, abs(TranslateX) + Ax));
 A_new = zeros(new_y, new_x);
 T_new = A_new;
 
 depthA = size(AStack, 3);
 depthT = size(TStack, 3);
-newstack_y = max(Asizey, max(abs(TranslateY) + Tsizey, abs(TranslateY) + Asizey));
-newstack_x = max(Asizex, max(abs(TranslateX) + Tsizex, abs(TranslateX) + Asizex));
+AStacky = size(AStack, 1);
+AStackx = size(AStack, 2);
+TStacky = size(TStack, 1);
+TStackx = size(TStack, 2);
+newstack_y = max(AStacky, max(abs(TranslateY) + TStacky, abs(TranslateY) + AStacky));
+newstack_x = max(AStackx, max(abs(TranslateX) + TStackx, abs(TranslateX) + AStackx));
 AStack_new = zeros(newstack_y, newstack_x, depthA);
 TStack_new = zeros(newstack_y, newstack_x, depthT);
 
 if TranslateY > 0
-    Ayrange = 1:Asizey;
-	Tyrange = (1:Tsizey) + TranslateY;
+    Ayrange = 1:Ay;
+	Tyrange = (1:Ty) + TranslateY;
+    Ayrangestack = 1:AStacky;
+    Tyrangestack = (1:TStacky) + TranslateY;
     if TranslateX > 0
-        Axrange = 1:Asizex;
-        Txrange = (1:Tsizex) + TranslateX;
+        Axrange = 1:Ax;
+        Txrange = (1:Tx) + TranslateX;
+        Axrangestack = 1:AStackx;
+        Txrangestack = (1:TStackx) + TranslateX;
     else
-        Axrange = (1:Asizex) + abs(TranslateX);
-        Txrange = 1:Tsizex;
+        Axrange = (1:Ax) + abs(TranslateX);
+        Txrange = 1:Tx;
+        Axrangestack = (1:AStackx) + abs(TranslateX);
+        Txrangestack = 1:TStackx;
     end
 else
-    Ayrange = (1:Asizey) + abs(TranslateY);
-    Tyrange = 1:Tsizey;
+    Ayrange = (1:Ay) + abs(TranslateY);
+    Tyrange = 1:Ty;
+    Ayrangestack = (1:AStacky) + abs(TranslateY);
+    Tyrangestack = 1:TStacky;
     if TranslateX > 0
-        Axrange = 1:Asizex;
-        Txrange = (1:Tsizex) + TranslateX;
+        Axrange = 1:Ax;
+        Txrange = (1:Tx) + TranslateX;
+        Axrangestack = 1:AStackx;
+        Txrangestack = (1:TStackx) + TranslateX;
     else
-        Axrange = (1:Asizex) + abs(TranslateX);
-        Txrange = 1:Tsizex;
+        Axrange = (1:Ax) + abs(TranslateX);
+        Txrange = 1:Tx;
+        Axrangestack = (1:AStackx) + abs(TranslateX);
+        Txrangestack = 1:TStackx;
     end
 end
 
 A_new(Ayrange, Axrange) = A;
 T_new(Tyrange, Txrange) = T;
-size(TStack_new)
-size(TStack)
-AStack_new(Ayrange, Axrange, :) = AStack;
-TStack_new(Tyrange, Txrange, :) = TStack;
+AStack_new(Ayrangestack, Axrangestack, :) = AStack;
+TStack_new(Tyrangestack, Txrangestack, :) = TStack;
 
 % remove padded zeros from final image.
 Merged = A_new;
