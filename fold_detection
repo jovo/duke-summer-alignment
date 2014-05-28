@@ -1,0 +1,22 @@
+%iterated threshold segmentation
+for i = 1:100
+image = imageAC4(:,:,i);
+thresh = mean2(image)-3*std2(image); 
+[r,c] = find(image <= thresh); %eliminates pixels 3std below avg
+
+%RANSAC
+ptNum = size([r,c]',2); %#columns
+iterNum = 45;
+thDist = 15;
+thInlrRatio = 0.05; 
+[t,r] = ransac([r,c]',iterNum,thDist,thInlrRatio)
+k = -tan(t)
+b = r/cos(t)
+X = 0:2^5:2^10;
+
+%plot line on image
+imshow(image);
+hold on;
+plot(k*X+b,X,'r')
+plot(k*X+b+thDist,X,'r')
+plot(k*X+b-thDist,X,'r')
