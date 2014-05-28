@@ -1,19 +1,15 @@
 function [ Merged, MergedStack ] = xcorr2imgs( template, A, templateStack, AStack )
-%XCORR2IMGS Rough alignment by 2D cross-correlation differing scaling,
-%translation, and/or rotation.
+%XCORR2IMGS Rough alignment by 2D cross-correlation differing by
+%translation and/or rotation.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 %
 %   [ Merged, MergedStack ] = XCORR2IMGS( template, A, templateStack, AStack )
-%   template is the image that should be matched to A. A should be
-%   larger than template or of same size. If that is not the case, will try to
-%   crop/swap images to satisfy these conditions.
-%   NOTE:
-%   It is preferred for template and A to be the same size.
-%   Please avoid zero padding that cover potential image overlaps. This causes
-%   significant bias and the program will probably fail.
-%   one image MUST be less than 1.5x smaller or larger than other image.
+
+% threshold for possible image scaling, which shouldn't happen by
+% assumption.
+threshold = 1.1;
 
 % convert to grayscale as necessary.
 if size(A, 3) == 3
@@ -35,9 +31,26 @@ switch sum(size(A) >= size(template))
         template = template(1:miny, 1:minx);
 end
 
+% zero pad image to same size
+yaddpad = max(size(A, 1), size(template, 1));
+xaddpad = max(size(A, 2), size(template, 2));
+A = addzeropadding(A, yaddpad-size(A, 1), xaddpad-size(A, 2));
+template = addzeropadding(template, yaddpad-size(template, 1), xaddpad-size(template, 2));
+
+% apply hamming window
+Aham = hamming2dwindow(A);
+templateham = hamming2dwindow(template);
+
+% additional zero padding to avoid edge bias. Tests show this improves
+% image alignment, but slows down program.
+ypadd = size(A, 1) + size(templateham, 1);
+xpadd = size(A, 2) + size(templateham, 2);
+Aham = addzeropadding(Aham, ypadd, xpadd);
+templateham = addzeropadding(templateham, ypadd, xpadd);
+
 % DFT of template and A.
-FourierT = fft2(template);
-FourierA = fft2(A);
+FourierT = fft2(templateham);
+FourierA = fft2(Aham);
 
 % high-pass filtering.
 filteredFT = highpass(abs(fftshift(FourierT)));
@@ -58,12 +71,14 @@ if rhopeak > size(c, 1)/2    % template scaled down to match A
 else    % template scaled up to match A
     SCALE = rhoaxis(rhopeak);
 end
-if SCALE > 1.5 || SCALE < 1/1.5     % threshold against excessive/wrong scaling
+if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
     SCALE = 1;
-    THETA = 0;
+    warning('scaling exceeded threshold. Potentially failed alignment');
 else
-    THETA = (thetapeak - 1) * 360 / size(c, 2);
 end
+THETA = (thetapeak - 1) * 360 / size(c, 2);
+% remove scaling for now.
+SCALE = 1;
 
 % rotate template image two possible ways.
 RotatedT1 = imrotate(template, -THETA, 'nearest', 'crop');
@@ -215,6 +230,22 @@ MergedStack = cat(3, TStack_new, AStack_new);
         M_new = M_new(ymin:ymax, xmin:xmax);
     end
 
+    % add the amount of zero padding
+    function [ M_new ] = addzeropadding( M, yadd, xadd )
+        M_new = uint8(zeros(size(M) + [yadd, xadd]));
+        yrange = (1:size(M, 1)) + floor(yadd/2);
+        xrange = (1:size(M, 2)) + floor(xadd/2);
+        M_new(yrange, xrange) = M;
+    end
+
+    % apply a hamming window entirely to image matrix.
+    function [ M_new ] = hamming2dwindow( M )
+        M = double(M);
+        ywindow = hamming(size(M, 1));
+        xwindow = hamming(size(M, 2));
+        w = ywindow(:) * xwindow(:)';
+        M_new = M.*w;
+    end
 
 %% kind of buggy, maybe useful later?
 %     % pick the better rotation
