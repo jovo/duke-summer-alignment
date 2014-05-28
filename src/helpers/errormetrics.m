@@ -35,7 +35,6 @@ switch lower(type)
             Error(i) = mean(mean((i1 - i2).^2));
         end
 end
-Error
 
 end
 

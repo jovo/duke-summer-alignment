@@ -30,8 +30,10 @@ M_new = roughalignhelper(M);
     end
         
     % output error 
-    original = errorreport(M, 'Original', 'mse');
-    aligned = errorreport(M_new, 'Aligned', 'mse');
+    [originalerror, original] = errorreport(M, 'Original', 'mse');
+    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'mse');
+    disp('Error improvement:');
+    disp(originalerror-alignederror);
     disp(original);
     disp(aligned);
     
