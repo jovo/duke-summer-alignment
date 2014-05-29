@@ -42,7 +42,7 @@ function align_gui
         
         varname = get(handles.imagename, 'String');
         try
-            imagestack = evalin('base', varname);
+            imagestack = uint8(evalin('base', varname));
             depth = size(imagestack, 3);
             set(handles.imgindex, 'String', '1');
             set(handles.zslider, 'Max', depth);
