@@ -1,11 +1,25 @@
-function [ Merged, MergedStack ] = xcorr2imgs( template, A, templateStack, AStack )
+function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 %
-%   [ Merged, MergedStack ] = XCORR2IMGS( template, A, templateStack, AStack )
+%   Performs automated alignment to template and A. performs the same
+%   transformations to templateStack and AStack, respectively.
+%   [ Transforms ] = xcorr2imgs( template, A )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A, action )
+%   if action is 'align', then also outputs the transformed final image in
+%   Merged. otherwise Merged is nil.
+%   templateID and AID are unique identifiers of template and A. These will
+%   be the key in the transformation table.
+
+% validate inputs
+narginchk(2,3);
+align = 0;
+if nargin == 3 && strcmp(action, varargin{1})
+	align = 1;
+end
 
 % threshold for possible image scaling, which shouldn't happen by
 % assumption.
@@ -72,12 +86,11 @@ else    % template scaled up to match A
     SCALE = rhoaxis(rhopeak);
 end
 if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
-    SCALE = 1;
+%     SCALE = 1;
     warning('scaling exceeded threshold. Potentially failed alignment');
-else
 end
 THETA = (thetapeak - 1) * 360 / size(c, 2);
-% remove scaling for now.
+% assume scaling is always 1.
 SCALE = 1;
 
 % rotate template image two possible ways.
@@ -110,77 +123,14 @@ end
 TranslateY = floor(TranslateY);
 TranslateX = floor(TranslateX);
 
-% Perform translation, rotation, scaling transformations to images
-T = imrotate(imresize(template, 1/SCALE), THETA, 'nearest', 'crop');
-TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
-Ay = size(A, 1);
-Ax = size(A, 2);
-Ty = size(T, 1);
-Tx = size(T, 2);
-new_y = max(Ay, max(abs(TranslateY) + Ty, abs(TranslateY) + Ay));
-new_x = max(Ax, max(abs(TranslateX) + Tx, abs(TranslateX) + Ax));
-A_new = uint8(zeros(new_y, new_x));
-T_new = A_new;
+% save transformations
+Transforms = [TranslateY, TranslateX, THETA, SCALE];
 
-depthA = size(AStack, 3);
-depthT = size(TStack, 3);
-AStacky = size(AStack, 1);
-AStackx = size(AStack, 2);
-TStacky = size(TStack, 1);
-TStackx = size(TStack, 2);
-newstack_y = max(AStacky, max(abs(TranslateY) + TStacky, abs(TranslateY) + AStacky));
-newstack_x = max(AStackx, max(abs(TranslateX) + TStackx, abs(TranslateX) + AStackx));
-AStack_new = uint8(zeros(newstack_y, newstack_x, depthA));
-TStack_new = uint8(zeros(newstack_y, newstack_x, depthT));
-
-if TranslateY > 0
-    Ayrange = 1:Ay;
-	Tyrange = (1:Ty) + TranslateY;
-    Ayrangestack = 1:AStacky;
-    Tyrangestack = (1:TStacky) + TranslateY;
-    if TranslateX > 0
-        Axrange = 1:Ax;
-        Txrange = (1:Tx) + TranslateX;
-        Axrangestack = 1:AStackx;
-        Txrangestack = (1:TStackx) + TranslateX;
-    else
-        Axrange = (1:Ax) + abs(TranslateX);
-        Txrange = 1:Tx;
-        Axrangestack = (1:AStackx) + abs(TranslateX);
-        Txrangestack = 1:TStackx;
-    end
-else
-    Ayrange = (1:Ay) + abs(TranslateY);
-    Tyrange = 1:Ty;
-    Ayrangestack = (1:AStacky) + abs(TranslateY);
-    Tyrangestack = 1:TStacky;
-    if TranslateX > 0
-        Axrange = 1:Ax;
-        Txrange = (1:Tx) + TranslateX;
-        Axrangestack = 1:AStackx;
-        Txrangestack = (1:TStackx) + TranslateX;
-    else
-        Axrange = (1:Ax) + abs(TranslateX);
-        Txrange = 1:Tx;
-        Axrangestack = (1:AStackx) + abs(TranslateX);
-        Txrangestack = 1:TStackx;
-    end
+% if align is true, applies transformations
+Merged = [];
+if align
+    [ Merged ] = affinetransform(template, A, template, A, Transforms);
 end
-
-A_new(Ayrange, Axrange) = A;
-T_new(Tyrange, Txrange) = T;
-AStack_new(Ayrangestack, Axrangestack, :) = AStack;
-TStack_new(Tyrangestack, Txrangestack, :) = TStack;
-
-% remove padded zeros from final image.
-Merged = A_new;
-empty = find(T_new~=0);
-Merged(empty) = T_new(empty);
-[ycoord, xcoord] = find(Merged);
-Merged = Merged(min(ycoord):max(ycoord), min(xcoord):max(xcoord));
-MergedStack = cat(3, TStack_new, AStack_new);
-% MergedStack = MergedStack(min(ycoord):max(ycoord), min(xcoord):max(xcoord),:);
-
 
 %% Helper functions
 
@@ -247,6 +197,10 @@ MergedStack = cat(3, TStack_new, AStack_new);
         M_new = M.*w;
     end
 
+end
+
+
+
 %% kind of buggy, maybe useful later?
 %     % pick the better rotation
 %     c1 = real(ifft2(FourierA.*conj(fft2(RotatedT1))));
@@ -287,6 +241,3 @@ MergedStack = cat(3, TStack_new, AStack_new);
 % xtrans = (1:size(template,2))+xpeak-floor(size(template,2)/2);
 % c(ytrans, xtrans) = template;
 % imshow(c, [0, 255]);
-
-end
-
