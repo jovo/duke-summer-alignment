@@ -9,16 +9,35 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   transformations to templateStack and AStack, respectively.
 %   [ Transforms ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, action )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A, action, pad )
 %   if action is 'align', then also outputs the transformed final image in
 %   Merged. otherwise Merged is nil.
+%   if padd is true (1), then will zero padd to improve alignment, but
+%   increase running time.
 %   templateID and AID are unique identifiers of template and A. These will
 %   be the key in the transformation table.
 
 % validate inputs
-narginchk(2,3);
+narginchk(2,4);
 align = 0;
-if nargin == 3 && strcmp(action, varargin{1})
+pad = 0;
+if nargin > 2 && strcmp('align', varargin{1})
 	align = 1;
+end
+if nargin > 3 && varargin{2}
+    pad = 1;
+end
+
+% stop program early if one image is flat.
+if std(double(template(:))) == 0 || std(double(A(:))) == 0
+    warning('one image is completely flat; no transformations performed');
+    Transforms = [0,0,0,1];
+    if std(double(template(:))) == 0
+        Merged = A;
+    else
+        Merged = template;
+    end
+    return;
 end
 
 % threshold for possible image scaling, which shouldn't happen by
@@ -39,6 +58,7 @@ switch sum(size(A) >= size(template))
         templatetemp = template;
         template = A;
         A = templatetemp;
+        clear templatetemp;
     case 1  % A is smaller than template in 1 dimension: crop template.
         miny = min(size(template, 1), size(A, 1));
         minx = min(size(template, 2), size(A, 2));
@@ -57,45 +77,62 @@ templateham = hamming2dwindow(template);
 
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
-ypadd = size(A, 1) + size(templateham, 1);
-xpadd = size(A, 2) + size(templateham, 2);
-Aham = addzeropadding(Aham, ypadd, xpadd);
-templateham = addzeropadding(templateham, ypadd, xpadd);
+if pad
+    ypadd = size(A, 1) + size(templateham, 1);
+    xpadd = size(A, 2) + size(templateham, 2);
+    Aham = addzeropadding(Aham, ypadd, xpadd);
+    templateham = addzeropadding(templateham, ypadd, xpadd);
+end
 
 % DFT of template and A.
 FourierT = fft2(templateham);
 FourierA = fft2(Aham);
+clear Aham templateham;
 
 % high-pass filtering.
 filteredFT = highpass(abs(fftshift(FourierT)));
 filteredFA = highpass(abs(fftshift(FourierA)));
+clear FourierA FourierT;
 
 % Resample image in log-polar coordinates.
 [LogPolarT, rhoaxis] = log_polar(filteredFT);
 LogPolarA = log_polar(filteredFA);
+clear filteredFT filteredFA;
 
 % compute phase correlation to find best theta.
 ysize = max(size(LogPolarA, 1), size(LogPolarT, 1));
 xsize = max(size(LogPolarA, 2), size(LogPolarT, 2));
 c = real(ifft2(fft2(LogPolarA, ysize, xsize).*conj(fft2(LogPolarT, ysize, xsize))));
 [rhopeak, thetapeak] = find(c==max(c(:)));
-if rhopeak > size(c, 1)/2    % template scaled down to match A
-    rhoindex = size(c,1) - rhopeak + 1;
-    SCALE = 1/rhoaxis(rhoindex);
-else    % template scaled up to match A
-    SCALE = rhoaxis(rhopeak);
+if length(rhopeak) > 1  % test for nonuniqueness
+    SCALE = 1;
+    THETA1 = 0;
+    THETA2 = 0;
+else
+    if rhopeak > size(c, 1)/2    % template scaled down to match A
+        rhoindex = size(c,1) - rhopeak + 1;
+        SCALE = 1/rhoaxis(rhoindex);
+    else    % template scaled up to match A
+        SCALE = rhoaxis(rhopeak);
+    end
+    % assume scaling is always 1 for now.
+    if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
+        SCALE = 1;
+        THETA1 = 0;
+        THETA2 = 0;
+        warning('scaling exceeded threshold. Potentially failed alignment');
+    else
+        SCALE = 1;
+        th = (thetapeak - 1) * 360 / size(c, 2);
+        THETA1 = -th;
+        THETA2 = -th-180;
+    end
 end
-if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
-%     SCALE = 1;
-    warning('scaling exceeded threshold. Potentially failed alignment');
-end
-THETA = (thetapeak - 1) * 360 / size(c, 2);
-% assume scaling is always 1.
-SCALE = 1;
+clear LogPolarT LogPolarA;
 
 % rotate template image two possible ways.
-RotatedT1 = imrotate(template, -THETA, 'nearest', 'crop');
-RotatedT2 = imrotate(template, -THETA-180, 'nearest', 'crop');
+RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
+RotatedT2 = imrotate(template, THETA2, 'nearest', 'crop');
 
 % scale each potential template image
 RotatedT1 = imresize(RotatedT1, 1/SCALE);
@@ -105,23 +142,40 @@ RotatedT2 = imresize(RotatedT2, 1/SCALE);
 % transformation parameters.
 [RotatedT1padrm, yshifted1, xshifted1] = rmzeropaddingforced(RotatedT1);
 [RotatedT2padrm, yshifted2, xshifted2] = rmzeropaddingforced(RotatedT2);
+clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
 [y1, x1] = find(c1==max(c1(:)));
 [y2, x2] = find(c2==max(c2(:)));
-if c1(y1, x1) > c2(y2, x2)
-    RotatedTpadrm = RotatedT1padrm;
-    THETA = -THETA;
-    TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
-    TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
+max1 = c1(y1, x1);
+max2 = c2(y2, x2);
+clear c1 c2;
+if length(max1) > 1 || length(max2) > 1   % test for nonuniqueness
+    THETA = 0;
+    if length(max1) > 1
+        TranslateX = 0;
+        TranslateY = 0;
+    end
+    if length(max2) > 1
+        TranslateX = 0;
+        TranslateY = 0;
+    end
 else
-    RotatedTpadrm = RotatedT2padrm;
-    THETA = -THETA - 180;
-    TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
-    TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
+    if max1 > max2
+        RotatedTpadrm = RotatedT1padrm;
+        THETA = THETA1;
+        TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
+        TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
+    else
+        RotatedTpadrm = RotatedT2padrm;
+        THETA = THETA2;
+        TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
+        TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
+    end
 end
 TranslateY = floor(TranslateY);
 TranslateX = floor(TranslateX);
+clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
 Transforms = [TranslateY, TranslateX, THETA, SCALE];
@@ -158,26 +212,32 @@ end
 
     % removes zero padding as much as possible; might crop parts of image.
     function [ M_new, yshift, xshift ] = rmzeropaddingforced( M )
-        % remove horizontal/vertical padding
-        [ypad, xpad] = find(M);
-        M_new = M(min(ypad):max(ypad), min(xpad):max(xpad));
-        yshift = min(ypad);
-        xshift = min(xpad);
-        % remove diagonal padding: will probably crop parts of image.
-        ymin = 1;
-        xmin = 1;
-        ymax = size(M_new,1);
-        xmax = size(M_new,2);
-        while (M_new(ymin, xmin) + M_new(ymin, xmax) + M_new(ymax, xmin) + M_new(ymax, xmax)) == 0 ...
-                && ymax > ymin && xmax > xmin
-            xmin = xmin+1;
-            xmax = xmax-1;
-            ymin = ymin+1;
-            ymax = ymax-1;
+        if M == zeros(size(M))
+            M_new = M;
+            yshift = 0;
+            xshift = 0;
+        else
+            % remove horizontal/vertical padding
+            [ypad, xpad] = find(M);
+            M_new = M(min(ypad):max(ypad), min(xpad):max(xpad));
+            yshift = min(ypad);
+            xshift = min(xpad);
+            % remove diagonal padding: will probably crop parts of image.
+            ymin = 1;
+            xmin = 1;
+            ymax = size(M_new,1);
+            xmax = size(M_new,2);
+            while (M_new(ymin, xmin) + M_new(ymin, xmax) + M_new(ymax, xmin) + M_new(ymax, xmax)) == 0 ...
+                    && ymax > ymin && xmax > xmin
+                xmin = xmin+1;
+                xmax = xmax-1;
+                ymin = ymin+1;
+                ymax = ymax-1;
+            end
+            yshift = yshift + ymin;
+            xshift = xshift + xmin;
+            M_new = M_new(ymin:ymax, xmin:xmax);
         end
-        yshift = yshift + ymin;
-        xshift = xshift + xmin;
-        M_new = M_new(ymin:ymax, xmin:xmax);
     end
 
     % add the amount of zero padding

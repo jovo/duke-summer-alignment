@@ -4,13 +4,13 @@ function [ IStackAligned ] = constructalignment( IStack, Transforms )
 %   stack of images, IStack, and a list of Transforms. Performs alignment
 %   on all images in IStack.
 
-% O(n) time, space complexity.
 depth = size(IStack,3);
 queue = Queue(depth);
 % initially add each image to Q
 for i=1:depth
   queue.push(IStack(:,:,i));
 end
+clear IStack;
 while queue.count() > 1
     queuesize = queue.count();
     for i=1:2:queuesize
@@ -27,6 +27,7 @@ while queue.count() > 1
             vals = vals{1};
             merged = affinetransform(N1, N2, vals);
             queue.push(merged);
+            clear merged;
         end
     end
 end
