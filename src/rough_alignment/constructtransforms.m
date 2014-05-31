@@ -2,16 +2,14 @@ function [ Transforms ] = constructtransforms( M )
 %CONSTRUCTTRANSFORMS determines transform parameters to align pairwise
 %images from image cube.
 
-% initialize nested cell arrays
-ids = cell(1, size(M,3)-1);
-tforms = cell(1, size(M,3)-1);
-
 % stores variables as matfile to save memory
 filename = strcat(lower(randseq(16, 'Alphabet','amino')),'.mat');
-save(filename,'M', 'tforms', 'ids', '-v7.3');
+save(filename,'M','-v7.3');
 data = matfile(filename, 'Writable', true);
+data.ids = cell(1, size(M,3)-1);
+data.tforms = cell(1, size(M,3)-1);
 looplength = size(M, 3) - 1;
-clear ids tforms M;
+clear M;
 
 % iterate through stack, compute transformations for rough alignment.
 for i=1:looplength

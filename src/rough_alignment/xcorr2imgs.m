@@ -183,7 +183,7 @@ Transforms = [TranslateY, TranslateX, THETA, SCALE];
 % if align is true, applies transformations
 Merged = [];
 if align
-    [ Merged ] = affinetransform(template, A, template, A, Transforms);
+    [ Merged ] = affinetransform(template, A, Transforms);
 end
 
 %% Helper functions
