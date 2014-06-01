@@ -145,40 +145,43 @@ RotatedT2 = imresize(RotatedT2, 1/SCALE);
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = find(c1==max(c1(:)));
-[y2, x2] = find(c2==max(c2(:)));
-max1 = c1(y1, x1);
-max2 = c2(y2, x2);
-clear c1 c2;
-if length(max1) > 1 || length(max2) > 1   % test for nonuniqueness
-    THETA = 0;
-    if length(max1) > 1
-        TranslateX = 0;
-        TranslateY = 0;
-    end
-    if length(max2) > 1
-        TranslateX = 0;
-        TranslateY = 0;
-    end
+[y1, x1] = detectpeaks(c1, 'gaussian');
+[y2, x2] = detectpeaks(c2, 'gaussian');
+if x1 == -1
+    max1 = 0;
 else
-    if max1 > max2
-        RotatedTpadrm = RotatedT1padrm;
-        THETA = THETA1;
-        TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
-        TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
-    else
-        RotatedTpadrm = RotatedT2padrm;
-        THETA = THETA2;
-        TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
-        TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
-    end
+    max1 = c1(y1, x1);
+end
+if x2 == -1
+    max2 = 0;
+else
+    max2 = c2(y2, x2);
+end
+clear c1 c2;
+if max1 > max2
+    RotatedTpadrm = RotatedT1padrm;
+    THETA = THETA1;
+    TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
+    TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
+    failed = 0;
+elseif max1 < max2
+    RotatedTpadrm = RotatedT2padrm;
+    THETA = THETA2;
+    TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
+    TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
+    failed = 0;
+else
+    failed = 1;
+    THETA = 0;
+    TranslateX = 0;
+    TranslateY = 0;
 end
 TranslateY = floor(TranslateY);
 TranslateX = floor(TranslateX);
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
-Transforms = [TranslateY, TranslateX, THETA, SCALE];
+Transforms = [TranslateY, TranslateX, THETA, SCALE, failed];
 
 % if align is true, applies transformations
 Merged = [];

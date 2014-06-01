@@ -3,7 +3,7 @@ function [ Transforms ] = constructtransforms( M )
 %images from image cube.
 
 % stores variables as matfile to save memory
-filename = strcat(lower(randseq(16, 'Alphabet','amino')),'.mat');
+filename = strcat('tempfiledeletewhendone_',lower(randseq(8, 'Alphabet','amino')),'.mat');
 save(filename,'M','-v7.3');
 data = matfile(filename, 'Writable', true);
 data.ids = cell(1, size(M,3)-1);
