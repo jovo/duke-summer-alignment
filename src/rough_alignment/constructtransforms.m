@@ -15,7 +15,8 @@ clear M;
 for i=1:looplength
     img1 = data.M(:,:,i);
     img2 = data.M(:,:,i+1);
-    tform = xcorr2imgs(img1, img2, '', 1);
+    [tform, merged] = xcorr2imgs(img1, img2, 'align', 1);
+%     [i, size(merged)]
     data.ids(1,i) = {[int2str(i),' ',int2str(i+1)]};
     data.tforms(1,i) = {tform};
 end
