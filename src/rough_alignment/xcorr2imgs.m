@@ -12,10 +12,8 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, action, pad )
 %   if action is 'align', then also outputs the transformed final image in
 %   Merged. otherwise Merged is nil.
-%   if padd is true (1), then will zero padd to improve alignment, but
+%   if pad is true (1), then will zero pad to improve alignment, but
 %   increase running time.
-%   templateID and AID are unique identifiers of template and A. These will
-%   be the key in the transformation table.
 
 % validate inputs
 narginchk(2,4);
@@ -68,8 +66,8 @@ end
 % zero pad image to same size
 yaddpad = max(size(A, 1), size(template, 1));
 xaddpad = max(size(A, 2), size(template, 2));
-A = addzeropadding(A, yaddpad-size(A, 1), xaddpad-size(A, 2));
-template = addzeropadding(template, yaddpad-size(template, 1), xaddpad-size(template, 2));
+A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
+template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
 
 % apply hamming window
 Aham = hamming2dwindow(A);
@@ -78,10 +76,10 @@ templateham = hamming2dwindow(template);
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
 if pad
-    ypadd = size(A, 1) + size(templateham, 1);
-    xpadd = size(A, 2) + size(templateham, 2);
-    Aham = addzeropadding(Aham, ypadd, xpadd);
-    templateham = addzeropadding(templateham, ypadd, xpadd);
+    ypadd = min(size(A, 1), size(templateham, 1));
+    xpadd = min(size(A, 2), size(templateham, 2));
+    Aham = padarray(Aham, [ypadd, xpadd]);
+    templateham = padarray(templateham, [ypadd, xpadd]);
 end
 
 % DFT of template and A.
@@ -241,14 +239,6 @@ end
             xshift = xshift + xmin;
             M_new = M_new(ymin:ymax, xmin:xmax);
         end
-    end
-
-    % add the amount of zero padding
-    function [ M_new ] = addzeropadding( M, yadd, xadd )
-        M_new = uint8(zeros(size(M) + [yadd, xadd]));
-        yrange = (1:size(M, 1)) + floor(yadd/2);
-        xrange = (1:size(M, 2)) + floor(xadd/2);
-        M_new(yrange, xrange) = M;
     end
 
     % apply a hamming window entirely to image matrix.
