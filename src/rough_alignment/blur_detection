@@ -37,5 +37,3 @@ plot(k*X+b-thDist,X,'r')
 figure;
 
 end
-
-%TO-DO:threshold iteration,RANSAC ratio?
