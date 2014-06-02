@@ -1,4 +1,4 @@
-%for detecting blurs--which are assumed to be lines of varying thickness that extend from one side of the image to the other, and are black in color--in the image  
+%for detecting folds, which are assumed to be dark lines of varying thickness that extend from one side of the image to the other
 
 %iterated threshold segmentation
 for i = 1:100;
