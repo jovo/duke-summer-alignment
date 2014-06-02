@@ -60,3 +60,6 @@ data/
 
 # matlab temp files
 *.m~
+
+# vim temp viles
+*.swp
