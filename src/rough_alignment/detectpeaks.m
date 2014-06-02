@@ -1,10 +1,9 @@
-function [ xpeak, ypeak ] = detectpeaks( c, type )
+function [ ypeak, xpeak ] = detectpeaks( c, type )
 %DETECTPEAKS Detects significant peaks of image in fourier domain.
 %   [ xpeak, ypeak ] = detectpeaks( c, type ) takes an image in the fourier
 %   domain, c, and what the peak should be modelled after. If the maximum
 %   point in c is indeed a 'peak', then returns the peak. Otherwise return
 %   -1
-
 
 tempsize = ceil(max(size(c))/8);    % half the size of distribution
 
@@ -19,19 +18,18 @@ template = y'*y;
 
 % correlate and find new peaks
 [ypeakold, xpeakold] = find(c==max(c(:)));
-x = normxcorr2(template, c);
-[yp, xp] = find(x==max(x(:)));
-ypeaknew = yp-tempsize;
-xpeaknew = xp-tempsize;
-% max(c(:))
-% max(x(:))
+cpad = padarray(c, [tempsize*2, tempsize*2], 'symmetric');
+x = normxcorr2(template, cpad);
+x = x(tempsize*3+1:size(x,1)-tempsize*3, tempsize*3+1:size(x,2)-tempsize*3);
+[ypeaknew, xpeaknew] = find(x==max(x(:)));
+
 % figure; imshow(c,[min(c(:)), max(c(:))]);
 % hold on;
 % plot(xpeakold,ypeakold,'ro');
 % hold off;
 % figure; imshow(x,[min(x(:)), max(x(:))]);
 % hold on;
-% plot(xp,yp,'bo');
+% plot(xpeaknew,ypeaknew,'bo');
 % hold off;
 
 % enter final values for xpeak and ypeak

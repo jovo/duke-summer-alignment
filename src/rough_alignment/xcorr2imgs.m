@@ -100,11 +100,10 @@ LogPolarA = log_polar(filteredFA);
 clear filteredFT filteredFA;
 
 % compute phase correlation to find best theta.
-ysize = max(size(LogPolarA, 1), size(LogPolarT, 1));
-xsize = max(size(LogPolarA, 2), size(LogPolarT, 2));
-c = real(ifft2(fft2(LogPolarA, ysize, xsize).*conj(fft2(LogPolarT, ysize, xsize))));
+xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
+c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
 [rhopeak, thetapeak] = detectpeaks(c, 'gaussian');
-if length(rhopeak) > 1  % test for nonuniqueness
+if rhopeak == -1
     SCALE = 1;
     THETA1 = 0;
     THETA2 = 0;
