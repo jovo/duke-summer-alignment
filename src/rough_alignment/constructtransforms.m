@@ -17,10 +17,10 @@ for i=1:looplength
     img2 = data.M(:,:,i+1);
 
 %     % with matlab's image registration function
-%     tform = imregtform(img1, img2, 'affine', ...
+%     tform = imregtform(img1, img2, 'rigid', ...
 %         registration.optimizer.RegularStepGradientDescent, ...
 %         registration.metric.MeanSquares);
-%
+
     % with own function
     tform = xcorr2imgs(img1, img2, '', 1);
 

@@ -4,7 +4,9 @@ function [ MergedStack ] = affinetransform( templateStack, AStack, tforms )
 %   templateStack and AStack are the image (could be stacks) that are
 %   transforms according to tforms.
 
+%% using transformation parameters
 % retrieve transformations from tforms
+tforms = tforms{1};
 TranslateY = tforms(1);
 TranslateX = tforms(2);
 THETA = tforms(3);
@@ -49,6 +51,15 @@ AStack_new(Ayrangestack, Axrangestack, :) = AStack;
 TStack_new(Tyrangestack, Txrangestack, :) = TStack;
 
 MergedStack = cat(3, TStack_new, AStack_new);
+
+%% using a transformation matrix
+% tforms = tforms{2};
+% TStack_new = imwarp(templateStack, tforms);
+% yrange = max(size(TStack_new, 1), size(AStack, 1));
+% xrange = max(size(TStack_new, 2), size(AStack, 2));
+% TStack_new = padarray(TStack_new, [yrange-size(TStack_new,1), xrange-size(TStack_new,2)], 0, 'post');
+% AStack = padarray(AStack, [yrange-size(AStack,1), xrange-size(AStack,2)], 0, 'post');
+% MergedStack = cat(3, TStack_new, AStack);
 
 end
 
