@@ -5,15 +5,7 @@ for i = 1:100;
 image = imageAC4(:,:,i);
 G = fspecial('gaussian',[3,3],3);
 im = imfilter(image,G);
-
-%dtm threshold of image
-thresh = mean2(image)-3*std2(image); 
-if (thresh >= 0);
-    thresh = thresh;
-else
-    thresh = 0;
-end
-[r,c] = find(image <= thresh); %eliminates pixels 3 STD below avg
+[r,c] = find(im <= 40);
 
 %RANSAC
 ptNum = size([r,c]',2); %#columns
