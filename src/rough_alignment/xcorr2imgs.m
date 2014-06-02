@@ -101,7 +101,7 @@ clear filteredFT filteredFA;
 ysize = max(size(LogPolarA, 1), size(LogPolarT, 1));
 xsize = max(size(LogPolarA, 2), size(LogPolarT, 2));
 c = real(ifft2(fft2(LogPolarA, ysize, xsize).*conj(fft2(LogPolarT, ysize, xsize))));
-[rhopeak, thetapeak] = find(c==max(c(:)));
+[rhopeak, thetapeak] = detectpeaks(c, 'gaussian');
 if length(rhopeak) > 1  % test for nonuniqueness
     SCALE = 1;
     THETA1 = 0;
@@ -180,6 +180,11 @@ clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
 Transforms = [TranslateY, TranslateX, THETA, SCALE, failed];
+% Transforms = [
+%                 SCALE*cosd(THETA),  sind(THETA),        0; ...
+%                 -sind(THETA),       SCALE*cosd(THETA),	0; ...
+%                 TranslateX,         TranslateY,         SCALE*1
+%              ];
 
 % if align is true, applies transformations
 Merged = [];

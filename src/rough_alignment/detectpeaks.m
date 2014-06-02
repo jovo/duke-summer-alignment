@@ -5,6 +5,7 @@ function [ xpeak, ypeak ] = detectpeaks( c, type )
 %   point in c is indeed a 'peak', then returns the peak. Otherwise return
 %   -1
 
+
 tempsize = ceil(max(size(c))/8);    % half the size of distribution
 
 % construct the distribution, template, that c will correlate with
@@ -34,15 +35,15 @@ xpeaknew = xp-tempsize;
 % hold off;
 
 % enter final values for xpeak and ypeak
-if length(xpeakold) > 1 || length(xpeaknew) > 1 % peaks not unique
+if length(xpeaknew) > 1 % peaks not unique
     xpeak = -1;
     ypeak = -1;
-elseif sqrt((ypeaknew-ypeakold)^2 + (xpeaknew-xpeakold)^2) < 20
-    xpeak = xpeakold;
-    ypeak = ypeakold;
+elseif sqrt((ypeaknew(1)-ypeakold(1))^2 + (xpeaknew(1)-xpeakold(1))^2) < 20
+    xpeak = xpeakold(1);
+    ypeak = ypeakold(1);
 else
-    xpeak = xpeaknew;
-    ypeak = ypeaknew;
+    xpeak = xpeaknew(1);
+    ypeak = ypeaknew(1);
 end
 
 end
