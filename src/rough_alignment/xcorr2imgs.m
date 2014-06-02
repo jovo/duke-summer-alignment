@@ -12,10 +12,8 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, action, pad )
 %   if action is 'align', then also outputs the transformed final image in
 %   Merged. otherwise Merged is nil.
-%   if padd is true (1), then will zero padd to improve alignment, but
+%   if pad is true (1), then will zero pad to improve alignment, but
 %   increase running time.
-%   templateID and AID are unique identifiers of template and A. These will
-%   be the key in the transformation table.
 
 % validate inputs
 narginchk(2,4);
@@ -68,8 +66,8 @@ end
 % zero pad image to same size
 yaddpad = max(size(A, 1), size(template, 1));
 xaddpad = max(size(A, 2), size(template, 2));
-A = addzeropadding(A, yaddpad-size(A, 1), xaddpad-size(A, 2));
-template = addzeropadding(template, yaddpad-size(template, 1), xaddpad-size(template, 2));
+A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
+template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
 
 % apply hamming window
 Aham = hamming2dwindow(A);
@@ -78,10 +76,10 @@ templateham = hamming2dwindow(template);
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
 if pad
-    ypadd = size(A, 1) + size(templateham, 1);
-    xpadd = size(A, 2) + size(templateham, 2);
-    Aham = addzeropadding(Aham, ypadd, xpadd);
-    templateham = addzeropadding(templateham, ypadd, xpadd);
+    ypadd = min(size(A, 1), size(templateham, 1));
+    xpadd = min(size(A, 2), size(templateham, 2));
+    Aham = padarray(Aham, [ypadd, xpadd]);
+    templateham = padarray(templateham, [ypadd, xpadd]);
 end
 
 % DFT of template and A.
@@ -103,7 +101,7 @@ clear filteredFT filteredFA;
 ysize = max(size(LogPolarA, 1), size(LogPolarT, 1));
 xsize = max(size(LogPolarA, 2), size(LogPolarT, 2));
 c = real(ifft2(fft2(LogPolarA, ysize, xsize).*conj(fft2(LogPolarT, ysize, xsize))));
-[rhopeak, thetapeak] = find(c==max(c(:)));
+[rhopeak, thetapeak] = detectpeaks(c, 'gaussian');
 if length(rhopeak) > 1  % test for nonuniqueness
     SCALE = 1;
     THETA1 = 0;
@@ -145,40 +143,48 @@ RotatedT2 = imresize(RotatedT2, 1/SCALE);
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = find(c1==max(c1(:)));
-[y2, x2] = find(c2==max(c2(:)));
-max1 = c1(y1, x1);
-max2 = c2(y2, x2);
-clear c1 c2;
-if length(max1) > 1 || length(max2) > 1   % test for nonuniqueness
-    THETA = 0;
-    if length(max1) > 1
-        TranslateX = 0;
-        TranslateY = 0;
-    end
-    if length(max2) > 1
-        TranslateX = 0;
-        TranslateY = 0;
-    end
+[y1, x1] = detectpeaks(c1, 'gaussian');
+[y2, x2] = detectpeaks(c2, 'gaussian');
+if x1 == -1
+    max1 = 0;
 else
-    if max1 > max2
-        RotatedTpadrm = RotatedT1padrm;
-        THETA = THETA1;
-        TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
-        TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
-    else
-        RotatedTpadrm = RotatedT2padrm;
-        THETA = THETA2;
-        TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
-        TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
-    end
+    max1 = c1(y1, x1);
+end
+if x2 == -1
+    max2 = 0;
+else
+    max2 = c2(y2, x2);
+end
+clear c1 c2;
+if max1 > max2
+    RotatedTpadrm = RotatedT1padrm;
+    THETA = THETA1;
+    TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
+    TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
+    failed = 0;
+elseif max1 < max2
+    RotatedTpadrm = RotatedT2padrm;
+    THETA = THETA2;
+    TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
+    TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
+    failed = 0;
+else
+    failed = 1;
+    THETA = 0;
+    TranslateX = 0;
+    TranslateY = 0;
 end
 TranslateY = floor(TranslateY);
 TranslateX = floor(TranslateX);
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
-Transforms = [TranslateY, TranslateX, THETA, SCALE];
+Transforms = [TranslateY, TranslateX, THETA, SCALE, failed];
+% Transforms = [
+%                 SCALE*cosd(THETA),  sind(THETA),        0; ...
+%                 -sind(THETA),       SCALE*cosd(THETA),	0; ...
+%                 TranslateX,         TranslateY,         SCALE*1
+%              ];
 
 % if align is true, applies transformations
 Merged = [];
@@ -238,14 +244,6 @@ end
             xshift = xshift + xmin;
             M_new = M_new(ymin:ymax, xmin:xmax);
         end
-    end
-
-    % add the amount of zero padding
-    function [ M_new ] = addzeropadding( M, yadd, xadd )
-        M_new = uint8(zeros(size(M) + [yadd, xadd]));
-        yrange = (1:size(M, 1)) + floor(yadd/2);
-        xrange = (1:size(M, 2)) + floor(xadd/2);
-        M_new(yrange, xrange) = M;
     end
 
     % apply a hamming window entirely to image matrix.
