@@ -1,9 +1,8 @@
 function [ MergedStack ] = affinetransform( templateStack, AStack, tforms )
 %AFFINETRANSFORM Performs translation, rotation, scaling to align images
-%   [ Merged, MergedStack ] = affinetransform( template, A, templateStack, AStack, tforms )
-%   template and A are the two images to be aligned templateStack and
-%   AStack are the stacks associated with template and A. The same
-%   transformations on template
+%   [ Merged, MergedStack ] = affinetransform( templateStack, AStack, tforms )
+%   templateStack and AStack are the image (could be stacks) that are
+%   transforms according to tforms.
 
 % retrieve transformations from tforms
 TranslateY = tforms(1);

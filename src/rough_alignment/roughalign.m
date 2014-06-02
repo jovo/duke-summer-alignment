@@ -8,6 +8,8 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 %   
 %	each image pair. 
 
+tic
+
 % validate inputs
 narginchk(1,2);
 
@@ -24,6 +26,6 @@ if nargin == 2 && strcmpi(varargin{1}, 'align')
     disp(aligned);
 end
 
+toc
+
 end
-
-
