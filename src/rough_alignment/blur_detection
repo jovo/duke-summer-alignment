@@ -1,3 +1,5 @@
+%for detecting blurs--which are assumed to be lines of varying thickness that extend from one side of the image to the other, and are black in color--in the image  
+
 %iterated threshold segmentation
 for i = 1:100;
 image = imageAC4(:,:,i);
@@ -23,6 +25,7 @@ k = -tan(t)
 b = rho/cos(t)
 X = 0:2^5:2^10;
 
+%shows #pts that are thDist close to the line
 for i = 1:ptNum;
     A = [r,c];
     pt = [A(i,1),A(i,2)];
@@ -33,7 +36,7 @@ end
     num = dist <= thresh;
     points = sum(num)
 
-%plot line on image
+%plot lines on image
 Im(i) = imshow(im);
 hold on;
 plot(k*X+b,X,'r')
@@ -43,4 +46,4 @@ figure;
 
 end
 
-%TO-DO:threshold iteration,RANSAC ratio 
+%TO-DO:threshold iteration,RANSAC ratio?
