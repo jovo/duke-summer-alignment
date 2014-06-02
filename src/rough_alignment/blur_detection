@@ -1,6 +1,10 @@
 %iterated threshold segmentation
 for i = 1:100;
 image = imageAC4(:,:,i);
+G = fspecial('gaussian',[3,3],3);
+im = imfilter(image,G);
+
+%dtm threshold of image
 thresh = mean2(image)-3*std2(image); 
 if (thresh >= 0);
     thresh = thresh;
@@ -19,8 +23,18 @@ k = -tan(t)
 b = rho/cos(t)
 X = 0:2^5:2^10;
 
+for i = 1:ptNum;
+    A = [r,c];
+    pt = [A(i,1),A(i,2)];
+    Q1 = [32,k*32+b];
+    Q2 = [512,k*32+b];
+    dist(i) = abs(det([Q2-Q1; pt-Q1]))/norm(Q2-Q1);
+end
+    num = dist <= thresh;
+    points = sum(num)
+
 %plot line on image
-im(i) = imshow(image);
+Im(i) = imshow(im);
 hold on;
 plot(k*X+b,X,'r')
 plot(k*X+b+thDist,X,'r')
@@ -29,4 +43,4 @@ figure;
 
 end
 
-%gaussian blurring? 
+%TO-DO:threshold iteration,RANSAC ratio 
