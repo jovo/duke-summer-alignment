@@ -1,17 +1,21 @@
 function [separated] = splitimage(image, m, b)
 %SPLITIMAGE splits the image
-%   Splits image into two pieces, alternatively setting the coefficients above and below the line of best fit through the fold to zero
+%   Splits image into two pieces, alternatively setting the coefficients above and below the 'fold_detection' line to zero
 
-%[Y,X]=[row,column]
-[Y,X] = ind2sub(size(image),1:size(image,1)*size(image,2)); 
-fpiece = [X; Y; Y>m.*X+b]'; %bottom half
-spiece = [X; Y; Y<m.*X+b]'; %top half
+%
+[Y,X] = ind2sub(size(image),1:size(image,1)*size(image,2)); %[Y,X]=[row,column]
+f_piece = [Y; X; Y>m.*X+b]'; %bottom half
+s_piece = [Y; X; Y<m.*X+b]'; %top half
 
-%to be continued...
+f_image = zeros(size(image));
+f_indices = find(f_piece(:,3)==1);
+f_image(f_indices) = image(f_indices);
 
-matrix1
-matrix2
-separated = cat(3, matrix1, matrix2);
+s_image = zeros(size(image));
+s_indices = find(s_piece(:,3)==1);
+s_image(s_indices) = image(s_indices);
+
+separated = cat(3, f_image, s_image);
 
 end
 
