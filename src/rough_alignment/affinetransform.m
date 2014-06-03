@@ -52,7 +52,7 @@ TStack_new(Tyrangestack, Txrangestack, :) = TStack;
 
 MergedStack = cat(3, TStack_new, AStack_new);
 
-%% using a transformation matrix
+%% using a transformation matrix. BUGGY atm.
 % tforms = tforms{2};
 % TStack_new = imwarp(templateStack, tforms);
 % yrange = max(size(TStack_new, 1), size(AStack, 1));

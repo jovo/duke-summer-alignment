@@ -22,11 +22,13 @@ for i=1:looplength
 %         registration.metric.MeanSquares);
 
     % with own function
-    tform = xcorr2imgs(img1, img2, '', 1);
+    tform = xcorr2imgs(img1, img2, 0, 1);
 
+    % store ids and transforms
     data.ids(1,i) = {[int2str(i),' ',int2str(i+1)]};
     data.tforms(1,i) = {tform};
 end
+% save ids and transforms into table. TODO different data struct for this?
 Transforms = containers.Map(data.ids, data.tforms);
 
 delete(filename);
