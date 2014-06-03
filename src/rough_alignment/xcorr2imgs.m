@@ -1,32 +1,31 @@
 function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation.
+%   Performs automated alignment to template and A. performs the same
+%   transformations to templateStack and AStack, respectively.
+%   [ Transforms ] = xcorr2imgs( template, A )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
+%   if align is true (1), then also outputs the transformed final image in
+%   Merged. otherwise Merged is nil.
+%   if pad is true (1), then will zero pad to improve alignment, but
+%   increase running time.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 %
-%   Performs automated alignment to template and A. performs the same
-%   transformations to templateStack and AStack, respectively.
-%   [ Transforms ] = xcorr2imgs( template, A )
-%   [ Transforms, Merged ] = xcorr2imgs( template, A, action )
-%   [ Transforms, Merged ] = xcorr2imgs( template, A, action, pad )
-%   if action is 'align', then also outputs the transformed final image in
-%   Merged. otherwise Merged is nil.
-%   if pad is true (1), then will zero pad to improve alignment, but
-%   increase running time.
-
 % validate inputs
 narginchk(2,4);
 align = 0;
 pad = 0;
-if nargin > 2 && strcmp('align', varargin{1})
-	align = 1;
+if nargin > 2   % align param
+	align = varargin{1};
 end
-if nargin > 3 && varargin{2}
-    pad = 1;
+if nargin > 3   % align and pad param
+    pad = varargin{2};
 end
 
-% stop program early if one image is flat.
+% stop program early if one image is flat (all one color)
 if std(double(template(:))) == 0 || std(double(A(:))) == 0
     warning('one image is completely flat; no transformations performed');
     Transforms = {  [0,0,0,1,1];
@@ -44,13 +43,13 @@ end
 % assumption.
 threshold = 1.1;
 
-% convert to grayscale as necessary.
-if size(A, 3) == 3
-    A = rgb2gray(A);
-end
-if size(template, 3) == 3
-    template = rgb2gray(template);
-end
+% convert to grayscale as necessary. (TODO Assumed to be greyscale)
+% if size(A, 3) == 3
+%     A = rgb2gray(A);
+% end
+% if size(template, 3) == 3
+%     template = rgb2gray(template);
+% end
 
 % adjust image dimensions as necessary
 switch sum(size(A) >= size(template))
@@ -66,10 +65,12 @@ switch sum(size(A) >= size(template))
 end
 
 % zero pad image to same size
-yaddpad = max(size(A, 1), size(template, 1));
-xaddpad = max(size(A, 2), size(template, 2));
-A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
-template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
+if size(A) ~= size(template)
+    yaddpad = max(size(A, 1), size(template, 1));
+    xaddpad = max(size(A, 2), size(template, 2));
+    A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
+    template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
+end
 
 % apply hamming window
 Aham = hamming2dwindow(A);
@@ -102,8 +103,8 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-[rhopeak, thetapeak] = detectpeaks(c, 'gaussian');
-if rhopeak == -1
+[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian');
+if rhopeak == -1    % peak detection failed
     SCALE = 1;
     THETA1 = 0;
     THETA2 = 0;
@@ -124,7 +125,7 @@ else
         SCALE = 1;
         th = (thetapeak - 1) * 360 / size(c, 2);
         THETA1 = -th;
-        THETA2 = -th-180;
+        THETA2 = -th - 180;
     end
 end
 clear LogPolarT LogPolarA;
@@ -134,8 +135,10 @@ RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
 RotatedT2 = imrotate(template, THETA2, 'nearest', 'crop');
 
 % scale each potential template image
-RotatedT1 = imresize(RotatedT1, 1/SCALE);
-RotatedT2 = imresize(RotatedT2, 1/SCALE);
+if SCALE ~= 1
+    RotatedT1 = imresize(RotatedT1, 1/SCALE);
+    RotatedT2 = imresize(RotatedT2, 1/SCALE);
+end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
@@ -144,8 +147,8 @@ RotatedT2 = imresize(RotatedT2, 1/SCALE);
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = detectpeaks(c1, 'gaussian');
-[y2, x2] = detectpeaks(c2, 'gaussian');
+[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian');
+[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian');
 if x1 == -1
     max1 = 0;
 else
@@ -157,6 +160,7 @@ else
     max2 = c2(y2, x2);
 end
 clear c1 c2;
+% pick rotation that produces the greatest peak
 if max1 > max2
     RotatedTpadrm = RotatedT1padrm;
     THETA = THETA1;
@@ -175,8 +179,6 @@ else
     TranslateX = 0;
     TranslateY = 0;
 end
-TranslateY = floor(TranslateY);
-TranslateX = floor(TranslateX);
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
@@ -191,13 +193,13 @@ Transforms = {  [TranslateY, TranslateX, THETA, SCALE, failed];
 % if align is true, applies transformations
 Merged = [];
 if align
-    [ Merged ] = affinetransform(template, A, Transforms);
+    Merged  = affinetransform(template, A, Transforms);
 end
 
 %% Helper functions
 
     % simple high-pass emphasis filter
-    function [M_hip] = highpass( M )
+    function [ M_hip ] = highpass( M )
         X = cos(linspace(-0.5,0.5,size(M,1)))'*cos(linspace(-0.5,0.5, size(M,2)));
         H = (1-X).*(2-X);   % transfer function
         M_hip = M.*H;
