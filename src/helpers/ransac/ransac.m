@@ -1,8 +1,9 @@
-function [ maxM, maxB ] = ransac( Indices, d )
+function [ maxM, maxB, inrangeprop ] = ransac( Indices, d )
 %RANSAC Custom implementation of Random Sample Consensus of linear model.
-%   [ maxM, maxB ] = ransac( Indices, d ) Indices are the [Y,X] indices of
+%   [ maxM, maxB, epsilon ] = ransac( Indices, d ) Indices are the [Y,X] indices of
 %   the points of interest. d is the width of points from the model that
-%   can be considered to be inliers.
+%   can be considered to be inliers. epsilon indicates the fraction of
+%   outliers.
 
 totalcount = size(Indices, 1);
 s = 2;
@@ -34,6 +35,8 @@ while i < N
     N = ceil(log(1-0.995)/log(1-(1-epsilon)^s));
     i = i+1;
 end
+
+inrangeprop = 1-epsilon;
 
     % find a random point from list of points
     function [ points ] = randpoint(indices, count)
