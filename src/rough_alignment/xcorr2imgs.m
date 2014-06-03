@@ -44,13 +44,13 @@ end
 % assumption.
 threshold = 1.1;
 
-% convert to grayscale as necessary.
-if size(A, 3) == 3
-    A = rgb2gray(A);
-end
-if size(template, 3) == 3
-    template = rgb2gray(template);
-end
+% convert to grayscale as necessary. (TODO Assumed to be greyscale)
+% if size(A, 3) == 3
+%     A = rgb2gray(A);
+% end
+% if size(template, 3) == 3
+%     template = rgb2gray(template);
+% end
 
 % adjust image dimensions as necessary
 switch sum(size(A) >= size(template))
@@ -66,10 +66,12 @@ switch sum(size(A) >= size(template))
 end
 
 % zero pad image to same size
-yaddpad = max(size(A, 1), size(template, 1));
-xaddpad = max(size(A, 2), size(template, 2));
-A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
-template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
+if size(A) ~= size(template)
+    yaddpad = max(size(A, 1), size(template, 1));
+    xaddpad = max(size(A, 2), size(template, 2));
+    A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
+    template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
+end
 
 % apply hamming window
 Aham = hamming2dwindow(A);
@@ -102,7 +104,7 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-[rhopeak, thetapeak] = detectpeaks(c, 'gaussian');
+[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian');
 if rhopeak == -1
     SCALE = 1;
     THETA1 = 0;
@@ -134,8 +136,10 @@ RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
 RotatedT2 = imrotate(template, THETA2, 'nearest', 'crop');
 
 % scale each potential template image
-RotatedT1 = imresize(RotatedT1, 1/SCALE);
-RotatedT2 = imresize(RotatedT2, 1/SCALE);
+if SCALE ~= 1
+    RotatedT1 = imresize(RotatedT1, 1/SCALE);
+    RotatedT2 = imresize(RotatedT2, 1/SCALE);
+end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
@@ -144,8 +148,8 @@ RotatedT2 = imresize(RotatedT2, 1/SCALE);
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = detectpeaks(c1, 'gaussian');
-[y2, x2] = detectpeaks(c2, 'gaussian');
+[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian');
+[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian');
 if x1 == -1
     max1 = 0;
 else
@@ -175,8 +179,6 @@ else
     TranslateX = 0;
     TranslateY = 0;
 end
-TranslateY = floor(TranslateY);
-TranslateX = floor(TranslateX);
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations

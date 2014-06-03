@@ -28,7 +28,6 @@ IStackAligned = RLHelper(Ids, IStack);
             a2n = padarray(a2n, [ymax-size(a2n,1), xmax-size(a2n,2), 0], 0, 'post');
             istacknew = cat(3, a1n, a2n);
     end
-    size(istacknew)
     end
 
 

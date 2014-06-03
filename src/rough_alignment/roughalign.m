@@ -12,8 +12,8 @@ tic
 
 % validate inputs
 narginchk(1,2);
-
-Transforms = constructtransforms(M);
+Mtrans = imresize(M, 1/2);
+Transforms = constructtransforms(Mtrans);
 M_new = [];
 if nargin == 2 && strcmpi(varargin{1}, 'align')
     M_new = constructalignment(M, Transforms);
