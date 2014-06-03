@@ -13,6 +13,7 @@ for i=1:size(IStack,3)
         IStackNew = cat(3, IStackNew, M_new);
     end
 end
+IStackNew = IStackNew(:,:,2:size(IStackNew,3));
 
 end
 

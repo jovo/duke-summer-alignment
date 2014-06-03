@@ -1,6 +1,8 @@
 function [separated] = splitimage(image, m, b)
 %SPLITIMAGE splits the image
-%   Given slope m and y-intercept b of 'fold_detection' line, splits image into two pieces, alternatively setting the coefficients above and below the line to zero
+%   Given slope m and y-intercept b of 'fold_detection' line, splits image
+%   into two pieces, alternatively setting the coefficients above and below
+%   the line to zero.
 
 %gives indices of separated images in matrix form
 [Y,X] = ind2sub(size(image),1:size(image,1)*size(image,2)); %indices: [Y,X]=[row,column]
