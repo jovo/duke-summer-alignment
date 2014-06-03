@@ -17,7 +17,7 @@ for i=1:size(IStack,3)
         indices = [indices, curindex-2, curindex-1];
     end
 end
-indices = indices(2:size(indices,1));
+indices = indices(2:size(indices,2));
 IStackNew = IStackNew(:,:,2:size(IStackNew,3));
 
 end
