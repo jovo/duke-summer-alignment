@@ -7,12 +7,12 @@ function [separated] = splitimage(image, m, b)
 f_piece = [Y; X; Y>=m.*X+b]'; 
 s_piece = [Y; X; Y<=m.*X+b]';
 
-%bottom half of image
+%image below line
 f_image = zeros(size(image));
 f_indices = find(f_piece(:,3)==1);
 f_image(f_indices) = image(f_indices);
 
-%top half of image 
+%image above line 
 s_image = zeros(size(image));
 s_indices = find(s_piece(:,3)==1);
 s_image(s_indices) = image(s_indices);
@@ -20,4 +20,3 @@ s_image(s_indices) = image(s_indices);
 separated = cat(3, f_image, s_image);
 
 end
-
