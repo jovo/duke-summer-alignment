@@ -34,6 +34,16 @@ switch lower(type)
             i2(zeroelements) = 0;
             Error(i) = mean(mean((i1 - i2).^2));
         end
+    case 'sse'
+        for i=1:size(M,3)-1
+            zerotable(:,:,i+1) = M(:,:,i+1) == 0;
+            zeroelements = zerotable(:,:,i) | zerotable(:,:,i+1);
+            i1 = M(:,:,i);
+            i2 = M(:,:,i+1);
+            i1(zeroelements) = 0;
+            i2(zeroelements) = 0;
+            Error(i) = sum(sum((i1 - i2).^2));
+        end
 end
 
 end

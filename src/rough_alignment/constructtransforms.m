@@ -21,8 +21,8 @@ for i=1:looplength
 %         registration.optimizer.RegularStepGradientDescent, ...
 %         registration.metric.MeanSquares);
 
-    % with own function
-    tform = xcorr2imgs(img1, img2, 0, 1);
+    % with own function (0= don't align, 1=pad)
+    tform = xcorr2imgs(img2, img1, 0, 1);
 
     % store ids and transforms
     data.ids(1,i) = {[int2str(i),' ',int2str(i+1)]};
