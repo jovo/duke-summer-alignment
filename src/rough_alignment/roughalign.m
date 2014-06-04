@@ -36,8 +36,8 @@ M_new = [];
 if align
     M_new = constructalignment(M, Transforms);
     % output error report for both original and aligned stacks.
-    [originalerror, original] = errorreport(M, 'Original', 'sse');
-    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'sse');
+    [originalerror, original] = errorreport(M, 'Original', 'sse', 1);
+    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'sse', 1);
     disp('Error improvement:');
     disp(originalerror-alignederror);
     disp(original);
