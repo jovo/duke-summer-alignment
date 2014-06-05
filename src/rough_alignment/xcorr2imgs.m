@@ -186,7 +186,7 @@ Transforms = {  [TranslateY, TranslateX, THETA, SCALE, failed];
                 affine2d([
                 SCALE*cosd(THETA),  sind(THETA),        0; ...
                 -sind(THETA),       SCALE*cosd(THETA),	0; ...
-                TranslateX,         TranslateY,         SCALE*1
+                TranslateX,         TranslateY,         1
                 ])
              };
 
