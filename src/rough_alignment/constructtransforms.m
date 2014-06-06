@@ -53,9 +53,9 @@ for i=1:looplength
     errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
-%     if errordiff(1,i) < 0
+    if errordiff(1,i) < 0
         errorupdate = cat(1, errorupdate, [i, i+1]);
-%     end
+    end
 end
 errorupdate = errorupdate(2:end,:);
 clear img1 img2 merged aligned;
