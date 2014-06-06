@@ -40,7 +40,7 @@ end
 
 % threshold for possible image scaling, which shouldn't happen by
 % assumption.
-threshold = 1.1;
+threshold = 1.05;
 
 % convert to grayscale as necessary. (TODO Assumed to be greyscale)
 % if size(A, 3) == 3
@@ -141,8 +141,8 @@ end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
-[RotatedT1padrm, yshifted1, xshifted1] = rmzeropaddingforced(RotatedT1);
-[RotatedT2padrm, yshifted2, xshifted2] = rmzeropaddingforced(RotatedT2);
+[RotatedT1padrm, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 'force');
+[RotatedT2padrm, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 'force');
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
@@ -214,36 +214,6 @@ end
         Y = rho'*sin(theta) + halfminsize;
         M_logpol = interp2(M,X,Y);
         M_logpol((Y>sizey) | (Y<1) | (X>sizex) | (X<1)) = 0;
-    end
-
-    % removes zero padding as much as possible; might crop parts of image.
-    function [ M_new, yshift, xshift ] = rmzeropaddingforced( M )
-        if M == zeros(size(M))
-            M_new = M;
-            yshift = 0;
-            xshift = 0;
-        else
-            % remove horizontal/vertical padding
-            [ypad, xpad] = find(M);
-            M_new = M(min(ypad):max(ypad), min(xpad):max(xpad));
-            yshift = min(ypad);
-            xshift = min(xpad);
-            % remove diagonal padding: will probably crop parts of image.
-            ymin = 1;
-            xmin = 1;
-            ymax = size(M_new,1);
-            xmax = size(M_new,2);
-            while (M_new(ymin, xmin) + M_new(ymin, xmax) + M_new(ymax, xmin) + M_new(ymax, xmax)) == 0 ...
-                    && ymax > ymin && xmax > xmin
-                xmin = xmin+1;
-                xmax = xmax-1;
-                ymin = ymin+1;
-                ymax = ymax-1;
-            end
-            yshift = yshift + ymin;
-            xshift = xshift + xmin;
-            M_new = M_new(ymin:ymax, xmin:xmax);
-        end
     end
 
     % apply a hamming window entirely to image matrix.
