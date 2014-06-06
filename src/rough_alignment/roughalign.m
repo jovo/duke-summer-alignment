@@ -38,6 +38,9 @@ if align
     % output error report for both original and aligned stacks.
     [originalerror, original] = errorreport(M, 'Original', 'pxdiff');
     [alignederror, aligned] = errorreport(M_new, 'Aligned', 'pxdiff');
+    disp('Original Error');
+    disp(originalerror);
+    disp(alignederror);
     disp('Error improvement:');
     disp(originalerror-alignederror);
     disp(original);
