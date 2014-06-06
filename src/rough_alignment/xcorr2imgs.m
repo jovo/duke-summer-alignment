@@ -207,7 +207,7 @@ end
         minsize = min(sizey, sizex);
         halfminsize = minsize*0.5;
         rho = logspace(0,log10(halfminsize),minsize);
-        theta = linspace(0,2*pi,minsize*4+1);
+        theta = linspace(0,2*pi,minsize+1);
         theta(length(theta)) = [];
 
         X = rho'*cos(theta) + halfminsize;

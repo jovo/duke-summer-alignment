@@ -15,11 +15,10 @@ data = matfile(filename, 'Writable', true);
 looplength = size(M, 3) - 1;
 ids = cell(1, looplength);
 tforms = cell(1, looplength);
-errors = NaN(1, looplength);
+newerrors = NaN(1, looplength);
 origerrors = NaN(1, looplength);
 errordiff = NaN(1, looplength);
 errorupdate = [0,0];
-
 clear M;
 
 %% iterate through stack, compute transformations for rough alignment.
@@ -33,9 +32,9 @@ for i=1:looplength
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {tform};
-    errors(1,i) = errormetrics(merged, 'pxdiff');
+    newerrors(1,i) = errormetrics(merged, 'pxdiff');
     origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff');
-    errordiff(1,i) = origerrors(1,i)-errors(1,i);
+    errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
     if errordiff(1,i) < 0
@@ -43,6 +42,7 @@ for i=1:looplength
     end
 end
 errorupdate = errorupdate(2:end,:);
+clear img1 img2;
 
 % save ids and transforms into table.
 Transforms = containers.Map(ids, tforms);
@@ -83,7 +83,7 @@ if improve
         % images exist, then the error is set to intmax.
         identparams = [0,0,0,1,0];
         identT = {identparams;affine2d(params2matrix(identparams))};
-        preT = NaN(1,5);
+        preT = zeros(1,5);
         if preindex >= 1
             val1 = values(addtforms, {indices2key(preindex, index2)});
             T_pre2 = val1{1}{1};
@@ -91,7 +91,6 @@ if improve
             T_pre1 = val2{1}{1};
             preT(1:3) = T_pre2(1:3)-T_pre1(1:3);
             preT(4) = T_pre2(4)/T_pre1(4);
-            preT(5) = 0;
             preTcell = {preT; affine2d(params2matrix(preT))};
             pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preTcell, identT);
             preTerror = errormetrics(pretf, 'pxdiff');
@@ -99,8 +98,7 @@ if improve
             preT = [0,0,0,1,0];
             preTerror = intmax;
         end
-
-        postT = NaN(1,5);
+        postT = zeros(1,5);
         if postindex <= looplength + 1
             val1 = values(addtforms, {indices2key(index1, postindex)});
             T_1post = val1{1}{1};
@@ -108,7 +106,6 @@ if improve
             T_2post = val2{1}{1};
             postT(1:3) = T_1post(1:3)-T_2post(1:3);
             postT(4) = T_1post(4)/T_2post(4);
-            postT(5) = 0;
             postTcell = {postT; affine2d(params2matrix(postT))};
             posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postTcell, identT);
             postTerror = errormetrics(posttf, 'pxdiff');
@@ -121,9 +118,9 @@ if improve
         currentT = values(Transforms, {indices2key(index1, index2)});
         currentT = currentT{1};
         curT = currentT{1};
-        Terror = errors(1, index1);
+        Terror = newerrors(1, index1);
 
-        % retrieves trivial solution: no transformation at all and error
+        % retrieves trivial solution: no transformation at all
         nochangeTerror = origerrors(1, index1);
         nochangeT = [0,0,0,1,1];
 
@@ -139,7 +136,6 @@ if improve
 
         % use solution from LP to find optimal transformation parameters.
         Tupdated = x(1)*preT + x(2)*postT + x(3)*curT + x(4)*nochangeT;
-        Tupdated(1:2) = int16(Tupdated(1:2));
         Tupmat = params2matrix(Tupdated);
         Transforms(indices2key(index1, index2)) = {Tupdated; affine2d(Tupmat)};
 

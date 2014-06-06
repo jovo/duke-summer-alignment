@@ -16,8 +16,10 @@ curparams = tforms{1};
 prevparams = prevtforms{1};
 THETA = curparams(3) + prevparams(3);
 SCALE = curparams(4) * prevparams(4);
-TranslateY = round(updatedmatrix(3,2));
 TranslateX = round(updatedmatrix(3,1));
+TranslateY = round(updatedmatrix(3,2));
+TranslateXunrounded = updatedmatrix(3,1);
+TranslateYunrounded = updatedmatrix(3,2);
 
 curtforms = zeros(1,5);
 % Perform translation, rotation, scaling transformations to images
@@ -34,12 +36,12 @@ if TranslateY > 0
     Ayrangestack = 1:AStacky;
     Tyrangestack = (1:TStacky) + TranslateY;
     newstack_y = max(AStacky, abs(TranslateY) + TStacky);
-    curtforms(1) = TranslateY;
+    curtforms(1) = TranslateYunrounded;
     if TranslateX > 0
         Axrangestack = 1:AStackx;
         Txrangestack = (1:TStackx) + TranslateX;
         newstack_x = max(AStackx, abs(TranslateX) + TStackx);
-        curtforms(2) = TranslateX;
+        curtforms(2) = TranslateXunrounded;
     else
         Axrangestack = (1:AStackx) + abs(TranslateX);
         Txrangestack = 1:TStackx;
@@ -53,7 +55,7 @@ else
         Axrangestack = 1:AStackx;
         Txrangestack = (1:TStackx) + TranslateX;
         newstack_x = max(AStackx, abs(TranslateX) + TStackx);
-        curtforms(2) = TranslateX;
+        curtforms(2) = TranslateXunrounded;
     else
         Axrangestack = (1:AStackx) + abs(TranslateX);
         Txrangestack = 1:TStackx;
