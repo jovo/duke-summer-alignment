@@ -10,6 +10,7 @@ function [ Error ] = errormetrics( M, type )
 %   'sse': Sum-Squared Error (SSE)
 %   'pxdiff': Pixel intensity difference
 
+M = double(M);
 Error = NaN(size(M,3)-1,1);
 switch lower(type)
     case 'psnr'

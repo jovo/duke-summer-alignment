@@ -29,15 +29,15 @@ switch nargin
 end
 
 % compute pairwise transforms
-Transforms = constructtransforms(Mtemp);
+Transforms = constructtransforms(Mtemp, 1);
 
 % aligns the image based on the transforms if required
 M_new = [];
 if align
     M_new = constructalignment(M, Transforms);
     % output error report for both original and aligned stacks.
-    [originalerror, original] = errorreport(M, 'Original', 'sse');
-    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'sse');
+    [originalerror, original] = errorreport(M, 'Original', 'pxdiff');
+    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'pxdiff');
     disp('Error improvement:');
     disp(originalerror-alignederror);
     disp(original);
