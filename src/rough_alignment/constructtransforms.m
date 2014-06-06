@@ -1,6 +1,12 @@
-function [ Transforms ] = constructtransforms( M, improve )
+function [ Transforms ] = constructtransforms( M, varargin )
 %CONSTRUCTTRANSFORMS determines transform parameters to align pairwise
 %images from image cube.
+
+% validate inputs
+improve = 0;
+if nargin == 2 && strcmpi(varargin{1}, 'improve')
+    improve = 1;
+end
 
 % stores variables as matfile to save memory
 filename = strcat('tempfiledeletewhendone_',lower(randseq(8, 'Alphabet','amino')),'.mat');
@@ -22,7 +28,7 @@ for i=1:looplength
     img2 = data.M(:,:,i+1);
 
     % with own function (0= don't align, 1=pad)
-    [tform, merged] = xcorr2imgs(img2, img1, 1, 1);
+    [tform, merged] = xcorr2imgs(img2, img1, 'align', 1);
 
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
@@ -60,13 +66,13 @@ if improve
         if preindex >= 1 && ~isKey(addtforms, {indices2key(preindex, index2)})
             img1 = data.M(:,:, preindex);
             img2 = data.M(:,:, index2);
-            tform = xcorr2imgs(img2, img1, 0, 1);
+            tform = xcorr2imgs(img2, img1, '', 1);
             addtforms(indices2key(preindex, index2)) = tform;
         end
         if postindex <= looplength+1 && ~isKey(addtforms, {indices2key(index1, postindex)})
             img1 = data.M(:,:, index1);
             img2 = data.M(:,:, postindex);
-            tform = xcorr2imgs(img2, img1, 0, 1);
+            tform = xcorr2imgs(img2, img1, '', 1);
             addtforms(indices2key(index1, postindex)) = tform;
         end
 

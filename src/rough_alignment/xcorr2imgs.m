@@ -18,11 +18,11 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 narginchk(2,4);
 align = 0;
 pad = 0;
-if nargin > 2   % align param
-	align = varargin{1};
+if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
+	align = 1;
 end
-if nargin > 3   % align and pad param
-    pad = varargin{2};
+if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
+    pad = 1;
 end
 
 % stop program early if one image is flat (all one color)
