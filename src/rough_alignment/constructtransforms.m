@@ -27,8 +27,24 @@ for i=1:looplength
     img2 = data.M(:,:,i+1);
 
     % with own function (0= don't align, 1=pad)
-    [tform, merged] = xcorr2imgs(img2, img1, 'align', 1);
-
+    [tform] = xcorr2imgs(img2, img1, '', 1);
+    % because transforms are discrete, minimize slight possible error
+    % check -1 < TranslateX < 1, -1 < TranslateY < 1, -1 < THETA < 1
+    besttparam = [0,0,0,1,0];
+    besterror = errormetrics(data.M(:,:,i:i+1), 'pxdiff');
+    pretform = {besttparam; affine2d(params2matrix(besttparam))};
+    tempparam = tform{1};
+    for theta = -360/min(size(img1)):0.2:360/min(size(img1))
+        newtp = tempparam + [0, 0, theta, 0, 0];
+        aligned = affinetransform(img2, img1, {newtp; affine2d(params2matrix(newtp))}, pretform);
+        errorfn = errormetrics(aligned, 'pxdiff');
+        if errorfn < besterror
+            besttparam = newtp;
+            besterror = errorfn;
+        end
+    end
+    tform = {besttparam; affine2d(params2matrix(besttparam))};
+    merged = affinetransform(img2, img1, tform, pretform);
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {tform};
