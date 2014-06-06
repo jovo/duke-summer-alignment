@@ -31,25 +31,25 @@ for i=1:looplength
     % because transforms are discrete, minimize slight possible error
     % check -1 < TranslateX < 1, -1 < TranslateY < 1, -1 < THETA < 1
     besttparam = [0,0,0,1,0];
-    besterror = errormetrics(data.M(:,:,i:i+1), 'pxdiff');
+    besterror = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5, '', intmax);
     pretform = {besttparam; affine2d(params2matrix(besttparam))};
     tempparam = tform{1};
     for theta = -360/min(size(img1)):0.2:360/min(size(img1))
         newtp = tempparam + [0, 0, theta, 0, 0];
         aligned = affinetransform(img2, img1, {newtp; affine2d(params2matrix(newtp))}, pretform);
-        errorfn = errormetrics(aligned, 'pxdiff');
-        if errorfn < besterror
+        [errorfn, flag] = errormetrics(aligned, 'pxdiff', 0.5);
+        if ~flag && errorfn < besterror
             besttparam = newtp;
             besterror = errorfn;
         end
     end
-    tform = {besttparam; affine2d(params2matrix(besttparam))};
-    merged = affinetransform(img2, img1, tform, pretform);
+    updatedtform = {besttparam; affine2d(params2matrix(besttparam))};
+    merged = affinetransform(img2, img1, updatedtform, pretform);
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
-    tforms(1,i) = {tform};
-    newerrors(1,i) = errormetrics(merged, 'pxdiff');
-    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff');
+    tforms(1,i) = {updatedtform};
+    newerrors(1,i) = errormetrics(merged, 'pxdiff', 0.5, '', intmax);
+    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5, '', intmax);
     errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
@@ -107,7 +107,7 @@ if improve
             preT = matrix2params(A\B);
             preTcell = {preT; affine2d(params2matrix(preT))};
             pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preTcell, identT);
-            preTerror = errormetrics(pretf, 'pxdiff');
+            preTerror = errormetrics(pretf, 'pxdiff', 0.5, '', intmax);
         else
             preT = [0,0,0,1,0];
             preTerror = intmax;
@@ -120,7 +120,7 @@ if improve
             postT = matrix2params(B/A);
             postTcell = {postT; affine2d(params2matrix(postT))};
             posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postTcell, identT);
-            postTerror = errormetrics(posttf, 'pxdiff');
+            postTerror = errormetrics(posttf, 'pxdiff', 0.5, '', intmax);
         else
             postT = [0,0,0,1,0];
             postTerror = intmax;
@@ -137,14 +137,14 @@ if improve
         nochangeT = [0,0,0,1,1];
 
         % solve linear program
-        f = [double(preTerror); double(postTerror); double(Terror); double(nochangeTerror)]
+        f = [double(preTerror); double(postTerror); double(Terror); double(nochangeTerror)];
         A = [];
         b = [];
         Aeq = [1, 1, 1, 1];
         beq = 1;
         lb = [0; 0; 0; 0];
         ub = [1; 1; 1; 1];
-        x = linprog(f, A, b, Aeq, beq, lb, ub)
+        x = linprog(f, A, b, Aeq, beq, lb, ub);
 
         % use solution from LP to find optimal transformation parameters.
         Tupdated = x(1)*preT + x(2)*postT + x(3)*curT + x(4)*nochangeT;
