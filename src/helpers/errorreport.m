@@ -1,10 +1,10 @@
 function [ Error, s ] = errorreport( M, name, type )
 %ERRORREPORT String output of the error metrics for image stack.
-%   [ s ] = errorreport( M, name, type ) M is the image stack, name is the
-%   name of the test run, type is the type of error.
+%   [ Error, s ] = errorreport( M, name, type ) M is the image
+%   stack, name is the name of the test run, type is the type of error.
 %   s is the string output of the error report.
 
-Error = errormetrics(M, type);
+Error = errormetrics(M, type, 0.5, 'warn');
 
 s = sprintf('ERROR REPORT:\n #############################################\n');
 s = [s, [' Error for image stack ', name, ':'], sprintf('\n')];
