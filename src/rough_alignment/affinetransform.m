@@ -1,4 +1,4 @@
-function [ MergedStack, updatedtforms ] = affinetransform( templateStack, AStack, tforms, prevtforms )
+function [ MergedStack, updatedtforms ] = affinetransform( templateStack, AStack, tforms )
 %AFFINETRANSFORM Performs translation, rotation, scaling to align images
 %   [ MergedStack, templatetforms ] = affinetransform( templateStack, AStack, tforms, prevtforms )
 %   only templateStack gets rotated and/or scaled, and recorded in
@@ -8,20 +8,16 @@ function [ MergedStack, updatedtforms ] = affinetransform( templateStack, AStack
 
 %% using transformation parameters
 % retrieve transformations from tforms
-curmatrix = tforms{2}.T;
-prevmatrix = prevtforms{2}.T;
-updatedmatrix = curmatrix*prevmatrix;
 
-curparams = tforms{1};
-prevparams = prevtforms{1};
-THETA = curparams(3) + prevparams(3);
-SCALE = curparams(4) * prevparams(4);
-TranslateX = round(updatedmatrix(3,1));
-TranslateY = round(updatedmatrix(3,2));
-TranslateXunrounded = updatedmatrix(3,1);
-TranslateYunrounded = updatedmatrix(3,2);
+tparams = matrix2params(tforms);
+TranslateYunrounded = tparams(1);
+TranslateXunrounded = tparams(2);
+TranslateY = round(TranslateYunrounded);
+TranslateX = round(TranslateXunrounded);
+THETA = tparams(3);
+SCALE = tparams(4);
 
-curtforms = zeros(1,5);
+curtforms = zeros(1,4);
 % Perform translation, rotation, scaling transformations to images
 TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
 curtforms(3:4) = [THETA, SCALE];
@@ -68,7 +64,7 @@ TStack_new = uint8(zeros(newstack_y, newstack_x, depthT));
 AStack_new(Ayrangestack, Axrangestack, :) = AStack;
 TStack_new(Tyrangestack, Txrangestack, :) = TStack;
 
-updatedtforms = {curtforms; affine2d(params2matrix(curtforms))};
+updatedtforms = params2matrix(curtforms);
 MergedStack = cat(3, TStack_new, AStack_new);
 
 %% using a transformation matrix. BUGGY atm.

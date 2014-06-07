@@ -1,11 +1,12 @@
-function [ T_new ] = matchlocalfeatures( T, A, resize )
+function [ updatedtform, merged ] = matchlocalfeatures( T, A, resize )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
 %   [ T_new ] = matchlocalfeatures( T, A, resize ) T is the image that
 %   should be matched to A. scale should probably be <= 1, and scales the
 %   images before matching to improve efficiency.
 
-    Ascaled = imresize(A, resize);
-    Tscaled = imresize(T, resize);
+    % apply median filter to filter noise and resize as specified.
+    Ascaled = imresize(medfilt2(A, [10,10]), resize);
+    Tscaled = imresize(medfilt2(T, [10,10]), resize);
 
     % convert inputs to unsigned 8-bit integers.
     Ascaled = uint8(Ascaled);
@@ -30,15 +31,15 @@ function [ T_new ] = matchlocalfeatures( T, A, resize )
     tparams(1:2) = [0,0];
     scale = tparams(4);
     tparams(4) = 1;
-    tmatrix = params2matrix(tparams);
-    prevparam = [0,0,0,1,0];
-    prevtform = {prevparam; affine2d(params2matrix(prevparam))};
-    curtform = {tparams, affine2d(tmatrix)};
+    curtform = params2matrix(tparams);
     if scale < 1.05
-        merged = affinetransform(T, A, curtform, prevtform);
-        T_new = rmzeropadding(merged(:,:,1));
+        tempmerged = affinetransform(T, A, curtform);
+        T_new = rmzeropadding(tempmerged(:,:,1));
+        [newtform, merged] = xcorr2imgs(T_new, A, 'align', 1);
+        updatedtform = curtform*newtform;
     else
-        T_new = T;
+        updatedtform = eye(3);
+        merged = affinetransform(T, A, eye(3));
     end
 
 %     figure, imshowpair(A, T_new, 'montage')

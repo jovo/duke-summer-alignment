@@ -28,8 +28,7 @@ end
 % stop program early if one image is flat (all one color)
 if std(double(template(:))) == 0 || std(double(A(:))) == 0
     warning('one image is completely flat; no transformations performed');
-    identparams = [0,0,0,1,1];
-    Transforms = {identparams; affine2d(params2matrix(identparams))};
+    Transforms = eye(3);
     if std(double(template(:))) == 0
         Merged = A;
     else
@@ -165,15 +164,12 @@ if max1 > max2
     THETA = THETA1;
     TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
     TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
-    failed = 0;
 elseif max1 < max2
     RotatedTpadrm = RotatedT2padrm;
     THETA = THETA2;
     TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
     TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
-    failed = 0;
 else
-    failed = 1;
     THETA = 0;
     TranslateX = 0;
     TranslateY = 0;
@@ -181,15 +177,12 @@ end
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
-params = [TranslateY, TranslateX, THETA, SCALE, failed];
-Transforms = {  params; affine2d(params2matrix(params))};
+Transforms = params2matrix([TranslateY, TranslateX, THETA, SCALE]);
 
 % if align is true, applies transformations
 Merged = [];
 if align
-    identparams = [0,0,0,1,0];
-    identT = {identparams; affine2d(params2matrix(identparams))};
-    Merged  = affinetransform(template, A, Transforms, identT);
+    Merged  = affinetransform(template, A, Transforms);
 end
 
 %% Helper functions
