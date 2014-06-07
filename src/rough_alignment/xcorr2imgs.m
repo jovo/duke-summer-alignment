@@ -102,7 +102,7 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian');
+[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
 if rhopeak == -1    % peak detection failed
     SCALE = 1;
     THETA1 = 0;
@@ -146,8 +146,8 @@ end
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian');
-[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian');
+[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian', 'yx');
+[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian', 'yx');
 if x1 == -1
     max1 = 0;
 else
