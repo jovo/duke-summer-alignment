@@ -25,18 +25,6 @@ if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
 
-% stop program early if one image is flat (all one color)
-if std(double(template(:))) == 0 || std(double(A(:))) == 0
-    warning('one image is completely flat; no transformations performed');
-    Transforms = eye(3);
-    if std(double(template(:))) == 0
-        Merged = A;
-    else
-        Merged = template;
-    end
-    return;
-end
-
 % threshold for possible image scaling, which shouldn't happen by
 % assumption.
 threshold = 1.05;
@@ -68,6 +56,14 @@ if size(A) ~= size(template)
     xaddpad = max(size(A, 2), size(template, 2));
     A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
     template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
+end
+
+% stop program early if one image is flat (all one color)
+if std(double(template(:))) == 0 || std(double(A(:))) == 0
+    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
+    Transforms = eye(3);
+    Merged = cat(3, template, A);
+    return;
 end
 
 % apply hamming window

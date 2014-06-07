@@ -29,18 +29,18 @@ for i=1:looplength
 
     % align with xcorr and evaluate error.
     [tform, merged] = xcorr2imgs(img2, img1, 'align', 1);
-    [error, flg] = errormetrics(merged, 'pxdiff', 0.5);
+    [error, flg] = errormetrics(merged, 'pxdiff', 0.5, '', intmax);
     % if flag is set (probably failed alignment), attempt alignment via
     % feature matching.
     if flg
         [newtform, newmerged] = featurematch2imgs(img2, img1, 0.5);
-        [newerr, newflg] = errormetrics(newmerged, 'pxdiff', 0.5);
+        [newerr, newflg] = errormetrics(newmerged, 'pxdiff', 0.5, '', intmax);
         if ~newflg
             tform = newtform;
             error = newerr;
         else
             tform = eye(3);
-            error = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5);
+            error = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5, '', intmax);
         end
     end
 
@@ -53,7 +53,7 @@ for i=1:looplength
     for theta = linspace(-bounds, bounds, 6);
         tempparam = invariantparam + [0, 0, theta, 0, 0];
         tempaligned = affinetransform(img2, img1, params2matrix(tempparam));
-        [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', 0.5);
+        [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', 0.5, '', intmax);
         if ~tempflag && temperror < besterror
             besttparam = tempparam;
             besterror = temperror;
@@ -139,7 +139,7 @@ if improve
         end
 
         % retrieves original transform and error
-        curT = tforms(1, index1);
+        curT = tforms{1, index1};
         Terror = newerrors(1, index1);
 
         % retrieves trivial solution: no transformation at all

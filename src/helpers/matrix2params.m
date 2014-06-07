@@ -15,4 +15,3 @@ THETA = atan2(ssin, scos) * 180 / pi;
 params = [TranslateY, TranslateX, THETA, SCALE, 0];
 
 end
-
