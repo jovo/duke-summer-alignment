@@ -1,8 +1,9 @@
-function [ updatedtform, merged ] = matchlocalfeatures( T, A, resize )
+function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
 %   [ T_new ] = matchlocalfeatures( T, A, resize ) T is the image that
 %   should be matched to A. scale should probably be <= 1, and scales the
-%   images before matching to improve efficiency.
+%   images before matching to improve efficiency. Where xcorr sometimes
+%   struggles to accurately detect rotation, this does a better job. 
 
     % apply median filter to filter noise and resize as specified.
     Ascaled = imresize(medfilt2(A, [10,10]), resize);
@@ -22,7 +23,7 @@ function [ updatedtform, merged ] = matchlocalfeatures( T, A, resize )
 	indexPairs = matchFeatures(featuresA, featuresT, 'Prenormalized', true);
     matchptsA = vptsA(indexPairs(:, 1));
     matchptsT = vptsT(indexPairs(:, 2));
-%     figure; showMatchedFeatures(A, T, matchptsA, matchptsT, 'montage');
+%     figure; showMatchedFeatures(Ascaled, Tscaled, matchptsA, matchptsT, 'montage');
     [tform, inlierT, inlierA] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
 %     figure; showMatchedFeatures(Ascaled, Tscaled, inlierA,inlierT, 'montage');
 

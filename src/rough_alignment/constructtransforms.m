@@ -33,7 +33,7 @@ for i=1:looplength
     % if flag is set (probably failed alignment), attempt alignment via
     % feature matching.
     if flg
-        [newtform, newmerged] = matchlocalfeatures(img2, img1, 0.5);
+        [newtform, newmerged] = featurematch2imgs(img2, img1, 0.5);
         [newerr, newflg] = errormetrics(newmerged, 'pxdiff', 0.5);
         if ~newflg
             tform = newtform;

@@ -6,14 +6,14 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
-%   if align is true (1), then also outputs the transformed final image in
-%   Merged. otherwise Merged is nil.
+%   if align parameter is 'align', then also outputs the transformed final
+%   image in Merged. otherwise Merged is nil.
 %   if pad is true (1), then will zero pad to improve alignment, but
 %   increase running time.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
-%
+
 % validate inputs
 narginchk(2,4);
 align = 0;
