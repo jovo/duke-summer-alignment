@@ -49,17 +49,17 @@ newC = padarray(newCcropped, [cropy, cropx], 0);
 [ypeakold, xpeakold] = find(oldC==max(oldC(:)));
 [ypeaknew, xpeaknew] = find(newC==max(newC(:)));
 
-% debugging
-size(oldC)
-size(newC)
-figure; imshow(oldC,[min(oldC(:)), max(oldC(:))]);
-hold on;
-plot(xpeakold,ypeakold,'ro');
-hold off;
-figure; imshow(newC,[min(newC(:)), max(newC(:))]);
-hold on;
-plot(xpeaknew,ypeaknew,'go');
-hold off;
+% % debugging
+% size(oldC)
+% size(newC)
+% figure; imshow(oldC,[min(oldC(:)), max(oldC(:))]);
+% hold on;
+% plot(xpeakold,ypeakold,'ro');
+% hold off;
+% figure; imshow(newC,[min(newC(:)), max(newC(:))]);
+% hold on;
+% plot(xpeaknew,ypeaknew,'go');
+% hold off;
 
 % enter final values for xpeak and ypeak. if peaks are not unique, then
 % reject unless peaks are really close together. if the distance between
