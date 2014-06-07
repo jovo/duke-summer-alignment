@@ -28,6 +28,7 @@ for i=1:looplength
 
     % with own function (0= don't align, 1=pad)
     [tform] = xcorr2imgs(img2, img1, '', 1);
+
     % because transforms are discrete, minimize slight possible error
     % check -1 < TranslateX < 1, -1 < TranslateY < 1, -1 < THETA < 1
     besttparam = [0,0,0,1,0];
@@ -45,6 +46,7 @@ for i=1:looplength
     end
     updatedtform = {besttparam; affine2d(params2matrix(besttparam))};
     merged = affinetransform(img2, img1, updatedtform, pretform);
+
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {updatedtform};
@@ -157,8 +159,6 @@ end
 delete(filename);
 
 end
-
-
 
 
 %     % with matlab's image registration function

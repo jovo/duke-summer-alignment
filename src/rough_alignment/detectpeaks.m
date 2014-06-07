@@ -53,10 +53,12 @@ newC = padarray(newCcropped, [cropy, cropx], 0);
 % size(oldC)
 % size(newC)
 % figure; imshow(oldC,[min(oldC(:)), max(oldC(:))]);
+% title('oldC');
 % hold on;
 % plot(xpeakold,ypeakold,'ro');
 % hold off;
 % figure; imshow(newC,[min(newC(:)), max(newC(:))]);
+% title('newC');
 % hold on;
 % plot(xpeaknew,ypeaknew,'go');
 % hold off;
@@ -79,4 +81,3 @@ else
 end
 
 end
-

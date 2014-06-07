@@ -83,4 +83,3 @@ MergedStack = cat(3, TStack_new, AStack_new);
 % MergedStack = cat(3, TStack_new, AStack);
 
 end
-

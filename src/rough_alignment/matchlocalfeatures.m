@@ -1,20 +1,29 @@
-function [ merged ] = matchlocalfeatures( T, A )
+function [ T_new ] = matchlocalfeatures( T, A, resize )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
-%   Detailed explanation goes here
+%   [ T_new ] = matchlocalfeatures( T, A, resize ) T is the image that
+%   should be matched to A. scale should probably be <= 1, and scales the
+%   images before matching to improve efficiency.
+
+    Ascaled = imresize(A, resize);
+    Tscaled = imresize(T, resize);
+
+    % convert inputs to unsigned 8-bit integers.
+    Ascaled = uint8(Ascaled);
+    Tscaled = uint8(Tscaled);
 
     % detect surf features
-	pointsA = detectSURFFeatures(A);
-	pointsT = detectSURFFeatures(T);
-    [featuresA, vptsA] = extractFeatures(A, pointsA);
-    [featuresT, vptsT] = extractFeatures(T, pointsT);
+	pointsA = detectSURFFeatures(Ascaled);
+	pointsT = detectSURFFeatures(Tscaled);
+    [featuresA, vptsA] = extractFeatures(Ascaled, pointsA);
+    [featuresT, vptsT] = extractFeatures(Tscaled, pointsT);
 
     % match features
 	indexPairs = matchFeatures(featuresA, featuresT, 'Prenormalized', true);
     matchptsA = vptsA(indexPairs(:, 1));
     matchptsT = vptsT(indexPairs(:, 2));
-    figure; showMatchedFeatures(A, T, matchptsA, matchptsT, 'montage');
+%     figure; showMatchedFeatures(A, T, matchptsA, matchptsT, 'montage');
     [tform, inlierT, inlierA] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
-    figure; showMatchedFeatures(A, T, inlierA,inlierT, 'montage');
+%     figure; showMatchedFeatures(Ascaled, Tscaled, inlierA,inlierT, 'montage');
 
     % determine transformations
     tparams = matrix2params(tform.T);
@@ -32,8 +41,6 @@ function [ merged ] = matchlocalfeatures( T, A )
         T_new = T;
     end
 
-    merged = cat(3, T_new, A);
-    figure, imshowpair(A, T_new, 'montage')
+%     figure, imshowpair(A, T_new, 'montage')
 
 end
-
