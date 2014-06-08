@@ -3,7 +3,7 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %translation and/or rotation.
 %   Performs automated alignment to template and A. performs the same
 %   transformations to templateStack and AStack, respectively.
-%   [ Transforms ] = xcorr2imgs( template, A )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
 %   if align parameter is 'align', then also outputs the transformed final
@@ -25,11 +25,15 @@ if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
 
+% convert inputs to unsigned 8-bit integers.
+A = uint8(A);
+template = uint8(template);
+
 % threshold for possible image scaling, which shouldn't happen by
 % assumption.
 threshold = 1.05;
 
-% convert to grayscale as necessary. (TODO Assumed to be greyscale)
+% convert to grayscale as necessary. NOT in the case of EM sections.
 % if size(A, 3) == 3
 %     A = rgb2gray(A);
 % end
@@ -37,18 +41,18 @@ threshold = 1.05;
 %     template = rgb2gray(template);
 % end
 
-% adjust image dimensions as necessary
-switch sum(size(A) >= size(template))
-    case 0  % A is completely smaller than template: swap.
-        templatetemp = template;
-        template = A;
-        A = templatetemp;
-        clear templatetemp;
-    case 1  % A is smaller than template in 1 dimension: crop template.
-        miny = min(size(template, 1), size(A, 1));
-        minx = min(size(template, 2), size(A, 2));
-        template = template(1:miny, 1:minx);
-end
+% adjust image dimensions as necessary, NOT in the case of EM sections.
+% switch sum(size(A) >= size(template))
+%     case 0  % A is completely smaller than template: swap.
+%         templatetemp = template;
+%         template = A;
+%         A = templatetemp;
+%         clear templatetemp;
+%     case 1  % A is smaller than template in 1 dimension: crop template.
+%         miny = min(size(template, 1), size(A, 1));
+%         minx = min(size(template, 2), size(A, 2));
+%         template = template(1:miny, 1:minx);
+% end
 
 % zero pad image to same size
 if size(A) ~= size(template)
@@ -73,8 +77,8 @@ templateham = hamming2dwindow(template);
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
 if pad
-    ypadd = min(size(A, 1), size(templateham, 1));
-    xpadd = min(size(A, 2), size(templateham, 2));
+    ypadd = min(floor(size(A, 1)/2), floor(size(templateham, 1)/2));
+    xpadd = min(floor(size(A, 2)/2), floor(size(templateham, 2)/2));
     Aham = padarray(Aham, [ypadd, xpadd]);
     templateham = padarray(templateham, [ypadd, xpadd]);
 end

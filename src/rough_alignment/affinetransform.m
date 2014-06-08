@@ -1,4 +1,4 @@
-function [ MergedStack, updatedtforms ] = affinetransform( templateStack, AStack, tforms )
+function [ MergedStack, updatedtform ] = affinetransform( templateStack, AStack, curtform, prevtform )
 %AFFINETRANSFORM Performs translation, rotation, scaling to align images
 %   [ MergedStack, templatetforms ] = affinetransform( templateStack, AStack, tforms, prevtforms )
 %   only templateStack gets rotated and/or scaled, and recorded in
@@ -9,18 +9,23 @@ function [ MergedStack, updatedtforms ] = affinetransform( templateStack, AStack
 %% using transformation parameters
 % retrieve transformations from tforms
 
-tparams = matrix2params(tforms);
-TranslateYunrounded = tparams(1);
-TranslateXunrounded = tparams(2);
+if nargin < 4
+    prevtform = eye(3);
+end
+newtform = curtform*prevtform;
+prevtparam = matrix2params(prevtform);
+newtparam = matrix2params(newtform);
+TranslateYunrounded = newtparam(1);
+TranslateXunrounded = newtparam(2);
 TranslateY = round(TranslateYunrounded);
 TranslateX = round(TranslateXunrounded);
-THETA = tparams(3);
-SCALE = tparams(4);
+THETA = newtparam(3);
+SCALE = newtparam(4);
 
-curtforms = zeros(1,4);
+updatedtparam = zeros(1,4);
+updatedtparam(3:4) = newtparam(3:4);
 % Perform translation, rotation, scaling transformations to images
 TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
-curtforms(3:4) = [THETA, SCALE];
 depthA = size(AStack, 3);
 depthT = size(TStack, 3);
 AStacky = size(AStack, 1);
@@ -32,12 +37,12 @@ if TranslateY > 0
     Ayrangestack = 1:AStacky;
     Tyrangestack = (1:TStacky) + TranslateY;
     newstack_y = max(AStacky, abs(TranslateY) + TStacky);
-    curtforms(1) = TranslateYunrounded;
+    updatedtparam(1) = TranslateYunrounded;
     if TranslateX > 0
         Axrangestack = 1:AStackx;
         Txrangestack = (1:TStackx) + TranslateX;
         newstack_x = max(AStackx, abs(TranslateX) + TStackx);
-        curtforms(2) = TranslateXunrounded;
+        updatedtparam(2) = TranslateXunrounded;
     else
         Axrangestack = (1:AStackx) + abs(TranslateX);
         Txrangestack = 1:TStackx;
@@ -51,7 +56,7 @@ else
         Axrangestack = 1:AStackx;
         Txrangestack = (1:TStackx) + TranslateX;
         newstack_x = max(AStackx, abs(TranslateX) + TStackx);
-        curtforms(2) = TranslateXunrounded;
+        updatedtparam(2) = TranslateXunrounded;
     else
         Axrangestack = (1:AStackx) + abs(TranslateX);
         Txrangestack = 1:TStackx;
@@ -64,12 +69,10 @@ TStack_new = uint8(zeros(newstack_y, newstack_x, depthT));
 AStack_new(Ayrangestack, Axrangestack, :) = AStack;
 TStack_new(Tyrangestack, Txrangestack, :) = TStack;
 
-updatedtforms = params2matrix(curtforms);
+updatedtform = params2matrix(updatedtparam);
 MergedStack = cat(3, TStack_new, AStack_new);
 
 %% using a transformation matrix. BUGGY atm.
-% curmatrix = tforms{2}.T;
-% prematrix = pretforms{2}.T;
 % updatedmatrix = curmatrix*prematrix;
 % TStack_new = imwarp(templateStack, affine2d(updatedmatrix));
 % yrange = max(size(TStack_new, 1), size(AStack, 1));

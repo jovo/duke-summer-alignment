@@ -1,17 +1,23 @@
 function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
-%   [ T_new ] = matchlocalfeatures( T, A, resize ) T is the image that
-%   should be matched to A. scale should probably be <= 1, and scales the
-%   images before matching to improve efficiency. Where xcorr sometimes
-%   struggles to accurately detect rotation, this does a better job. 
-
-% apply median filter to filter noise and resize as specified.
-Ascaled = imresize(medfilt2(A, [10,10]), resize);
-Tscaled = imresize(medfilt2(T, [10,10]), resize);
+%   [ updatedtform, merged ] = matchlocalfeatures( T, A )
+%   [ updatedtform, merged ] = featurematch2imgs( T, A, resize ) T is the
+%   image that should be matched to A. scale should probably be <= 1, and
+%   scale the images before matching to improve efficiency. If feature
+%   matching does a poor job, reverts back to xcorr methods.
 
 % convert inputs to unsigned 8-bit integers.
-Ascaled = uint8(Ascaled);
-Tscaled = uint8(Tscaled);
+A = uint8(A);
+T = uint8(T);
+
+% apply median filter to filter noise and resize as specified.
+if nargin > 2
+    Ascaled = imresize(medfilt2(A, [10,10]), resize);
+    Tscaled = imresize(medfilt2(T, [10,10]), resize);
+else
+    Ascaled = medfilt2(A, [10,10]);
+    Tscaled = medfilt2(T, [10,10]);
+end
 
 % detect surf features
 pointsA = detectSURFFeatures(Ascaled);
@@ -23,29 +29,23 @@ pointsT = detectSURFFeatures(Tscaled);
 indexPairs = matchFeatures(featuresA, featuresT, 'Prenormalized', true);
 matchptsA = vptsA(indexPairs(:, 1));
 matchptsT = vptsT(indexPairs(:, 2));
-% figure; showMatchedFeatures(Ascaled, Tscaled, matchptsA, matchptsT, 'montage');
 try
-    [tform, inlierT, inlierA] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
-    % figure; showMatchedFeatures(Ascaled, Tscaled, inlierA,inlierT, 'montage');
+    [tform, ~, ~] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
 catch
     tform = affine2d(eye(3));
 end
-% determine transformations
-tparams = matrix2params(tform.T);
-tparams(1:2) = [0,0];
-scale = tparams(4);
-tparams(4) = 1;
-curtform = params2matrix(tparams);
-if scale < 1.05
-    tempmerged = affinetransform(T, A, curtform);
-    T_new = rmzeropadding(tempmerged(:,:,1));
-    [newtform, merged] = xcorr2imgs(T_new, A, 'align', 1);
-    updatedtform = curtform*newtform;
-else
-    updatedtform = eye(3);
-    merged = affinetransform(T, A, updatedtform);
-end
 
-% figure, imshowpair(A, T_new, 'montage')
+% determine transformations
+featuret = matrix2params(tform.T);
+tparams = [0, 0, featuret(3), 1];
+prevtform = params2matrix(tparams);
+if featuret(4) < 1.05
+    tempmerged = affinetransform(T, A, prevtform);
+    newtform = xcorr2imgs(tempmerged(:,:,1), A, '', 'pad');
+    updatedtform = prevtform * newtform;
+    merged = affinetransform(T, A, updatedtform);
+else
+    [updatedtform, merged] = xcorr2imgs(T, A, 'align', 'pad');
+end
 
 end

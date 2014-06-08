@@ -1,6 +1,10 @@
 function [ Transforms ] = constructtransforms( M, varargin )
 %CONSTRUCTTRANSFORMS determines transform parameters to align pairwise
 %images from image cube.
+%   [ Transforms ] = constructtransforms( M )
+%   [ Transforms ] = constructtransforms( M, improve ) M is the image
+%   stack, the optional improve parameter attempts to correct faulty
+%   alignments by using adjacent images.
 
 % validate inputs
 improve = 0;
@@ -9,8 +13,8 @@ if nargin == 2 && strcmpi(varargin{1}, 'improve')
 end
 
 % stores variables as matfile to save memory
-filename = strcat('tempfiledeletewhendone_',lower(randseq(8, 'Alphabet','amino')),'.mat');
-save(filename,'M','-v7.3');
+filename = strcat('tempfiledeletewhendone_', lower(randseq(8, 'Alphabet', 'amino')), '.mat');
+save(filename, 'M', '-v7.3');
 data = matfile(filename, 'Writable', true);
 looplength = size(M, 3) - 1;
 ids = cell(1, looplength);
@@ -27,21 +31,17 @@ for i=1:looplength
     img1 = data.M(:,:,i);
     img2 = data.M(:,:,i+1);
 
-    % align with xcorr and evaluate error.
-    [tform, merged] = xcorr2imgs(img2, img1, 'align', 1);
-    [error, flg] = errormetrics(merged, 'pxdiff', 0.5, '', intmax);
-    % if flag is set (probably failed alignment), attempt alignment via
-    % feature matching.
-    if flg
-        [newtform, newmerged] = featurematch2imgs(img2, img1, 0.5);
-        [newerr, newflg] = errormetrics(newmerged, 'pxdiff', 0.5, '', intmax);
-        if ~newflg
-            tform = newtform;
-            error = newerr;
-        else
-            tform = eye(3);
-            error = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5, '', intmax);
-        end
+    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.3, '', intmax);
+    % feature match for rough angle alignment, then xcorr for precision.
+    [tform1, merged1] = featurematch2imgs(img2, img1);
+    figure; imshowpair(merged1(:,:,1), merged1(:,:,2));
+    [error1, ~] = errormetrics(merged1, 'pxdiff', 0.3, '', intmax);
+    if error1 < origerrors(1,i)
+        tform = tform1;
+        error = error1;
+    else
+        tform = eye(3);
+        error = origerrors(1,i);
     end
 
     % because transforms are discrete, minimize slight error in theta
@@ -53,7 +53,7 @@ for i=1:looplength
     for theta = linspace(-bounds, bounds, 6);
         tempparam = invariantparam + [0, 0, theta, 0, 0];
         tempaligned = affinetransform(img2, img1, params2matrix(tempparam));
-        [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', 0.5, '', intmax);
+        [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', 0.3, '', intmax);
         if ~tempflag && temperror < besterror
             besttparam = tempparam;
             besterror = temperror;
@@ -65,8 +65,7 @@ for i=1:looplength
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {updatedtform};
-    newerrors(1,i) = errormetrics(updatedmerged, 'pxdiff', 0.5, '', intmax);
-    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff', 0.5, '', intmax);
+    newerrors(1,i) = errormetrics(updatedmerged, 'pxdiff', 0.3, '', intmax);
     errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
@@ -120,7 +119,7 @@ if improve
             A = val2{1};
             preT = A\B;
             pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preT);
-            preTerror = errormetrics(pretf, 'pxdiff', 0.5, '', intmax);
+            preTerror = errormetrics(pretf, 'pxdiff', 0.3, '', intmax);
         else
             preT = eye(3);
             preTerror = intmax;
@@ -132,7 +131,7 @@ if improve
             A = val2{1};
             postT = B/A;
             posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postT);
-            postTerror = errormetrics(posttf, 'pxdiff', 0.5, '', intmax);
+            postTerror = errormetrics(posttf, 'pxdiff', 0.3, '', intmax);
         else
             postT = eye(3);
             postTerror = intmax;
@@ -166,7 +165,6 @@ end
 delete(filename);
 
 end
-
 
 %     % with matlab's image registration function
 %     tform = imregtform(img1, img2, 'rigid', ...
