@@ -8,7 +8,7 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 
 % retrieve global variable
 global scalethreshold;
-if ~exist('scalethreshold', 'var')
+if isempty(scalethreshold)
     scalethreshold = 1.5;
 end
 

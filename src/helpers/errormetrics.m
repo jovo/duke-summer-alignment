@@ -18,13 +18,15 @@ function [ Error, flag ] = errormetrics( M, type, varargin )
 
 % retrieve global variable
 global minnonzeropercent;
-if ~exist('minnonzeropercent', 'var')
+if isempty(minnonzeropercent)
     minnonzeropercent = 0;
 end
 
+% minimum acceptable proportion of alignment overlap.
+minimum = minnonzeropercent;
+
 % validate inputs
 narginchk(2,5);
-minimum = minnonzeropercent;
 maxval = NaN;
 warn = 0;
 if nargin > 2

@@ -16,9 +16,12 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 
 % retrieve global variable
 global scalethreshold;
-if ~exist('scalethreshold', 'var')
+if isempty(scalethreshold)
     scalethreshold = 1.5;
 end
+
+% threshold for possible image scaling.
+threshold = scalethreshold;
 
 % validate inputs
 narginchk(2,4);
@@ -30,9 +33,6 @@ end
 if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
-
-% threshold for possible image scaling.
-threshold = scalethreshold;
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
