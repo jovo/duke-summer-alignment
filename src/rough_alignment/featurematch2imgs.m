@@ -9,7 +9,7 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 % retrieve global variable
 global scalethreshold;
 if isempty(scalethreshold)
-    scalethreshold = 1.5;
+    scalethreshold = 1.05;
 end
 
 % threshold for possible image scaling.
@@ -48,7 +48,7 @@ end
 featuret = matrix2params(tform.T);
 tparams = [0, 0, featuret(3), 1];
 prevtform = params2matrix(tparams);
-if featuret(4) < threshold
+if featuret(4) < threshold || featuret(4) > 1/threshold
     tempmerged = affinetransform(T, A, prevtform);
     newtform = xcorr2imgs(tempmerged(:,:,1), A, '', 'pad');
     updatedtform = prevtform * newtform;

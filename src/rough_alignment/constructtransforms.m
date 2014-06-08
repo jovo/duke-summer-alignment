@@ -65,7 +65,7 @@ for i=1:looplength
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {updatedtform};
     newerrors(1,i) = errormetrics(updatedmerged, 'pxdiff', '', intmax);
-    errordiff(1,i) = origerrors(1,i)-newerrors(1,i)
+    errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
     if errordiff(1,i) < 0

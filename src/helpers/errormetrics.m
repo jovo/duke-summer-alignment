@@ -19,7 +19,7 @@ function [ Error, flag ] = errormetrics( M, type, varargin )
 % retrieve global variable
 global minnonzeropercent;
 if isempty(minnonzeropercent)
-    minnonzeropercent = 0;
+    minnonzeropercent = 0.3;
 end
 
 % minimum acceptable proportion of alignment overlap.

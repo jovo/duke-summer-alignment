@@ -17,7 +17,7 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 % retrieve global variable
 global scalethreshold;
 if isempty(scalethreshold)
-    scalethreshold = 1.5;
+    scalethreshold = 1.05;
 end
 
 % threshold for possible image scaling.
