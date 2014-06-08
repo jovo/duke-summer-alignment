@@ -14,6 +14,12 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 
+% retrieve global variable
+global scalethreshold;
+if ~exist('scalethreshold', 'var')
+    scalethreshold = 1.5;
+end
+
 % validate inputs
 narginchk(2,4);
 align = 0;
@@ -25,13 +31,12 @@ if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
 
+% threshold for possible image scaling.
+threshold = scalethreshold;
+
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 template = uint8(template);
-
-% threshold for possible image scaling, which shouldn't happen by
-% assumption.
-threshold = 1.05;
 
 % convert to grayscale as necessary. NOT in the case of EM sections.
 % if size(A, 3) == 3

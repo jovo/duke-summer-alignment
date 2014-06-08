@@ -6,6 +6,15 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 %   scale the images before matching to improve efficiency. If feature
 %   matching does a poor job, reverts back to xcorr methods.
 
+% retrieve global variable
+global scalethreshold;
+if ~exist('scalethreshold', 'var')
+    scalethreshold = 1.5;
+end
+
+% threshold for possible image scaling.
+threshold = scalethreshold;
+
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 T = uint8(T);
@@ -39,7 +48,7 @@ end
 featuret = matrix2params(tform.T);
 tparams = [0, 0, featuret(3), 1];
 prevtform = params2matrix(tparams);
-if featuret(4) < 1.05
+if featuret(4) < threshold
     tempmerged = affinetransform(T, A, prevtform);
     newtform = xcorr2imgs(tempmerged(:,:,1), A, '', 'pad');
     updatedtform = prevtform * newtform;

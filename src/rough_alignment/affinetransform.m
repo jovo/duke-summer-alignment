@@ -8,7 +8,6 @@ function [ MergedStack, updatedtform ] = affinetransform( templateStack, AStack,
 
 %% using transformation parameters
 % retrieve transformations from tforms
-
 if nargin < 4
     prevtform = eye(3);
 end
