@@ -1,6 +1,6 @@
 function [ Transforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
-%	[ Transforms ] = roughalign( M )
+%	[ Transforms, M_new ] = roughalign( M )
 %   [ Transforms, M_new ] = roughalign( M, align )
 %   [ Transforms, M_new ] = roughalign( M, align, scale )
 %   if align variable is 'align', M_new returns the aligned image stack;

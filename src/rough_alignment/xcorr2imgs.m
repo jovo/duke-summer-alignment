@@ -3,17 +3,26 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %translation and/or rotation.
 %   Performs automated alignment to template and A. performs the same
 %   transformations to templateStack and AStack, respectively.
-%   [ Transforms ] = xcorr2imgs( template, A )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
-%   if align is true (1), then also outputs the transformed final image in
-%   Merged. otherwise Merged is nil.
+%   if align parameter is 'align', then also outputs the transformed final
+%   image in Merged. otherwise Merged is nil.
 %   if pad is true (1), then will zero pad to improve alignment, but
 %   increase running time.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
-%
+
+% retrieve global variable
+global scalethreshold;
+if isempty(scalethreshold)
+    scalethreshold = 1.05;
+end
+
+% threshold for possible image scaling.
+threshold = scalethreshold;
+
 % validate inputs
 narginchk(2,4);
 align = 0;
@@ -25,24 +34,11 @@ if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
 
-% stop program early if one image is flat (all one color)
-if std(double(template(:))) == 0 || std(double(A(:))) == 0
-    warning('one image is completely flat; no transformations performed');
-    identparams = [0,0,0,1,1];
-    Transforms = {identparams; affine2d(params2matrix(identparams))};
-    if std(double(template(:))) == 0
-        Merged = A;
-    else
-        Merged = template;
-    end
-    return;
-end
+% convert inputs to unsigned 8-bit integers.
+A = uint8(A);
+template = uint8(template);
 
-% threshold for possible image scaling, which shouldn't happen by
-% assumption.
-threshold = 1.1;
-
-% convert to grayscale as necessary. (TODO Assumed to be greyscale)
+% convert to grayscale as necessary. NOT in the case of EM sections.
 % if size(A, 3) == 3
 %     A = rgb2gray(A);
 % end
@@ -50,18 +46,18 @@ threshold = 1.1;
 %     template = rgb2gray(template);
 % end
 
-% adjust image dimensions as necessary
-switch sum(size(A) >= size(template))
-    case 0  % A is completely smaller than template: swap.
-        templatetemp = template;
-        template = A;
-        A = templatetemp;
-        clear templatetemp;
-    case 1  % A is smaller than template in 1 dimension: crop template.
-        miny = min(size(template, 1), size(A, 1));
-        minx = min(size(template, 2), size(A, 2));
-        template = template(1:miny, 1:minx);
-end
+% adjust image dimensions as necessary, NOT in the case of EM sections.
+% switch sum(size(A) >= size(template))
+%     case 0  % A is completely smaller than template: swap.
+%         templatetemp = template;
+%         template = A;
+%         A = templatetemp;
+%         clear templatetemp;
+%     case 1  % A is smaller than template in 1 dimension: crop template.
+%         miny = min(size(template, 1), size(A, 1));
+%         minx = min(size(template, 2), size(A, 2));
+%         template = template(1:miny, 1:minx);
+% end
 
 % zero pad image to same size
 if size(A) ~= size(template)
@@ -71,6 +67,14 @@ if size(A) ~= size(template)
     template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
 end
 
+% stop program early if one image is flat (all one color)
+if std(double(template(:))) == 0 || std(double(A(:))) == 0
+    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
+    Transforms = eye(3);
+    Merged = cat(3, template, A);
+    return;
+end
+
 % apply hamming window
 Aham = hamming2dwindow(A);
 templateham = hamming2dwindow(template);
@@ -78,8 +82,8 @@ templateham = hamming2dwindow(template);
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
 if pad
-    ypadd = min(size(A, 1), size(templateham, 1));
-    xpadd = min(size(A, 2), size(templateham, 2));
+    ypadd = min(floor(size(A, 1)/2), floor(size(templateham, 1)/2));
+    xpadd = min(floor(size(A, 2)/2), floor(size(templateham, 2)/2));
     Aham = padarray(Aham, [ypadd, xpadd]);
     templateham = padarray(templateham, [ypadd, xpadd]);
 end
@@ -102,7 +106,7 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian');
+[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
 if rhopeak == -1    % peak detection failed
     SCALE = 1;
     THETA1 = 0;
@@ -141,13 +145,13 @@ end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
-[RotatedT1padrm, yshifted1, xshifted1] = rmzeropaddingforced(RotatedT1);
-[RotatedT2padrm, yshifted2, xshifted2] = rmzeropaddingforced(RotatedT2);
+[RotatedT1padrm, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 'force');
+[RotatedT2padrm, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 'force');
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian');
-[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian');
+[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian', 'yx');
+[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian', 'yx');
 if x1 == -1
     max1 = 0;
 else
@@ -165,15 +169,12 @@ if max1 > max2
     THETA = THETA1;
     TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
     TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
-    failed = 0;
 elseif max1 < max2
     RotatedTpadrm = RotatedT2padrm;
     THETA = THETA2;
     TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
     TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
-    failed = 0;
 else
-    failed = 1;
     THETA = 0;
     TranslateX = 0;
     TranslateY = 0;
@@ -181,15 +182,12 @@ end
 clear RotatedT1padrm RotatedT2padrm
 
 % save transformations
-params = [TranslateY, TranslateX, THETA, SCALE, failed];
-Transforms = {  params; affine2d(params2matrix(params))};
+Transforms = params2matrix([TranslateY, TranslateX, THETA, SCALE]);
 
 % if align is true, applies transformations
 Merged = [];
 if align
-    identparams = [0,0,0,1,0];
-    identT = {identparams; affine2d(params2matrix(identparams))};
-    Merged  = affinetransform(template, A, Transforms, identT);
+    Merged  = affinetransform(template, A, Transforms);
 end
 
 %% Helper functions
@@ -214,36 +212,6 @@ end
         Y = rho'*sin(theta) + halfminsize;
         M_logpol = interp2(M,X,Y);
         M_logpol((Y>sizey) | (Y<1) | (X>sizex) | (X<1)) = 0;
-    end
-
-    % removes zero padding as much as possible; might crop parts of image.
-    function [ M_new, yshift, xshift ] = rmzeropaddingforced( M )
-        if M == zeros(size(M))
-            M_new = M;
-            yshift = 0;
-            xshift = 0;
-        else
-            % remove horizontal/vertical padding
-            [ypad, xpad] = find(M);
-            M_new = M(min(ypad):max(ypad), min(xpad):max(xpad));
-            yshift = min(ypad);
-            xshift = min(xpad);
-            % remove diagonal padding: will probably crop parts of image.
-            ymin = 1;
-            xmin = 1;
-            ymax = size(M_new,1);
-            xmax = size(M_new,2);
-            while (M_new(ymin, xmin) + M_new(ymin, xmax) + M_new(ymax, xmin) + M_new(ymax, xmax)) == 0 ...
-                    && ymax > ymin && xmax > xmin
-                xmin = xmin+1;
-                xmax = xmax-1;
-                ymin = ymin+1;
-                ymax = ymax-1;
-            end
-            yshift = yshift + ymin;
-            xshift = xshift + xmin;
-            M_new = M_new(ymin:ymax, xmin:xmax);
-        end
     end
 
     % apply a hamming window entirely to image matrix.
