@@ -9,16 +9,9 @@ features(1) = Gmag(ypeak,xpeak);
 features(2) = Lmag(ypeak,xpeak);
 
 %histogram statistics  
-meanGL = mean(double(c(:)));
-varGL = var(double(c(:)));
-
-[pixelCounts GLs] = imhist(c); %grayLevels = GLs
-skew = sum((GLs-meanGL).^ 3 .*pixelCounts)/((sum(pixelCounts)-1)*varGL^1.5); 
-kurtosis = kurtosis(double(c(:)));
-
-features(3) = meanGL;
-features(4) = varGL;
-features(5) = skew; %negative skew = skewed left 
-features(6) = kurtosis; 
+features(3) = mean(double(c(:)));
+features(4) = var(double(c(:)));
+features(5) = skewness(double(c(:))); %negative skew = skewed left 
+features(6) = kurtosis(double(c(:))); 
 
 end
