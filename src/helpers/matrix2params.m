@@ -1,6 +1,7 @@
 function [ params ] = matrix2params( matrix )
-%MATRIX2PARAMS convers transformation matrix to vector of parameters
-%   Detailed explanation goes here
+%MATRIX2PARAMS converts transformation matrix to vector of parameters
+%   [ params ] = matrix2params( matrix ) -- takes in transformation matrix and converts it 
+%   into vector of parameters, params = [TranslateY, TranslateX, THETA, SCALE, 0]
 
 TranslateX = matrix(3, 1);
 TranslateY = matrix(3, 2);
