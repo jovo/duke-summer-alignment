@@ -1,6 +1,6 @@
-function [ ypeak, xpeak ] = detectpeaks( oldC, tempsize, type, class )
+function [ ypeak, xpeak ] = detectpeak( oldC, tempsize, type, class )
 %DETECTPEAKS Detects significant peaks of image in fourier domain.
-%   [ xpeak, ypeak ] = detectpeaks( c, tempsize, type ) takes an image in
+%   [ xpeak, ypeak ] = detectpeak( c, tempsize, type ) takes an image in
 %   the fourier domain, c, and evaluates the peak. tempsize specifies the
 %   distribution of the peak it should model. If program finds a potential
 %   error in peak detection, will return -1 for all outputs;
