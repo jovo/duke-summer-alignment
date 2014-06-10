@@ -2,45 +2,61 @@ function [ features ] = getpeakfeatures( img, ypeak, xpeak )
 % [ features ] = getpeakfeatures( img ) takes input image img, peak values 
 % xpeak, ypeak, and returns a 1 x k vector with values of k features 
 
-sz = size(img,3);
-features = NaN(sz,7); 
+% define sizes
+sizeyimg = size(img,1);
+sizeximg = size(img,2);
+cropsy = floor(sizeyimg/20);
+cropsx = floor(sizeximg/20);
+features = NaN(1,9);
 
-for i = 1:sz
-    c = img(:,:,i); 
+% normalize to between 0 and 255.
+img = img-min(img(:));  % minimum = 0
+img = img.*(255/max(img(:)));    % range from 0 to 255
 
-%gradient, Laplacian
+% padarray and crop
+img = padarray(img, [cropsy, cropsx], 'symmetric');
+yp = ypeak+cropsy;
+xp = xpeak+cropsy;
+c = img(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
+ypeakcrop = 1+cropsy;
+xpeakcrop = 1+cropsx;
+sizeycrop = size(c,1);
+sizexcrop = size(c,2);
+
+% figure; imshow(c, [min(c(:)),max(c(:))]);
+% hold on
+% plot(xpeakcrop, ypeakcrop, 'ro');
+% hold off
+
+% gradient, Laplacian
 [Gmag, ~] = imgradient(c);
-features(i,1) = Gmag(ypeak,xpeak);
+features(1) = Gmag(ypeakcrop,xpeakcrop);
 [Lmag, ~] = imgradient(Gmag);
-features(i,2) = Lmag(ypeak,xpeak);
+features(2) = Lmag(ypeakcrop,xpeakcrop);
 
-%histogram statistics  
-features(i,3) = mean(double(c(:)));
-features(i,4) = var(double(c(:)));
-features(i,5) = skewness(double(c(:))); %negative skew = skewed left 
-features(i,6) = kurtosis(double(c(:)));
+% histogram statistics
+features(3) = mean(double(c(:)));
+features(4) = var(double(c(:)));
+features(5) = skewness(double(c(:))); % negative skew = skewed left
+features(6) = kurtosis(double(c(:)));
 
-%counts # pixels within certain range (exp correct = small)
-cBinary = roicolor(c,230,255); %lower bound arbitrarily set at 230
-[ymax, xmax, value] = find(cBinary);
-features(i,7) = size(ymax,1); 
+% counts # pixels within certain range (exp correct = small)
+cBinary = roicolor(c,230,255); % lower bound arbitrarily set at 230
+[ymax, ~, ~] = find(cBinary);
+features(7) = size(ymax,1);
 
-%image edge pixels statistics
-left = c(:,1); 
-right = c(:,size(img,2)); 
-top = c(1,2:size(img,2)-1);
-bottom = c(size(img,1),2:size(img,2)-1);
+% image edge pixels statistics
+left = c(:,1);
+right = c(:,sizexcrop);
+top = c(1,2:sizexcrop-1)';
+bottom = c(sizeycrop,2:sizexcrop-1)';
 edge = [left;right;top;bottom];
-features(i,8) = mean(edge);
-features(i,9) = var(edge);
-features(i,10) = skewness(edge); 
-features(i,11) = kurtosis(edge);
+features(8) = mean(edge);
+features(9) = var(edge);
 
-%contour map 
-imcontour(c);
-%find highest value contour line, within region of x pixels around it,
-%are there multiple contour line values??
-
-end
+% contour map
+% imcontour(c);
+% find highest value contour line, within region of x pixels around it,
+% are there multiple contour line values??
 
 end

@@ -4,14 +4,13 @@ function [ ypeak, xpeak ] = detectpeakml( c, classifier )
 
 N = 10;     % indicate # of possible peak points to classify
 csorted = sort(c(:));   % sort the image by intensity
-% interate throgh each possible peak, and classify
+% iterate through each possible peak, and classify
 for i=1:N
     [yptemparray, xptemparray] = find(c==csorted(i));
     yptemp = yptemparray(1);
     xptemp = xptemparray(1);
     feature = getpeakfeatures(c, yptemp, xptemp);
-    ScoreSVMModel = fitSVMPosterior(classifier);
-    [label, ~] = predict(ScoreSVMModel, feature);
+    [label, ~] = predict(classifier, feature);
     if label
         ypeak = yptemp;
         xpeak = xptemp;
