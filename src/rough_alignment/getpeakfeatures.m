@@ -10,22 +10,36 @@ for i = 1:sz
 
 %gradient, Laplacian
 [Gmag, ~] = imgradient(c);
-features(1,1) = Gmag(ypeak,xpeak);
+features(i,1) = Gmag(ypeak,xpeak);
 [Lmag, ~] = imgradient(Gmag);
-features(1,2) = Lmag(ypeak,xpeak);
+features(i,2) = Lmag(ypeak,xpeak);
 
 %histogram statistics  
-features(1,3) = mean(double(c(:)));
-features(1,4) = var(double(c(:)));
-features(1,5) = skewness(double(c(:))); %negative skew = skewed left 
-features(1,6) = kurtosis(double(c(:)));
+features(i,3) = mean(double(c(:)));
+features(i,4) = var(double(c(:)));
+features(i,5) = skewness(double(c(:))); %negative skew = skewed left 
+features(i,6) = kurtosis(double(c(:)));
 
 %counts # pixels within certain range (exp correct = small)
-cBinary = roicolor(c,230,255);
+cBinary = roicolor(c,230,255); %lower bound arbitrarily set at 230
 [ymax, xmax, value] = find(cBinary);
-features(1,7) = size(ymax,1); 
+features(i,7) = size(ymax,1); 
 
-%edge values
+%image edge pixels statistics
+left = c(:,1); 
+right = c(:,size(img,2)); 
+top = c(1,2:size(img,2)-1);
+bottom = c(size(img,1),2:size(img,2)-1);
+edge = [left;right;top;bottom];
+features(i,8) = mean(edge);
+features(i,9) = var(edge);
+features(i,10) = skewness(edge); 
+features(i,11) = kurtosis(edge);
+
+%contour map 
+imcontour(c);
+%find highest value contour line, within region of x pixels around it,
+%are there multiple contour line values??
 
 end
 
