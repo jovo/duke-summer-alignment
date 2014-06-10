@@ -6,6 +6,7 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
+%   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad, classifier )
 %   if align parameter is 'align', then also outputs the transformed final
 %   image in Merged. otherwise Merged is nil.
 %   if pad is true (1), then will zero pad to improve alignment, but
@@ -32,6 +33,9 @@ if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
 end
 if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
+end
+if nargin > 4
+    classifier = varargin{3};
 end
 
 % convert inputs to unsigned 8-bit integers.
@@ -106,7 +110,7 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-[rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
+[rhopeak, thetapeak] = find(c==max(c(:)));
 if rhopeak == -1    % peak detection failed
     SCALE = 1;
     THETA1 = 0;
@@ -150,8 +154,13 @@ end
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-[y1, x1] = detectpeaks(c1, ceil(length(c1)/8), 'gaussian', 'yx');
-[y2, x2] = detectpeaks(c2, ceil(length(c2)/8), 'gaussian', 'yx');
+if exist('classifier', 'var')
+    [y1, x1] = detectpeakml(c1, classifier);
+    [y2, x2] = detectpeakml(c2, classifier);
+else
+    [y1, x1] = detectpeak(c1, ceil(length(c1)/8), 'gaussian', 'yx');
+    [y2, x2] = detectpeak(c2, ceil(length(c2)/8), 'gaussian', 'yx');
+end
 if x1 == -1
     max1 = 0;
 else
@@ -178,6 +187,7 @@ else
     THETA = 0;
     TranslateX = 0;
     TranslateY = 0;
+    warning('failed alignment.');
 end
 clear RotatedT1padrm RotatedT2padrm
 
