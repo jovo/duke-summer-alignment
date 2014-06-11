@@ -25,7 +25,7 @@ end
 threshold = scalethreshold;
 
 % validate inputs
-narginchk(2,4);
+narginchk(2,5);
 align = 0;
 pad = 0;
 if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
@@ -111,6 +111,7 @@ clear filteredFT filteredFA;
 xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
 [rhopeak, thetapeak] = find(c==max(c(:)));
+% [rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
 if rhopeak == -1    % peak detection failed
     SCALE = 1;
     THETA1 = 0;
@@ -149,8 +150,8 @@ end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
-[RotatedT1padrm, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 'force');
-[RotatedT2padrm, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 'force');
+[RotatedT1padrm, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 2);
+[RotatedT2padrm, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 2);
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
