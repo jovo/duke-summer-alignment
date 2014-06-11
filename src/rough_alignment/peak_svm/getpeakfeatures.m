@@ -5,18 +5,18 @@ function [ features ] = getpeakfeatures( img, ypeak, xpeak )
 % define sizes
 sizeyimg = size(img,1);
 sizeximg = size(img,2);
-cropsy = floor(sizeyimg/20);
-cropsx = floor(sizeximg/20);
-features = NaN(1,9);
+cropsy = floor(sizeyimg/30);
+cropsx = floor(sizeximg/30);
+features = NaN(1,6);
 
-% normalize to between 0 and 255.
+% normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
-img = img.*(255/max(img(:)));    % range from 0 to 255
+img = uint8(img.*(255/max(img(:))));    % range from 0 to 255
 
 % padarray and crop
 img = padarray(img, [cropsy, cropsx], 'symmetric');
 yp = ypeak+cropsy;
-xp = xpeak+cropsy;
+xp = xpeak+cropsx;
 c = img(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
 ypeakcrop = 1+cropsy;
 xpeakcrop = 1+cropsx;
@@ -30,20 +30,27 @@ sizexcrop = size(c,2);
 
 % gradient, Laplacian
 [Gmag, ~] = imgradient(c);
-features(1) = Gmag(ypeakcrop,xpeakcrop);
+features(1) = max(max(Gmag));
 [Lmag, ~] = imgradient(Gmag);
-features(2) = Lmag(ypeakcrop,xpeakcrop);
+features(2) = max(max(Lmag));
 
-% histogram statistics
+% figure; imshow(Gmag, [min(Gmag(:)),max(Gmag(:))]);
+% hold on
+% plot(xpeakcrop, ypeakcrop, 'ro');
+% hold off
+% figure; imshow(Lmag, [min(Lmag(:)),max(Lmag(:))]);
+% hold on
+% plot(xpeakcrop, ypeakcrop, 'ro');
+% hold off
+
+% statistics
 features(3) = mean(double(c(:)));
-features(4) = var(double(c(:)));
-features(5) = skewness(double(c(:))); % negative skew = skewed left
-features(6) = kurtosis(double(c(:)));
+features(4) = skewness(double(c(:))); % negative skew = skewed left
 
 % counts # pixels within certain range (exp correct = small)
 cBinary = roicolor(c,230,255); % lower bound arbitrarily set at 230
 [ymax, ~, ~] = find(cBinary);
-features(7) = size(ymax,1);
+features(5) = size(ymax,1)./(size(cBinary,1)*size(cBinary,2));
 
 % image edge pixels statistics
 left = c(:,1);
@@ -51,8 +58,20 @@ right = c(:,sizexcrop);
 top = c(1,2:sizexcrop-1)';
 bottom = c(sizeycrop,2:sizexcrop-1)';
 edge = [left;right;top;bottom];
-features(8) = mean(edge);
-features(9) = var(edge);
+features(6) = mean(edge);
+
+
+% correlate with gaussian
+y1 = normpdf(-cropsy:cropsy, 0, cropsy*2/10);
+y2 = normpdf(-cropsx:cropsx, 0, cropsy*2/10);
+template = y1'*y2;
+% size(template)
+% size(c)
+cor = normxcorr2(template, c);
+cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
+% figure; imshow(template, [min(template(:)),max(template(:))]);
+% figure; imshowpair(cor, c, 'montage');
+features(7) = max(cor(:));
 
 % contour map
 % imcontour(c);
