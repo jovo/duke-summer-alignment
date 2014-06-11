@@ -19,11 +19,8 @@ data.IStackNew(:,:,1:zsize,1) = double(IStack);
 data.IStackSize = NaN(count+1,2);
 data.IStackSize(1,:) = [ysize,xsize];
 
-% distribution from which to draw random numbers
-betaD = makedist('Beta', 1, 3);
-
 for i=1:count    % iterate through each random sample
-    cursize = floor(mindim + random(betaD) * (maxdim-mindim));   % size of image in this iteration
+    cursize = floor(mindim + random('beta',1,3) * (maxdim-mindim));   % size of image in this iteration
     randSY = ceil(rand .* (ysize-cursize));
     randSX = ceil(rand .* (xsize-cursize));
     curStack = NaN(cursize, cursize, zsize);
@@ -50,10 +47,10 @@ for i=1:count+1
     xsize = data.IStackSize(i,2);
 
     % compute transformation parameters
-    randY = min(ysize,xsize)/20 + floor(rand(zsize-1,1) * min(ysize,xsize)/20);
-    randX = min(ysize,xsize)/20 + floor(rand(zsize-1,1) * min(ysize,xsize)/20);
-    randT = 30 + rand(zsize-1,1) * 300;
-    randS = rand(zsize-1,1) * 1.1;
+    randY = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize)/20);
+    randX = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize)/20);
+    randT = 5 + random('beta',1,3,[zsize-1,1]) * 350;
+    randS = random('beta',1,3,[zsize-1,1]) * 1.1;
     Tparam = [randY, randX, randT, randS];
 
     for j=1:zsize-1   % iterate through each image in stack

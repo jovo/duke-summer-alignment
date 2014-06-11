@@ -5,8 +5,8 @@ function [ features ] = getpeakfeatures( img, ypeak, xpeak )
 % define sizes
 sizeyimg = size(img,1);
 sizeximg = size(img,2);
-cropsy = floor(sizeyimg/20);
-cropsx = floor(sizeximg/20);
+cropsy = floor(sizeyimg/30);
+cropsx = floor(sizeximg/30);
 features = NaN(1,6);
 
 % normalize to between 0 and 255 and convert to uint8
@@ -59,6 +59,19 @@ top = c(1,2:sizexcrop-1)';
 bottom = c(sizeycrop,2:sizexcrop-1)';
 edge = [left;right;top;bottom];
 features(6) = mean(edge);
+
+
+% correlate with gaussian
+y1 = normpdf(-cropsy:cropsy, 0, cropsy*2/10);
+y2 = normpdf(-cropsx:cropsx, 0, cropsy*2/10);
+template = y1'*y2;
+size(template)
+size(c)
+cor = normxcorr2(template, c);
+cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
+figure; imshow(template, [min(template(:)),max(template(:))]);
+figure; imshowpair(cor, c, 'montage');
+features(7) = max(cor(:));
 
 % contour map
 % imcontour(c);

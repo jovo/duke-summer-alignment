@@ -6,7 +6,6 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
-%   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad, classifier )
 %   if align parameter is 'align', then also outputs the transformed final
 %   image in Merged. otherwise Merged is nil.
 %   if pad is true (1), then will zero pad to improve alignment, but
@@ -16,9 +15,13 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 
 % retrieve global variable
-global scalethreshold;
+global scalethreshold peakclassifier;
 if isempty(scalethreshold)
     scalethreshold = 1.05;
+end
+classify = 1;
+if peakclassifier == -1
+    classify = 0;
 end
 
 % threshold for possible image scaling.
@@ -155,7 +158,7 @@ end
 clear RotatedT1 RotatedT2;
 c1 = normxcorr2(RotatedT1padrm, A);
 c2 = normxcorr2(RotatedT2padrm, A);
-if exist('classifier', 'var')
+if classify
     [y1, x1] = detectpeakml(c1, classifier);
     [y2, x2] = detectpeakml(c2, classifier);
 else
