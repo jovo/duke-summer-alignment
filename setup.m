@@ -1,7 +1,7 @@
 addpath(genpath('data'));
 addpath(genpath('src'));
 
-global minnonzeropercent scalethreshold;
+global minnonzeropercent scalethreshold peakclassifier;
 
 % the the minimum value of the intersection of two images divided by the
 % union of two images. This basically indicates the minimum amount of
@@ -13,3 +13,8 @@ minnonzeropercent = 0.3;
 % another. Any alignment with a scale greater than this threshold is
 % rejected.
 scalethreshold = 1.05;
+
+% classifier for detecting peaks. If peakclassifier = -1, then don't use a
+% classfier for peak detection.
+peakclassifier = classifier;
+% peakclassifier = -1;

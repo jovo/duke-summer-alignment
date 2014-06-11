@@ -13,7 +13,7 @@ if nargin == 2 && strcmpi(varargin{1}, 'improve')
 end
 
 % stores variables as matfile to save memory
-filename = strcat('tempfiledeletewhendone_', lower(randseq(8, 'Alphabet', 'amino')), '.mat');
+filename = strcat('constructtransform_tempfile_', lower(randseq(8, 'Alphabet', 'amino')), '.mat');
 save(filename, 'M', '-v7.3');
 data = matfile(filename, 'Writable', true);
 looplength = size(M, 3) - 1;
@@ -96,13 +96,13 @@ if improve
         if preindex >= 1 && ~isKey(addtforms, {indices2key(preindex, index2)})
             img1 = data.M(:,:, preindex);
             img2 = data.M(:,:, index2);
-            tform = xcorr2imgs(img2, img1, '', 1);
+            tform = xcorr2imgs(img2, img1, '', 'pad');
             addtforms(indices2key(preindex, index2)) = tform;
         end
         if postindex <= looplength+1 && ~isKey(addtforms, {indices2key(index1, postindex)})
             img1 = data.M(:,:, index1);
             img2 = data.M(:,:, postindex);
-            tform = xcorr2imgs(img2, img1, '', 1);
+            tform = xcorr2imgs(img2, img1, '', 'pad');
             addtforms(indices2key(index1, postindex)) = tform;
         end
 
