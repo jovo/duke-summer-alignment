@@ -65,12 +65,12 @@ features(6) = mean(edge);
 y1 = normpdf(-cropsy:cropsy, 0, cropsy*2/10);
 y2 = normpdf(-cropsx:cropsx, 0, cropsy*2/10);
 template = y1'*y2;
-size(template)
-size(c)
+% size(template)
+% size(c)
 cor = normxcorr2(template, c);
 cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
-figure; imshow(template, [min(template(:)),max(template(:))]);
-figure; imshowpair(cor, c, 'montage');
+% figure; imshow(template, [min(template(:)),max(template(:))]);
+% figure; imshowpair(cor, c, 'montage');
 features(7) = max(cor(:));
 
 % contour map
