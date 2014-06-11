@@ -96,13 +96,13 @@ if improve
         if preindex >= 1 && ~isKey(addtforms, {indices2key(preindex, index2)})
             img1 = data.M(:,:, preindex);
             img2 = data.M(:,:, index2);
-            tform = xcorr2imgs(img2, img1, '', 1);
+            tform = xcorr2imgs(img2, img1, '', 'pad');
             addtforms(indices2key(preindex, index2)) = tform;
         end
         if postindex <= looplength+1 && ~isKey(addtforms, {indices2key(index1, postindex)})
             img1 = data.M(:,:, index1);
             img2 = data.M(:,:, postindex);
-            tform = xcorr2imgs(img2, img1, '', 1);
+            tform = xcorr2imgs(img2, img1, '', 'pad');
             addtforms(indices2key(index1, postindex)) = tform;
         end
 
