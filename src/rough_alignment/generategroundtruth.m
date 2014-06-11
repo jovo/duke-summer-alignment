@@ -10,9 +10,14 @@ ysize = size(IStack, 1);
 xsize = size(IStack, 2);
 zsize = size(IStack, 3);
 
-% size of new training set
-IStackNew = cell(count,1);
-IStackNew{1} = IStack;
+% save variable in .mat to free up memory
+filename = strcat('generategroundtruth_tempfile_', lower(randseq(8, 'Alphabet', 'amino')), '.mat');
+data = matfile(filename, 'Writable', true);
+% stores all training sets
+data.IStackNew = NaN(ysize, xsize, zsize, count+1);
+data.IStackNew(:,:,1:zsize,1) = double(IStack);
+data.IStackSize = NaN(count+1,2);
+data.IStackSize(1,:) = [ysize,xsize];
 
 % distribution from which to draw random numbers
 betaD = makedist('Beta', 1, 3);
@@ -25,8 +30,10 @@ for i=1:count    % iterate through each random sample
     for j=1:zsize
         curStack(:,:,j) = IStack(1+randSY:cursize+randSY,1+randSX:cursize+randSX,j);
     end
-    IStackNew{i+1} = curStack;
+    data.IStackNew(1:cursize,1:cursize,1:zsize,i+1) = curStack;
+    data.IStackSize(i+1,:) = [cursize, cursize];
 end
+clear IStack curStack;
 
 % preallocate matrices
 maxfeaturecount = 100;  % maximum possible # of features.
@@ -36,10 +43,11 @@ XF = NaN((zsize-1)*(count+1), maxfeaturecount);
 % iterate through expanded stack, compute features.
 counterT = 1;
 counterF = 1;
-for i=1:length(IStackNew)
+for i=1:count+1
 
-    % current stack
-    curStack = IStackNew{i};
+    % retrieve size of image for this iteration
+    ysize = data.IStackSize(i,1);
+    xsize = data.IStackSize(i,2);
 
     % compute transformation parameters
     randY = min(ysize,xsize)/20 + floor(rand(zsize-1,1) * min(ysize,xsize)/20);
@@ -49,11 +57,11 @@ for i=1:length(IStackNew)
     Tparam = [randY, randX, randT, randS];
 
     for j=1:zsize-1   % iterate through each image in stack
+        % access image pair and remove NaN
+        img1 = uint8(data.IStackNew(1:ysize,1:xsize,j,i));
+        img2 = uint8(data.IStackNew(1:ysize,1:xsize,j+1,i));
         % compute cross correlation of correct alignment
-        img1 = curStack(:,:,j);
-        img2 = curStack(:,:,j+1);
         cT = normxcorr2(img2, img1);
-
         % find peak of aligned image
         [ymaxT, xmaxT] = find(cT==max(cT(:)));
         featuresT = getpeakfeatures(cT, ymaxT, xmaxT);
