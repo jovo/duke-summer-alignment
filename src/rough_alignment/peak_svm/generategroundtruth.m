@@ -14,8 +14,8 @@ zsize = size(IStack, 3);
 filename = strcat('generategroundtruth_tempfile_', lower(randseq(8, 'Alphabet', 'amino')), '.mat');
 data = matfile(filename, 'Writable', true);
 % stores all training sets
-data.IStackNew = NaN(ysize, xsize, zsize, count+1);
-data.IStackNew(:,:,1:zsize,1) = double(IStack);
+data.IStackNew = zeros(ysize, xsize, zsize, count+1, 'uint8');
+data.IStackNew(:,:,1:zsize,1) = IStack;
 data.IStackSize = NaN(count+1,2);
 data.IStackSize(1,:) = [ysize,xsize];
 
@@ -23,17 +23,18 @@ for i=1:count    % iterate through each random sample
     cursize = floor(mindim + random('beta',1,3) * (maxdim-mindim));   % size of image in this iteration
     randSY = ceil(rand .* (ysize-cursize));
     randSX = ceil(rand .* (xsize-cursize));
-    curStack = NaN(cursize, cursize, zsize);
+    curStack = zeros(cursize, cursize, zsize, 'uint8');
     for j=1:zsize
         curStack(:,:,j) = IStack(1+randSY:cursize+randSY,1+randSX:cursize+randSX,j);
     end
     data.IStackNew(1:cursize,1:cursize,1:zsize,i+1) = curStack;
+    clear curStack;
     data.IStackSize(i+1,:) = [cursize, cursize];
 end
-clear IStack curStack;
+clear IStack;
 
 % preallocate matrices
-maxfeaturecount = 100;  % maximum possible # of features.
+maxfeaturecount = 10;  % maximum possible # of features.
 XT = NaN((zsize-1)*(count+1), maxfeaturecount);
 XF = NaN((zsize-1)*(count+1), maxfeaturecount);
 
@@ -55,25 +56,30 @@ for i=1:count+1
 
     for j=1:zsize-1   % iterate through each image in stack
         % access image pair and remove NaN
-        img1 = uint8(data.IStackNew(1:ysize,1:xsize,j,i));
-        img2 = uint8(data.IStackNew(1:ysize,1:xsize,j+1,i));
+        img1 = data.IStackNew(1:ysize,1:xsize,j,i);
+        img2 = data.IStackNew(1:ysize,1:xsize,j+1,i);
         % compute cross correlation of correct alignment
         cT = normxcorr2(img2, img1);
         % find peak of aligned image
         [ymaxT, xmaxT] = find(cT==max(cT(:)));
         featuresT = getpeakfeatures(cT, ymaxT, xmaxT);
+        clear cT;
         XT(counterT, 1:size(featuresT,2)) = featuresT;
         counterT = counterT + 1;
 
         % apply transform to one image, compute xcorr of incorrect alignment
         merged = affinetransform(img2, img1, params2matrix(Tparam(j,:)));
+        clear img1 img2;
         cF = normxcorr2(merged(:,:,1), merged(:,:,2));
+        clear merged;
 
         % find incorrect peak of unaligned image
         [ymaxF, xmaxF] = find(cF==max(cF(:)));
         featuresF = getpeakfeatures(cF, ymaxF, xmaxF);
+        clear cF;
         XF(counterF, 1:size(featuresF,2)) = featuresF;
         counterF = counterF + 1;
+
     end
 end
 
@@ -86,8 +92,8 @@ XF = XF(nonzerorows, :);
 XF = XF(:, nonzerocols);
 
 % assign ground truth
-YT = ones(size(XT,1),1);
-YF = zeros(size(XF,1),1);
+YT = true(size(XT,1),1);
+YF = false(size(XF,1),1);
 
 % concatenate true and false entries
 X = [XT; XF];

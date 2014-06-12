@@ -14,21 +14,21 @@ function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 
-% retrieve global variable
+% retrieve global variables
 global scalethreshold peakclassifier;
+% threshold for possible scaling.
 if isempty(scalethreshold)
     scalethreshold = 1.05;
 end
+threshold = scalethreshold;
+% whether to use a trained classifier
 classify = 1;
 if peakclassifier == -1
     classify = 0;
 end
 
-% threshold for possible image scaling.
-threshold = scalethreshold;
-
 % validate inputs
-narginchk(2,5);
+narginchk(2,4);
 align = 0;
 pad = 0;
 if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
@@ -36,9 +36,6 @@ if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
 end
 if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
-end
-if nargin > 4
-    classifier = varargin{3};
 end
 
 % convert inputs to unsigned 8-bit integers.

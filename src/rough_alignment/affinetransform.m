@@ -25,6 +25,7 @@ updatedtparam = zeros(1,4);
 updatedtparam(3:4) = newtparam(3:4);
 % Perform translation, rotation, scaling transformations to images
 TStack = imrotate(imresize(templateStack, 1/SCALE), THETA, 'nearest', 'crop');
+clear templateStack;
 depthA = size(AStack, 3);
 depthT = size(TStack, 3);
 AStacky = size(AStack, 1);
@@ -62,8 +63,8 @@ else
         newstack_x = max(TStackx, abs(TranslateX) + AStackx);
     end
 end
-AStack_new = uint8(zeros(newstack_y, newstack_x, depthA));
-TStack_new = uint8(zeros(newstack_y, newstack_x, depthT));
+AStack_new = zeros(newstack_y, newstack_x, depthA, 'uint8');
+TStack_new = zeros(newstack_y, newstack_x, depthT, 'uint8');
 
 AStack_new(Ayrangestack, Axrangestack, :) = AStack;
 TStack_new(Tyrangestack, Txrangestack, :) = TStack;
