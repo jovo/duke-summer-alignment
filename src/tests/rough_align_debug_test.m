@@ -2,13 +2,14 @@
 
 clear all
 close all
-% load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svmclassifier1.mat');
+load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svm1.mat');
+setup;
 % test identical image with large rotations, moderate shifts
 load('/Users/rogerzou/Projects/openconnectome/alignment/data/AC4_matrices.mat')
 
 rng; % control random number generator
 n1 = 30;
-data1 = zeros(512, 512, n1);
+data1 = zeros(512, 512, n1, 'uint8');
 r1 = ceil(rand(1,n1)*200);
 r2 = ceil(rand(1,n1)*200);
 rot1 = floor(rand(1,n1)*180);

@@ -1,11 +1,11 @@
-function [ Transforms, Merged ] = xcorr2imgs( template, A, varargin )
+function [ Transforms, Merged, flag ] = xcorr2imgs( template, A, varargin )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation.
 %   Performs automated alignment to template and A. performs the same
 %   transformations to templateStack and AStack, respectively.
-%   [ Transforms, Merged ] = xcorr2imgs( template, A )
-%   [ Transforms, Merged ] = xcorr2imgs( template, A, align )
-%   [ Transforms, Merged ] = xcorr2imgs( template, A, align, pad )
+%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A )
+%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align )
+%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align, pad )
 %   if align parameter is 'align', then also outputs the transformed final
 %   image in Merged. otherwise Merged is nil.
 %   if pad is true (1), then will zero pad to improve alignment, but
@@ -22,9 +22,10 @@ if isempty(scalethreshold)
 end
 threshold = scalethreshold;
 % whether to use a trained classifier
-classify = 1;
-if peakclassifier == -1
-    classify = 0;
+classify = 0;
+if strcmpi(class(peakclassifier), 'ClassificationSVM')
+    classifier = peakclassifier;
+    classify = 1;
 end
 
 % validate inputs
@@ -37,6 +38,9 @@ end
 if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
+
+% flag to indicate failed alignment
+flag = 0;
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
@@ -189,6 +193,7 @@ else
     TranslateX = 0;
     TranslateY = 0;
     warning('failed alignment.');
+    flag = 1;
 end
 clear RotatedT1padrm RotatedT2padrm
 
