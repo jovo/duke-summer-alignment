@@ -7,7 +7,7 @@ sizeyimg = size(img,1);
 sizeximg = size(img,2);
 cropsy = floor(sizeyimg/30);
 cropsx = floor(sizeximg/30);
-features = NaN(1,6);
+features = NaN(1,8);
 
 % normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
@@ -72,6 +72,8 @@ cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
 % figure; imshow(template, [min(template(:)),max(template(:))]);
 % figure; imshowpair(cor, c, 'montage');
 features(7) = max(cor(:));
+
+features(8) = sizeyimg*sizeximg;
 
 % contour map
 % imcontour(c);
