@@ -6,10 +6,13 @@ function [ Transforms, Merged, flag ] = xcorr2imgs( template, A, varargin )
 %   [ Transforms, Merged, flag ] = xcorr2imgs( template, A )
 %   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align )
 %   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align, pad )
-%   if align parameter is 'align', then also outputs the transformed final
-%   image in Merged. otherwise Merged is nil.
-%   if pad is true (1), then will zero pad to improve alignment, but
-%   increase running time.
+%   If align parameter is set to 'align', then Merged will be the aligned
+%   images. Otherwise Merged is nil. If the pad parameter is set to 'pad',
+%   then program will add extra padding, at the cost of more computation
+%   time. flag is raised if alignment is deemed to fail.
+%   ASSUMPTIONS: template and A are the SAME size, and DO NOT have any
+%   zero pad. These assumptions are consistent with inputs from EM
+%   sections.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
@@ -28,7 +31,15 @@ if strcmpi(class(peakclassifier), 'ClassificationSVM')
     classify = 1;
 end
 
-% validate inputs
+% stop program early if one image is flat (all one color).
+if std(double(template(:))) == 0 || std(double(A(:))) == 0
+    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
+    Transforms = eye(3);
+    Merged = cat(3, template, A);
+    return;
+end
+
+% validate inputs.
 narginchk(2,4);
 align = 0;
 pad = 0;
@@ -39,108 +50,64 @@ if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
     pad = 1;
 end
 
-% flag to indicate failed alignment
+% flag to indicate failed alignment.
 flag = 0;
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 template = uint8(template);
 
-% convert to grayscale as necessary. NOT in the case of EM sections.
-% if size(A, 3) == 3
-%     A = rgb2gray(A);
-% end
-% if size(template, 3) == 3
-%     template = rgb2gray(template);
-% end
-
-% adjust image dimensions as necessary, NOT in the case of EM sections.
-% switch sum(size(A) >= size(template))
-%     case 0  % A is completely smaller than template: swap.
-%         templatetemp = template;
-%         template = A;
-%         A = templatetemp;
-%         clear templatetemp;
-%     case 1  % A is smaller than template in 1 dimension: crop template.
-%         miny = min(size(template, 1), size(A, 1));
-%         minx = min(size(template, 2), size(A, 2));
-%         template = template(1:miny, 1:minx);
-% end
-
-% zero pad image to same size
-if size(A) ~= size(template)
-    yaddpad = max(size(A, 1), size(template, 1));
-    xaddpad = max(size(A, 2), size(template, 2));
-    A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
-    template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
-end
-
-% stop program early if one image is flat (all one color)
-if std(double(template(:))) == 0 || std(double(A(:))) == 0
-    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
-    Transforms = eye(3);
-    Merged = cat(3, template, A);
-    return;
-end
-
-% apply hamming window
-Aham = hamming2dwindow(A);
-templateham = hamming2dwindow(template);
+% apply hamming window.
+Amod = hamming2dwindow(A);
+Tmod = hamming2dwindow(template);
 
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
 if pad
-    ypadd = min(floor(size(A, 1)/2), floor(size(templateham, 1)/2));
-    xpadd = min(floor(size(A, 2)/2), floor(size(templateham, 2)/2));
-    Aham = padarray(Aham, [ypadd, xpadd]);
-    templateham = padarray(templateham, [ypadd, xpadd]);
+    ypad = min(floor(size(Amod, 1)/2), floor(size(Tmod, 1)/2));
+    xpad = min(floor(size(Amod, 2)/2), floor(size(Tmod, 2)/2));
+    Amod = padarray(Amod, [ypad, xpad]);
+    Tmod = padarray(Tmod, [ypad, xpad]);
 end
 
 % DFT of template and A.
-FourierT = fft2(templateham);
-FourierA = fft2(Aham);
-clear Aham templateham;
+Amod = fft2(Amod);
+Tmod = fft2(Tmod);
 
 % high-pass filtering.
-filteredFT = highpass(abs(fftshift(FourierT)));
-filteredFA = highpass(abs(fftshift(FourierA)));
-clear FourierA FourierT;
+Amod = highpass(abs(fftshift(Amod)));
+Tmod = highpass(abs(fftshift(Tmod)));
 
 % Resample image in log-polar coordinates.
-[LogPolarT, rhoaxis] = log_polar(filteredFT);
-LogPolarA = log_polar(filteredFA);
+[Tmod, rhoaxis] = log_polar(Tmod);
+Amod = log_polar(Amod);
 clear filteredFT filteredFA;
 
 % compute phase correlation to find best theta.
-xpowerspec = fft2(LogPolarA).*conj(fft2(LogPolarT));
+xpowerspec = fft2(Amod).*conj(fft2(Tmod));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
+clear xpowerspec Amod Tmod;
 [rhopeak, thetapeak] = find(c==max(c(:)));
 % [rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
-if rhopeak == -1    % peak detection failed
+if rhopeak > size(c, 1)/2    % template scaled down to match A
+    rhoindex = size(c,1) - rhopeak + 1;
+    SCALE = 1/rhoaxis(rhoindex);
+else    % template scaled up to match A
+    SCALE = rhoaxis(rhopeak);
+end
+% assume scaling is always 1 for now.
+if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
     SCALE = 1;
     THETA1 = 0;
     THETA2 = 0;
+    warning('scaling exceeded threshold. Potentially failed alignment');
 else
-    if rhopeak > size(c, 1)/2    % template scaled down to match A
-        rhoindex = size(c,1) - rhopeak + 1;
-        SCALE = 1/rhoaxis(rhoindex);
-    else    % template scaled up to match A
-        SCALE = rhoaxis(rhopeak);
-    end
-    % assume scaling is always 1 for now.
-    if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
-        SCALE = 1;
-        THETA1 = 0;
-        THETA2 = 0;
-        warning('scaling exceeded threshold. Potentially failed alignment');
-    else
-        SCALE = 1;
-        th = (thetapeak - 1) * 360 / size(c, 2);
-        THETA1 = -th;
-        THETA2 = -th - 180;
-    end
+    SCALE = 1;
+    th = (thetapeak - 1) * 360 / size(c, 2);
+    THETA1 = -th;
+    THETA2 = -th - 180;
 end
-clear LogPolarT LogPolarA;
+clear c;
 
 % rotate template image two possible ways.
 RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
@@ -154,11 +121,10 @@ end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
-[RotatedT1padrm, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 2);
-[RotatedT2padrm, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 2);
-clear RotatedT1 RotatedT2;
-c1 = normxcorr2(RotatedT1padrm, A);
-c2 = normxcorr2(RotatedT2padrm, A);
+[RotatedT1, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 2);
+[RotatedT2, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 2);
+c1 = normxcorr2(RotatedT1, A);
+c2 = normxcorr2(RotatedT2, A);
 if classify
     [y1, x1] = detectpeakml(c1, classifier);
     [y2, x2] = detectpeakml(c2, classifier);
@@ -179,15 +145,15 @@ end
 clear c1 c2;
 % pick rotation that produces the greatest peak
 if max1 > max2
-    RotatedTpadrm = RotatedT1padrm;
+    RotatedT = RotatedT1;
     THETA = THETA1;
-    TranslateY = y1 - size(RotatedTpadrm, 1) - yshifted1 + 2;
-    TranslateX = x1 - size(RotatedTpadrm, 2) - xshifted1 + 2;
+    TranslateY = y1 - size(RotatedT, 1) - yshifted1 + 2;
+    TranslateX = x1 - size(RotatedT, 2) - xshifted1 + 2;
 elseif max1 < max2
-    RotatedTpadrm = RotatedT2padrm;
+    RotatedT = RotatedT2;
     THETA = THETA2;
-    TranslateY = y2 - size(RotatedTpadrm, 1) - yshifted2 + 2;
-    TranslateX = x2 - size(RotatedTpadrm, 2) - xshifted2 + 2;
+    TranslateY = y2 - size(RotatedT, 1) - yshifted2 + 2;
+    TranslateX = x2 - size(RotatedT, 2) - xshifted2 + 2;
 else
     THETA = 0;
     TranslateX = 0;
@@ -195,7 +161,7 @@ else
     warning('failed alignment.');
     flag = 1;
 end
-clear RotatedT1padrm RotatedT2padrm
+clear RotatedT1 RotatedT2
 
 % save transformations
 Transforms = params2matrix([TranslateY, TranslateX, THETA, SCALE]);
@@ -205,81 +171,3 @@ Merged = [];
 if align
     Merged  = affinetransform(template, A, Transforms);
 end
-
-%% Helper functions
-
-    % simple high-pass emphasis filter
-    function [ M_hip ] = highpass( M )
-        X = cos(linspace(-0.5,0.5,size(M,1)))'*cos(linspace(-0.5,0.5, size(M,2)));
-        H = (1-X).*(2-X);   % transfer function
-        M_hip = M.*H;
-    end
-
-    % log-polar representation of each Xcoord and Ycoord value of 2d matrix M
-    function [ M_logpol, rho ] = log_polar( M )
-        [sizey, sizex] = size(M);
-        minsize = min(sizey, sizex);
-        halfminsize = minsize*0.5;
-        rho = logspace(0,log10(halfminsize),minsize);
-        theta = linspace(0,2*pi,minsize+1);
-        theta(length(theta)) = [];
-
-        X = rho'*cos(theta) + halfminsize;
-        Y = rho'*sin(theta) + halfminsize;
-        M_logpol = interp2(M,X,Y);
-        M_logpol((Y>sizey) | (Y<1) | (X>sizex) | (X<1)) = 0;
-    end
-
-    % apply a hamming window entirely to image matrix.
-    function [ M_new ] = hamming2dwindow( M )
-        M = double(M);
-        ywindow = hamming(size(M, 1));
-        xwindow = hamming(size(M, 2));
-        w = ywindow(:) * xwindow(:)';
-        M_new = M.*w;
-    end
-
-end
-
-
-
-%% kind of buggy, maybe useful later?
-%     % pick the better rotation
-%     c1 = real(ifft2(FourierA.*conj(fft2(RotatedT1))));
-%     c2 = real(ifft2(FourierA.*conj(fft2(RotatedT2))));
-%     [y1, x1] = find(c1==max(c1(:)));
-%     [y2, x2] = find(c2==max(c2(:)));
-%     if c1(y1, x1) > c2(y2, x2)
-%         RotatedT = RotatedT1;
-%         y = y1;
-%         x = x1;
-%     else
-%         RotatedT = RotatedT2;
-%         y = y2;
-%         x = x2;
-%     end
-%     % determine translation
-%     TranslateY = y - 1;
-%     TranslateX = x - 1;
-%     if (y > size(A, 2)/2)
-%         TranslateY = TranslateY - size(A, 2);
-%     end
-%     if (x > size(A, 1)/2)
-%         TranslateX = TranslateX - size(A, 1);
-%     end
-
-
-% great debugging tool below.
-% figure
-% imshow(c, [min(c(:)), max(c(:))]);
-% figure
-% imshow(c, [0, 255]);
-% ycoords = (1:size(A,1))+floor(size(template,1)/2)
-% xcoords = (1:size(A,2))+floor(size(template,2)/2)
-% c(ycoords, xcoords) = A;
-% imshow(c, [0, 255]);
-% 
-% ytrans = (1:size(template,1))+ypeak-floor(size(template,1)/2);
-% xtrans = (1:size(template,2))+xpeak-floor(size(template,2)/2);
-% c(ytrans, xtrans) = template;
-% imshow(c, [0, 255]);
