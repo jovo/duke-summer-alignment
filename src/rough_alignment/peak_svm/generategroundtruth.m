@@ -83,6 +83,10 @@ for i=1:count+1
     end
 end
 
+% delete temp matfile
+clear data;
+delete(filename);
+
 % remove naN feature matrix rows and cols
 nonzerocols = ~all(isnan(XT),1);
 nonzerorows = ~all(isnan(XT),2);
