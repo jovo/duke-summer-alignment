@@ -11,13 +11,13 @@ classdef matrix2params_test < matlab.unittest.TestCase
             matrix = [c1;c2;[randn(1,2),1]];
             params = matrix2params(matrix);
             
-            %transformations 
+            % transformations 
             actTx = params(2);
             expTx = matrix(3,1);
             actTy = params(1);
             expTy = matrix(3,2);
             
-            if params(3) < 0;
+            if params(3) < 0; 
                 actTHETA = round((params(3)+360)*1e10)*(1e-10);
                 expTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
             else
