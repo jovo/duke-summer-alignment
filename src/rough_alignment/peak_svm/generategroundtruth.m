@@ -37,9 +37,6 @@ for i=1:count    % iterate through each random sample
     data.IStackNew(1:cursize,1:cursize,1:zsize,i+1) = curStack;
     clear curStack;
     data.IStackSize(i+1,:) = [cursize, cursize];
-
-    whos
-
 end
 clear IStack;
 
@@ -91,9 +88,6 @@ for i=1:count+1
         counterF = counterF + 1;
 
     end
-
-    whos
-
 end
 
 % delete temp matfile
@@ -115,8 +109,6 @@ YF = false(size(XF,1),1);
 % concatenate true and false entries
 X = [XT; XF];
 Y = [YT; YF];
-
-whos
 
 toc
 
