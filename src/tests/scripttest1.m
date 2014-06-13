@@ -1,12 +1,9 @@
 
 
-template = imageAC4(1:1000, 1:1000, 1);
-A = imageAC4(1:1000, 1:1000, 1);
-A = A(200:800,200:800);
-template2 = imrotate(template, 98);
-template2 = template2(200:800,200:800);
-figure; imshowpair(A, template2, 'montage')
-[tform,merged] = xcorr2imgs(template2, A,'align','pad');
+template = data1(:,:,1);
+A = data1(:,:,2);
+figure; imshowpair(A, template, 'montage')
+[tform,merged] = xcorr2imgs(template, A,'align','pad');
 figure; imshowpair(merged(:,:,1), merged(:,:,2), 'diff');
 
 % c = normxcorr2(template, A);
