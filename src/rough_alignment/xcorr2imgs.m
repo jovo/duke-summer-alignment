@@ -133,31 +133,37 @@ c2 = normxcorr2(RotatedT2, Atemp2);
 % f1 = getpeakfeatures(c1, ypeak1, xpeak1)
 % f2 = getpeakfeatures(c2, ypeak2, xpeak2)
 if classify
-    [y1, x1] = detectpeaksvm(c1, classifier, RotatedT1, Atemp1);
-    [y2, x2] = detectpeaksvm(c2, classifier, RotatedT2, Atemp2);
+    [y1, x1] = detectpeaksvm(c1, classifier);
+    [y2, x2] = detectpeaksvm(c2, classifier);
 else
-    [y1, x1, y2, x2] = detectpeakcmp(c1, c2, RotatedT1, Atemp1, RotatedT2, Atemp2);
+    [y1, x1] = find(c1==max(c1(:)));
+    [y2, x2] = find(c2==max(c2(:)));
 %     [y1, x1] = detectpeakxcorr(c1, ceil(length(c1)/8), 'gaussian', 'yx');
 %     [y2, x2] = detectpeakxcorr(c2, ceil(length(c2)/8), 'gaussian', 'yx');
-end 
-if x1 == -1
-    max1 = 0;
-else
-    max1 = c1(y1, x1);
 end
-if x2 == -1
-    max2 = 0;
+[errors1, flag1, mnzp1] = errormetrics(cat(3, RotatedT1, Atemp1), 'pxdiff');
+[errors2, flag2, mnzp2] = errormetrics(cat(3, RotatedT2, Atemp2), 'pxdiff');
+select = 0;
+% one is rejected
+if x1 ~= -1 && x2 == -1 && c1(y1,x1) > c2(y2,x2)
+    select = 1;
+elseif x1 == -1 && x2 ~= -1 && c2(y2,x2) > c1(y1,x1)
+    select = 2;
 else
-    max2 = c2(y2, x2);
+    if ~flag1 && c1(y1,x1) > c2(y2,x2) && errors1 < errors2 && mnzp1 > mnzp2
+        select = 1;
+    elseif ~flag2 && c2(y2,x2) > c1(y1,x1) && errors2 < errors1 && mnzp2 > mnzp1
+        select = 2;
+    end
 end
 clear c1 c2 Atemp1 Atemp2;
 % pick rotation that produces the greatest peak
-if max1 > max2
+if select == 1
     RotatedT = RotatedT1;
     THETA = THETA1;
     TranslateY = y1 - size(RotatedT, 1);
     TranslateX = x1 - size(RotatedT, 2);
-elseif max1 < max2
+elseif select == 2
     RotatedT = RotatedT2;
     THETA = THETA2;
     TranslateY = y2 - size(RotatedT, 1);
