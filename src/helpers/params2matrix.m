@@ -1,6 +1,6 @@
 function [ matrix ] = params2matrix( params )
-%PARAMS2MATRIX Convert transformation parameters to matrix form
-%   Detailed explanation goes here
+%PARAMS2MATRIX Converts transformation parameters to matrix form
+%   Takes vector of parameters and converts into 3-by-3 matrix 
 
 TranslateY = params(1);
 TranslateX = params(2);
