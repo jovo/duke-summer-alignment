@@ -53,7 +53,7 @@ if featuret(4) < threshold || featuret(4) > 1/threshold
     [newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
     newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
     [newtform,merged] = xcorr2imgs(newT, newA, 'align', 'pad');
-    figure; imshowpair(merged(:,:,1), merged(:,:,2));
+%     figure; imshowpair(merged(:,:,1), merged(:,:,2), 'montage');
     updatedtform = prevtform * newtform;
     merged = affinetransform(T, A, updatedtform);
 else

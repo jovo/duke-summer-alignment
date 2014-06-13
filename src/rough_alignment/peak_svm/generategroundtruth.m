@@ -53,8 +53,8 @@ for i=1:count+1
     xsize = data.IStackSize(i,2);
 
     % compute transformation parameters
-    randY = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize)/20);
-    randX = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize)/20);
+    randY = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize));
+    randX = floor(random('beta',1,3,[zsize-1,1]) * min(ysize,xsize));
     randT = 5 + random('beta',1,3,[zsize-1,1]) * 350;
     randS = random('beta',1,3,[zsize-1,1]) * 1.1;
     Tparam = [randY, randX, randT, randS];

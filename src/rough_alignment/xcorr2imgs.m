@@ -121,19 +121,25 @@ end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
-[RotatedT1, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 2);
-[RotatedT2, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 2);
-[Atemp, yshiftedA, xshiftedA] = rmzeropadding(A, 2);
-c1 = normxcorr2(RotatedT1, Atemp);
-c2 = normxcorr2(RotatedT2, Atemp);
+[RotatedT1, ysmin1, xsmin1, ysmax1, xsmax1] = rmzeropadding(RotatedT1, 2);
+[RotatedT2, ysmin2, xsmin2, ysmax2, xsmax2] = rmzeropadding(RotatedT2, 2);
+Atemp1 = A(1+ysmin1:size(A,1)-ysmax1, 1+xsmin1:size(A,1)-xsmax1);
+Atemp2 = A(1+ysmin2:size(A,1)-ysmax2, 1+xsmin2:size(A,1)-xsmax2);
+c1 = normxcorr2(RotatedT1, Atemp1);
+c2 = normxcorr2(RotatedT2, Atemp2);
+% [ypeak1, xpeak1] = find(c1==max(c1(:)));
+% [ypeak2, xpeak2] = find(c2==max(c2(:)));
+% format long g
+% f1 = getpeakfeatures(c1, ypeak1, xpeak1)
+% f2 = getpeakfeatures(c2, ypeak2, xpeak2)
 if classify
-    [y1, x1] = detectpeakml(c1, classifier);
-    [y2, x2] = detectpeakml(c2, classifier);
+    [y1, x1] = detectpeaksvm(c1, classifier, RotatedT1, Atemp1);
+    [y2, x2] = detectpeaksvm(c2, classifier, RotatedT2, Atemp2);
 else
-    [y1, x1, y2, x2] = detectpeakcmp(c1, c2, RotatedT1, Atemp, RotatedT2, Atemp);
-%     [y1, x1] = detectpeak(c1, ceil(length(c1)/8), 'gaussian', 'yx');
-%     [y2, x2] = detectpeak(c2, ceil(length(c2)/8), 'gaussian', 'yx');
-end
+    [y1, x1, y2, x2] = detectpeakcmp(c1, c2, RotatedT1, Atemp1, RotatedT2, Atemp2);
+%     [y1, x1] = detectpeakxcorr(c1, ceil(length(c1)/8), 'gaussian', 'yx');
+%     [y2, x2] = detectpeakxcorr(c2, ceil(length(c2)/8), 'gaussian', 'yx');
+end 
 if x1 == -1
     max1 = 0;
 else
@@ -144,18 +150,18 @@ if x2 == -1
 else
     max2 = c2(y2, x2);
 end
-clear c1 c2;
+clear c1 c2 Atemp1 Atemp2;
 % pick rotation that produces the greatest peak
 if max1 > max2
     RotatedT = RotatedT1;
     THETA = THETA1;
-    TranslateY = y1 - size(RotatedT, 1) - yshifted1 + yshiftedA;
-    TranslateX = x1 - size(RotatedT, 2) - xshifted1 + xshiftedA;
+    TranslateY = y1 - size(RotatedT, 1);
+    TranslateX = x1 - size(RotatedT, 2);
 elseif max1 < max2
     RotatedT = RotatedT2;
     THETA = THETA2;
-    TranslateY = y2 - size(RotatedT, 1) - yshifted2 + yshiftedA;
-    TranslateX = x2 - size(RotatedT, 2) - xshifted2 + xshiftedA;
+    TranslateY = y2 - size(RotatedT, 1);
+    TranslateX = x2 - size(RotatedT, 2);
 else
     THETA = 0;
     TranslateX = 0;

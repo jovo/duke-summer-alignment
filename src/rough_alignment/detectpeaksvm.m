@@ -1,6 +1,6 @@
-function [ ypeak, xpeak ] = detectpeakml( c, classifier )
+function [ ypeak, xpeak ] = detectpeaksvm( c, classifier, img1, img2 )
 %DETECTPEAKSVM Binary classification of peaks with a Support Vector Machine
-%   [ ypeak, xpeak ] = detectpeakml( c, classifier )
+%   [ ypeak, xpeak ] = detectpeaksvm( c, classifier, img1, img2 )
 
 N = 5;     % indicate # of possible peak points to classify
 csorted = sort(c(:), 1, 'descend');   % sort the image by intensity

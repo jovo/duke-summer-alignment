@@ -7,7 +7,16 @@ sizeyimg = size(img,1);
 sizeximg = size(img,2);
 cropsy = floor(sizeyimg/30);
 cropsx = floor(sizeximg/30);
-features = NaN(1,8);
+features = NaN(1,6);
+
+% get binary image
+imgbw = im2bw(img, max(img(:))*0.5);
+rp = regionprops(imgbw);
+cc = bwconncomp(imgbw);
+
+features(1) = sizeyimg*sizeximg;
+features(2) = rp.Area;
+features(3) = cc.NumObjects;
 
 % normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
@@ -30,9 +39,12 @@ sizexcrop = size(c,2);
 
 % gradient, Laplacian
 [Gmag, ~] = imgradient(c);
-features(1) = max(max(Gmag));
+features(4) = max(max(Gmag));
 [Lmag, ~] = imgradient(Gmag);
-features(2) = max(max(Lmag));
+features(5) = max(max(Lmag));
+
+% statistics
+features(6) = skewness(double(c(:)));
 
 % figure; imshow(Gmag, [min(Gmag(:)),max(Gmag(:))]);
 % hold on
@@ -42,38 +54,6 @@ features(2) = max(max(Lmag));
 % hold on
 % plot(xpeakcrop, ypeakcrop, 'ro');
 % hold off
-
-% statistics
-features(3) = mean(double(c(:)));
-features(4) = skewness(double(c(:))); % negative skew = skewed left
-
-% counts # pixels within certain range (exp correct = small)
-cBinary = roicolor(c,230,255); % lower bound arbitrarily set at 230
-[ymax, ~, ~] = find(cBinary);
-features(5) = size(ymax,1)./(size(cBinary,1)*size(cBinary,2));
-
-% image edge pixels statistics
-left = c(:,1);
-right = c(:,sizexcrop);
-top = c(1,2:sizexcrop-1)';
-bottom = c(sizeycrop,2:sizexcrop-1)';
-edge = [left;right;top;bottom];
-features(6) = mean(edge);
-
-
-% correlate with gaussian
-y1 = normpdf(-cropsy:cropsy, 0, cropsy*2/10);
-y2 = normpdf(-cropsx:cropsx, 0, cropsy*2/10);
-template = y1'*y2;
-% size(template)
-% size(c)
-cor = normxcorr2(template, c);
-cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
-% figure; imshow(template, [min(template(:)),max(template(:))]);
-% figure; imshowpair(cor, c, 'montage');
-features(7) = max(cor(:));
-
-features(8) = sizeyimg*sizeximg;
 
 % contour map
 % imcontour(c);

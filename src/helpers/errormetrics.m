@@ -1,7 +1,7 @@
-function [ Error, flag ] = errormetrics( M, type, varargin )
+function [ Error, flag, nonzeropercent ] = errormetrics( M, type, varargin )
 %ERRORMETRICS Computes a variety of error metrics for image stack. 
-%   [ Error, flag ] = errormetrics( M, type )
-%   [ Error, flag ] = errormetrics( M, type, warn, maxval, minimum ) M is the
+%   [ Error, flag, nonzeropercent ] = errormetrics( M, type )
+%   [ Error, flag, nonzeropercent ] = errormetrics( M, type, warn, maxval, minimum ) M is the
 %   image stack, 'type' specifies which type of error you wish to compute.
 %   Error is an array of size [size(M,3)-1]. Error(i) returns the error
 %   between images i and i+1 in stack. minimum is the smallest percentage
@@ -50,7 +50,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
@@ -71,7 +72,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
@@ -92,7 +94,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
@@ -113,7 +116,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
