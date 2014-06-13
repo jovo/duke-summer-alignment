@@ -123,14 +123,14 @@ end
 % transformation parameters.
 [RotatedT1, yshifted1, xshifted1] = rmzeropadding(RotatedT1, 2);
 [RotatedT2, yshifted2, xshifted2] = rmzeropadding(RotatedT2, 2);
-c1 = normxcorr2(RotatedT1, A);
-c2 = normxcorr2(RotatedT2, A);
+[Atemp, yshiftedA, xshiftedA] = rmzeropadding(A, 2);
+c1 = normxcorr2(RotatedT1, Atemp);
+c2 = normxcorr2(RotatedT2, Atemp);
 if classify
     [y1, x1] = detectpeakml(c1, classifier);
     [y2, x2] = detectpeakml(c2, classifier);
 else
-    [y1, x1] = find(c1==max(c1(:)));
-    [y2, x2] = find(c2==max(c2(:)));
+    [y1, x1, y2, x2] = detectpeakcmp(c1, c2, RotatedT1, Atemp, RotatedT2, Atemp);
 %     [y1, x1] = detectpeak(c1, ceil(length(c1)/8), 'gaussian', 'yx');
 %     [y2, x2] = detectpeak(c2, ceil(length(c2)/8), 'gaussian', 'yx');
 end
@@ -149,13 +149,13 @@ clear c1 c2;
 if max1 > max2
     RotatedT = RotatedT1;
     THETA = THETA1;
-    TranslateY = y1 - size(RotatedT, 1) - yshifted1 + 2;
-    TranslateX = x1 - size(RotatedT, 2) - xshifted1 + 2;
+    TranslateY = y1 - size(RotatedT, 1) - yshifted1 + yshiftedA;
+    TranslateX = x1 - size(RotatedT, 2) - xshifted1 + xshiftedA;
 elseif max1 < max2
     RotatedT = RotatedT2;
     THETA = THETA2;
-    TranslateY = y2 - size(RotatedT, 1) - yshifted2 + 2;
-    TranslateX = x2 - size(RotatedT, 2) - xshifted2 + 2;
+    TranslateY = y2 - size(RotatedT, 1) - yshifted2 + yshiftedA;
+    TranslateX = x2 - size(RotatedT, 2) - xshifted2 + xshiftedA;
 else
     THETA = 0;
     TranslateX = 0;

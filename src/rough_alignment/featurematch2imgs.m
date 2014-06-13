@@ -50,7 +50,10 @@ tparams = [0, 0, featuret(3), 1];
 prevtform = params2matrix(tparams);
 if featuret(4) < threshold || featuret(4) > 1/threshold
     tempmerged = affinetransform(T, A, prevtform);
-    newtform = xcorr2imgs(tempmerged(:,:,1), A, '', 'pad');
+    [newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
+    newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
+    [newtform,merged] = xcorr2imgs(newT, newA, 'align', 'pad');
+    figure; imshowpair(merged(:,:,1), merged(:,:,2));
     updatedtform = prevtform * newtform;
     merged = affinetransform(T, A, updatedtform);
 else

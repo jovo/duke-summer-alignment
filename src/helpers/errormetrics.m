@@ -1,7 +1,7 @@
 function [ Error, flag ] = errormetrics( M, type, varargin )
 %ERRORMETRICS Computes a variety of error metrics for image stack. 
-%   [ Error ] = errormetrics( M, type )
-%   [ Error ] = errormetrics( M, type, warn, maxval, minimum ) M is the
+%   [ Error, flag ] = errormetrics( M, type )
+%   [ Error, flag ] = errormetrics( M, type, warn, maxval, minimum ) M is the
 %   image stack, 'type' specifies which type of error you wish to compute.
 %   Error is an array of size [size(M,3)-1]. Error(i) returns the error
 %   between images i and i+1 in stack. minimum is the smallest percentage
