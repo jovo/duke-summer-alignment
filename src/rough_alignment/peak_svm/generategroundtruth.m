@@ -1,9 +1,14 @@
 function [ X, Y, XT, XF ] = generategroundtruth( IStack, count, mindim, maxdim )
 %GENERATEGROUNDTRUTH Generate a bunch of training inputs for classifiers
-%   [ X, Y, XT, XF ] = generategroundtruth( IStack, count, size )
-%   IStack is the stack of images to use to generate ground truth. count
-%   indicates how many samples of dimension randomly between mindim and
-%   maxdim to to take for each image.
+%   [ X, Y, XT, XF ] = generategroundtruth( IStack, count, mindim, maxdim )
+%   IStack is the stack of images used to generate all training cases.
+%   count indicates the number of iterations over the IStack. At each
+%   iteration, an image size of dimension from mindim to maxdim is chosen
+%   from a distribution. This image size applies to all images in IStack,
+%   cross-correlation of adjacent images is computed and feature vectors
+%   are extracted. X are all the feature vectors, and Y contains the
+%   labels. XT are all the feature vectors with true label, XF are all the
+%   feature vectors with false label.
 
 % access size of inputs for training image stack
 ysize = size(IStack, 1);
