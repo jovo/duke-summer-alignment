@@ -1,37 +1,40 @@
+A = imageAC4(:,:,1);
+T = imageAC4(:,:,2);
+c = normxcorr2(T,A);
+[ypeak, xpeak] = find(c==max(c(:)));
+cbw = im2bw(c, max(max(c))*0.5);
+figure; imshowpair(c, cbw,'montage');
+hold on
+plot(xpeak, ypeak,'ro');
+A1 = A(1:512,1:512);
+T1 = T(1:512,1:512);
+c1 = normxcorr2(T1,A1);
+[ypeak1, xpeak1] = find(c1==max(c1(:)));
+c1bw = im2bw(c1, max(max(c1))*0.5);
+figure; imshowpair(c1, c1bw,'montage');
+hold on
+plot(xpeak1, ypeak1,'ro');
+A2 = A(1:256, 1:256);
+T2 = T(1:256, 1:256);
+c2 = normxcorr2(T2,A2);
+[ypeak2, xpeak2] = find(c2==max(c2(:)));
+c2bw = im2bw(c2, max(max(c2))*0.5);
+cc2 = bwconncomp(c2bw);
+figure; imshowpair(c2, c2bw,'montage');
+hold on
+plot(xpeak2, ypeak2,'ro');
+
+feat = getpeakfeatures(c, ypeak, xpeak);
+feat1 = getpeakfeatures(c1, ypeak1, xpeak1);
+feat2 = getpeakfeatures(c2, ypeak2, xpeak2);
 
 
-template = data1(:,:,1);
-A = data1(:,:,2);
-figure; imshowpair(A, template, 'montage')
-[tform,merged] = xcorr2imgs(template, A,'align','pad');
-figure; imshowpair(merged(:,:,1), merged(:,:,2), 'diff');
+A3 = A;
+T3 = imrotate(T,23, 'nearest','crop');
+c3 = normxcorr2(T3,A3);
+[ypeak3, xpeak3] = find(c3==max(c3(:)));
+c3bw = im2bw(c3, max(max(c3))*0.5);
+cc3 = bwconncomp(c3bw);
+figure; imshowpair(c3, c3bw,'montage');
 
-% c = normxcorr2(template, A);
-% figure; imshow(c, [min(c(:)),max(c(:))]);
-% [tform, merged] = featurematch2imgs(template, A, 0.5);
-
-
-
-
-
-% % images different size, correlate rotation
-% A = imageAC4(1:512, 1:512, 1);
-% template = imageAC4(1:100, 1:100, 1);
-% 
-% % pad to same size?
-% yaddpad = max(size(A, 1), size(template, 1));
-% xaddpad = max(size(A, 2), size(template, 2));
-% A = padarray(A, [yaddpad-size(A, 1), xaddpad-size(A, 2)], 0, 'post');
-% template = padarray(template, [yaddpad-size(template, 1), xaddpad-size(template, 2)], 0 ,'post');
-% Aham = hamming2dwindow(A);
-% templateham = hamming2dwindow(template);
-% 
-% 
-%     ypadd = min(floor(size(A, 1)/2), floor(size(templateham, 1)/2));
-%     xpadd = min(floor(size(A, 2)/2), floor(size(templateham, 2)/2));
-%     Aham = padarray(Aham, [ypadd, xpadd]);
-%     templateham = padarray(templateham, [ypadd, xpadd]);
-% 
-% c1 = normxcorr2(template,A);
-% c2 = normxcorr2(templateham,Aham);
-% figure; imshowpair(c1, c2, 'montage');
+feat3 = getpeakfeatures(c3, ypeak3, xpeak3);

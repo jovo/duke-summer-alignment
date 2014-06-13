@@ -129,8 +129,10 @@ if classify
     [y1, x1] = detectpeakml(c1, classifier);
     [y2, x2] = detectpeakml(c2, classifier);
 else
-    [y1, x1] = detectpeak(c1, ceil(length(c1)/8), 'gaussian', 'yx');
-    [y2, x2] = detectpeak(c2, ceil(length(c2)/8), 'gaussian', 'yx');
+    [y1, x1] = find(c1==max(c1(:)));
+    [y2, x2] = find(c2==max(c2(:)));
+%     [y1, x1] = detectpeak(c1, ceil(length(c1)/8), 'gaussian', 'yx');
+%     [y2, x2] = detectpeak(c2, ceil(length(c2)/8), 'gaussian', 'yx');
 end
 if x1 == -1
     max1 = 0;
