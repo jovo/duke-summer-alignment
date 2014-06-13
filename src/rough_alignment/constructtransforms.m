@@ -50,7 +50,7 @@ for i=1:looplength
     invariantparam = besttparam;
     bounds = 360/min(min(size(img1), size(img2)));
     for theta = linspace(-bounds, bounds, 6);
-        tempparam = invariantparam + [0, 0, theta, 0, 0];
+        tempparam = invariantparam + [0, 0, theta];
         tempaligned = affinetransform(img2, img1, params2matrix(tempparam));
         [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', '', intmax);
         if ~tempflag && temperror < besterror

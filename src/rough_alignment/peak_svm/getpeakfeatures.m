@@ -7,16 +7,14 @@ sizeyimg = size(img,1);
 sizeximg = size(img,2);
 cropsy = floor(sizeyimg/30);
 cropsx = floor(sizeximg/30);
-features = NaN(1,6);
+features = NaN(1,5);
 
 % get binary image
 imgbw = im2bw(img, max(img(:))*0.5);
 rp = regionprops(imgbw);
-cc = bwconncomp(imgbw);
 
 features(1) = sizeyimg*sizeximg;
 features(2) = rp.Area;
-features(3) = cc.NumObjects;
 
 % normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
@@ -39,12 +37,12 @@ sizexcrop = size(c,2);
 
 % gradient, Laplacian
 [Gmag, ~] = imgradient(c);
-features(4) = max(max(Gmag));
+features(3) = max(max(Gmag));
 [Lmag, ~] = imgradient(Gmag);
-features(5) = max(max(Lmag));
+features(4) = max(max(Lmag));
 
 % statistics
-features(6) = skewness(double(c(:)));
+features(5) = skewness(double(c(:)));
 
 % figure; imshow(Gmag, [min(Gmag(:)),max(Gmag(:))]);
 % hold on

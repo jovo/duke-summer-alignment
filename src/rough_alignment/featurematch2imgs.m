@@ -6,15 +6,6 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 %   scale the images before matching to improve efficiency. If feature
 %   matching does a poor job, reverts back to xcorr methods.
 
-% retrieve global variable
-global scalethreshold;
-if isempty(scalethreshold)
-    scalethreshold = 1.05;
-end
-
-% threshold for possible image scaling.
-threshold = scalethreshold;
-
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 T = uint8(T);
@@ -46,18 +37,13 @@ end
 
 % determine transformations
 featuret = matrix2params(tform.T);
-tparams = [0, 0, featuret(3), 1];
+tparams = [0, 0, featuret(3)];
 prevtform = params2matrix(tparams);
-if featuret(4) < threshold || featuret(4) > 1/threshold
-    tempmerged = affinetransform(T, A, prevtform);
-    [newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
-    newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
-    [newtform,merged] = xcorr2imgs(newT, newA, 'align', 'pad');
+tempmerged = affinetransform(T, A, prevtform);
+[newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
+newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
+[newtform,merged] = xcorr2imgs(newT, newA, 'align', 'pad');
 %     figure; imshowpair(merged(:,:,1), merged(:,:,2), 'montage');
-    updatedtform = prevtform * newtform;
-    merged = affinetransform(T, A, updatedtform);
-else
-    [updatedtform, merged] = xcorr2imgs(T, A, 'align', 'pad');
-end
-
+updatedtform = prevtform * newtform;
+merged = affinetransform(T, A, updatedtform);
 end

@@ -1,6 +1,6 @@
 function [ Transforms, Merged, flag ] = xcorr2imgs( template, A, varargin )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
-%translation and/or rotation.
+%translation and/or rotation. Assumed for scale to always be 1.
 %   Performs automated alignment to template and A. performs the same
 %   transformations to templateStack and AStack, respectively.
 %   [ Transforms, Merged, flag ] = xcorr2imgs( template, A )
@@ -18,12 +18,8 @@ function [ Transforms, Merged, flag ] = xcorr2imgs( template, A, varargin )
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 
 % retrieve global variables
-global scalethreshold peakclassifier;
-% threshold for possible scaling.
-if isempty(scalethreshold)
-    scalethreshold = 1.05;
-end
-threshold = scalethreshold;
+global peakclassifier;
+
 % whether to use a trained classifier
 classify = 0;
 if strcmpi(class(peakclassifier), 'ClassificationSVM')
@@ -36,6 +32,7 @@ if std(double(template(:))) == 0 || std(double(A(:))) == 0
     warning('XCORR2IMGS: one image is completely flat; no transformations performed');
     Transforms = eye(3);
     Merged = cat(3, template, A);
+    flag = 1;
     return;
 end
 
@@ -79,7 +76,7 @@ Amod = highpass(abs(fftshift(Amod)));
 Tmod = highpass(abs(fftshift(Tmod)));
 
 % Resample image in log-polar coordinates.
-[Tmod, rhoaxis] = log_polar(Tmod);
+[Tmod, ~] = log_polar(Tmod);
 Amod = log_polar(Amod);
 clear filteredFT filteredFA;
 
@@ -87,37 +84,15 @@ clear filteredFT filteredFA;
 xpowerspec = fft2(Amod).*conj(fft2(Tmod));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
 clear xpowerspec Amod Tmod;
-[rhopeak, thetapeak] = find(c==max(c(:)));
-% [rhopeak, thetapeak] = detectpeaks(c, ceil(length(c)/8), 'gaussian', 'rt');
-if rhopeak > size(c, 1)/2    % template scaled down to match A
-    rhoindex = size(c,1) - rhopeak + 1;
-    SCALE = 1/rhoaxis(rhoindex);
-else    % template scaled up to match A
-    SCALE = rhoaxis(rhopeak);
-end
-% assume scaling is always 1 for now.
-if SCALE > threshold || SCALE < 1/threshold     % threshold against excessive/wrong scaling
-    SCALE = 1;
-    THETA1 = 0;
-    THETA2 = 0;
-    warning('scaling exceeded threshold. Potentially failed alignment');
-else
-    SCALE = 1;
-    th = (thetapeak - 1) * 360 / size(c, 2);
-    THETA1 = -th;
-    THETA2 = -th - 180;
-end
+[~, thetapeak] = find(c==max(c(:)));
+th = (thetapeak - 1) * 360 / size(c, 2);
+THETA1 = -th;
+THETA2 = -th - 180;
 clear c;
 
 % rotate template image two possible ways.
 RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
 RotatedT2 = imrotate(template, THETA2, 'nearest', 'crop');
-
-% scale each potential template image
-if SCALE ~= 1
-    RotatedT1 = imresize(RotatedT1, 1/SCALE);
-    RotatedT2 = imresize(RotatedT2, 1/SCALE);
-end
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
@@ -178,7 +153,7 @@ end
 clear RotatedT1 RotatedT2
 
 % save transformations
-Transforms = params2matrix([TranslateY, TranslateX, THETA, SCALE]);
+Transforms = params2matrix([TranslateY, TranslateX, THETA]);
 
 % if align is true, applies transformations
 Merged = [];
