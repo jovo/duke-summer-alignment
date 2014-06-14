@@ -1,7 +1,7 @@
-function [ Error, flag ] = errormetrics( M, type, varargin )
+function [ Error, flag, nonzeropercent ] = errormetrics( M, type, varargin )
 %ERRORMETRICS Computes a variety of error metrics for image stack. 
-%   [ Error ] = errormetrics( M, type )
-%   [ Error ] = errormetrics( M, type, warn, maxval, minimum ) M is the
+%   [ Error, flag, nonzeropercent ] = errormetrics( M, type )
+%   [ Error, flag, nonzeropercent ] = errormetrics( M, type, warn, maxval, minimum ) M is the
 %   image stack, 'type' specifies which type of error you wish to compute.
 %   Error is an array of size [size(M,3)-1]. Error(i) returns the error
 %   between images i and i+1 in stack. minimum is the smallest percentage
@@ -13,17 +13,7 @@ function [ Error, flag ] = errormetrics( M, type, varargin )
 %   Options: 
 %   'psnr': Signal-to-Noise Ratio (PSNR)
 %   'mse': Mean-Squared Error (MSE)
-%   'sse': Sum-Squared Error (SSE)
 %   'pxdiff': Mean Pixel intensity difference
-
-% retrieve global variable
-global minnonzeropercent;
-if isempty(minnonzeropercent)
-    minnonzeropercent = 0.3;
-end
-
-% minimum acceptable proportion of alignment overlap.
-minimum = minnonzeropercent;
 
 % validate inputs
 narginchk(2,5);
@@ -50,7 +40,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
@@ -71,7 +62,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');
@@ -85,27 +77,6 @@ switch lower(type)
                 Error(i) = mean(mean((i1 - i2).^2));
             end
         end
-    case 'sse'
-        flag = zeros(1,size(M,3)-1);
-        for i=1:size(M,3)-1
-            i1 = M(:,:,i);
-            i2 = M(:,:,i+1);
-            imgOR = i1 ~= 0 | i2 ~= 0;
-            zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
-                flag(1,i) = 1;
-                if warn
-                    warning('majority of elements are zeros');
-                end
-            end
-            if ~isnan(maxval) && flag(1,i)
-                Error(i) = maxval;
-            else
-                i1(zeroE) = [];
-                i2(zeroE) = [];
-                Error(i) = sum(sum((i1 - i2).^2));
-            end
-        end
     case 'pxdiff'
         flag = zeros(1,size(M,3)-1);
         for i=1:size(M,3)-1
@@ -113,7 +84,8 @@ switch lower(type)
             i2 = M(:,:,i+1);
             imgOR = i1 ~= 0 | i2 ~= 0;
             zeroE =  i1 == 0 | i2 == 0;
-            if sum(sum(~zeroE))/sum(sum(imgOR)) < minimum;
+            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
+            if nonzeropercent < minimum;
                 flag(1,i) = 1;
                 if warn
                     warning('majority of elements are zeros');

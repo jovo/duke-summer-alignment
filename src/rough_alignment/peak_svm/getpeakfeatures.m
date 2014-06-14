@@ -7,75 +7,46 @@ sizeyimg = size(img,1);
 sizeximg = size(img,2);
 cropsy = floor(sizeyimg/30);
 cropsx = floor(sizeximg/30);
-features = NaN(1,6);
 
 % normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
 img = uint8(img.*(255/max(img(:))));    % range from 0 to 255
 
-% padarray and crop
-img = padarray(img, [cropsy, cropsx], 'symmetric');
+% padarray (in case peak is at edge) and update peak location
+imgpad = padarray(img, [cropsy, cropsx], 'symmetric');
 yp = ypeak+cropsy;
 xp = xpeak+cropsx;
-c = img(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
-ypeakcrop = 1+cropsy;
-xpeakcrop = 1+cropsx;
-sizeycrop = size(c,1);
-sizexcrop = size(c,2);
 
-% figure; imshow(c, [min(c(:)),max(c(:))]);
-% hold on
-% plot(xpeakcrop, ypeakcrop, 'ro');
-% hold off
+% crop padded image
+croppedimg = imgpad(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
 
-% gradient, Laplacian
-[Gmag, ~] = imgradient(c);
-features(1) = max(max(Gmag));
+% regionprops on binary image
+bw = im2bw(croppedimg, 0.95);
+rp = regionprops(bw);
+if size(rp) == [0,1]
+    rparea = 0;
+else
+    rparea = rp.Area;
+end
+
+% compute Gradient and  Laplacian
+[Gmag, ~] = imgradient(croppedimg);
 [Lmag, ~] = imgradient(Gmag);
-features(2) = max(max(Lmag));
 
-% figure; imshow(Gmag, [min(Gmag(:)),max(Gmag(:))]);
+% extract feature vector
+features = NaN(1,5);
+features(1) = sizeyimg*sizeximg;    % # of pixels
+features(2) = rparea;  % area of binary 'on' region
+features(3) = max(max(Gmag));
+features(4) = max(max(Lmag));
+features(5) = skewness(double(croppedimg(:)));
+
+% ypeakcrop = 1+cropsy;
+% xpeakcrop = 1+cropsx;
+% figure; subplot(2,1,1);  subimage(croppedimg);
 % hold on
 % plot(xpeakcrop, ypeakcrop, 'ro');
 % hold off
-% figure; imshow(Lmag, [min(Lmag(:)),max(Lmag(:))]);
-% hold on
-% plot(xpeakcrop, ypeakcrop, 'ro');
-% hold off
-
-% statistics
-features(3) = mean(double(c(:)));
-features(4) = skewness(double(c(:))); % negative skew = skewed left
-
-% counts # pixels within certain range (exp correct = small)
-cBinary = roicolor(c,230,255); % lower bound arbitrarily set at 230
-[ymax, ~, ~] = find(cBinary);
-features(5) = size(ymax,1)./(size(cBinary,1)*size(cBinary,2));
-
-% image edge pixels statistics
-left = c(:,1);
-right = c(:,sizexcrop);
-top = c(1,2:sizexcrop-1)';
-bottom = c(sizeycrop,2:sizexcrop-1)';
-edge = [left;right;top;bottom];
-features(6) = mean(edge);
-
-
-% correlate with gaussian
-y1 = normpdf(-cropsy:cropsy, 0, cropsy*2/10);
-y2 = normpdf(-cropsx:cropsx, 0, cropsy*2/10);
-template = y1'*y2;
-% size(template)
-% size(c)
-cor = normxcorr2(template, c);
-cor = cor(1+cropsy:size(c,1)+cropsy, 1+cropsx:size(c,2)+cropsx);
-% figure; imshow(template, [min(template(:)),max(template(:))]);
-% figure; imshowpair(cor, c, 'montage');
-features(7) = max(cor(:));
-
-% contour map
-% imcontour(c);
-% find highest value contour line, within region of x pixels around it,
-% are there multiple contour line values??
+% subplot(2,1,2); subimage(bw);
 
 end
