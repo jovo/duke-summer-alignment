@@ -1,14 +1,10 @@
 function [ svm ] = trainpeakclassifier( X, Y )
 %TRAINPEAKCLASSFIER Trains a binary SVM classfier for peak detection
-%   Detailed explanation goes here
-
-tic
+%   [ svm ] = trainpeakclassifier( X, Y ) X and Y are the input feature
+%   vectors and labels, svm is the svm of class ClassificationSVM.
 
 % train and cross-validate SVM
-SVMModel = fitcsvm(X, Y, 'Standardize', true, 'ClassNames', logical([0,1]));
-CSVMModel = crossval(SVMModel);
-svm = fitSVMPosterior(CSVMModel);
-
-toc
+model = fitcsvm(X, Y, 'Standardize', true, 'ClassNames', logical([0,1]));
+svm = fitSVMPosterior(model);
 
 end
