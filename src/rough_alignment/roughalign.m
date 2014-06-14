@@ -11,6 +11,12 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 
 tic
 
+% retrieve global variable
+global errormeasure;
+if isempty(errormeasure)
+    errormeasure = 'mse';
+end
+
 % validate inputs
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
@@ -36,8 +42,8 @@ M_new = [];
 if align
     M_new = constructalignment(M, Transforms);
     % output error report for both original and aligned stacks.
-    [originalerror, original] = errorreport(M, 'Original', 'pxdiff');
-    [alignederror, aligned] = errorreport(M_new, 'Aligned', 'pxdiff');
+    [originalerror, original] = errorreport(M, 'Original', errormeasure);
+    [alignederror, aligned] = errorreport(M_new, 'Aligned', errormeasure);
     disp('Error improvement:');
     disp(originalerror-alignederror);
     disp(original);

@@ -13,7 +13,6 @@ function [ Error, flag, nonzeropercent ] = errormetrics( M, type, varargin )
 %   Options: 
 %   'psnr': Signal-to-Noise Ratio (PSNR)
 %   'mse': Mean-Squared Error (MSE)
-%   'sse': Sum-Squared Error (SSE)
 %   'pxdiff': Mean Pixel intensity difference
 
 % retrieve global variable
@@ -85,28 +84,6 @@ switch lower(type)
                 i1(zeroE) = [];
                 i2(zeroE) = [];
                 Error(i) = mean(mean((i1 - i2).^2));
-            end
-        end
-    case 'sse'
-        flag = zeros(1,size(M,3)-1);
-        for i=1:size(M,3)-1
-            i1 = M(:,:,i);
-            i2 = M(:,:,i+1);
-            imgOR = i1 ~= 0 | i2 ~= 0;
-            zeroE =  i1 == 0 | i2 == 0;
-            nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
-            if nonzeropercent < minimum;
-                flag(1,i) = 1;
-                if warn
-                    warning('majority of elements are zeros');
-                end
-            end
-            if ~isnan(maxval) && flag(1,i)
-                Error(i) = maxval;
-            else
-                i1(zeroE) = [];
-                i2(zeroE) = [];
-                Error(i) = sum(sum((i1 - i2).^2));
             end
         end
     case 'pxdiff'

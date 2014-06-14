@@ -6,6 +6,12 @@ function [ Transforms ] = constructtransforms( M, varargin )
 %   stack, the optional improve parameter attempts to correct faulty
 %   alignments by using adjacent images.
 
+% retrieve global variable
+global errormeasure;
+if isempty(errormeasure)
+    errormeasure = 'mse';
+end
+
 % validate inputs
 improve = 0;
 if nargin == 2 && strcmpi(varargin{1}, 'improve')
@@ -31,10 +37,10 @@ for i=1:looplength
     img1 = data.M(:,:,i);
     img2 = data.M(:,:,i+1);
 
-    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), 'pxdiff', '', intmax);
+    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax);
     % feature match for rough angle alignment, then xcorr for precision.
     [tform1, merged1] = featurematch2imgs(img2, img1);
-    [error1, ~] = errormetrics(merged1, 'pxdiff', '', intmax);
+    [error1, ~] = errormetrics(merged1, errormeasure, '', intmax);
     if error1 < origerrors(1,i)
         tform = tform1;
         error = error1;
@@ -52,7 +58,7 @@ for i=1:looplength
     for theta = linspace(-bounds, bounds, 6);
         tempparam = invariantparam + [0, 0, theta];
         tempaligned = affinetransform(img2, img1, params2matrix(tempparam));
-        [temperror, tempflag] = errormetrics(tempaligned, 'pxdiff', '', intmax);
+        [temperror, tempflag] = errormetrics(tempaligned, errormeasure, '', intmax);
         if ~tempflag && temperror < besterror
             besttparam = tempparam;
             besterror = temperror;
@@ -64,7 +70,7 @@ for i=1:looplength
     % store ids and transforms, and error
     ids(1,i) = {indices2key(i, i+1)};
     tforms(1,i) = {updatedtform};
-    newerrors(1,i) = errormetrics(updatedmerged, 'pxdiff', '', intmax);
+    newerrors(1,i) = errormetrics(updatedmerged, errormeasure, '', intmax);
     errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
 
     % conditions to update error.
@@ -118,7 +124,7 @@ if improve
             A = val2{1};
             preT = A\B;
             pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preT);
-            preTerror = errormetrics(pretf, 'pxdiff', '', intmax);
+            preTerror = errormetrics(pretf, errormeasure, '', intmax);
         else
             preT = eye(3);
             preTerror = intmax;
@@ -130,7 +136,7 @@ if improve
             A = val2{1};
             postT = B/A;
             posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postT);
-            postTerror = errormetrics(posttf, 'pxdiff', '', intmax);
+            postTerror = errormetrics(posttf, errormeasure, '', intmax);
         else
             postT = eye(3);
             postTerror = intmax;
