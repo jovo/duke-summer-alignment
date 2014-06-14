@@ -10,13 +10,21 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 A = uint8(A);
 T = uint8(T);
 
-% apply median filter to filter noise and resize as specified.
+% apply gaussian blur to filter noise and resize as specified.
+hsizeA = floor(size(A)/100);
+hsizeT = floor(size(T)/100);
+sigmaA = floor(size(A,1)/200);
+sigmaT = floor(size(T,1)/200);
+F1 = fspecial('gaussian', hsizeA, sigmaA);
+F2 = fspecial('gaussian', hsizeT, sigmaT);
+
+% validate inputs
 if nargin > 2
-    Ascaled = imresize(medfilt2(A, [10,10]), resize);
-    Tscaled = imresize(medfilt2(T, [10,10]), resize);
+    Ascaled = imresize(imfilter(A, F1), resize);
+    Tscaled = imresize(imfilter(T, F2), resize);
 else
-    Ascaled = medfilt2(A, [10,10]);
-    Tscaled = medfilt2(T, [10,10]);
+    Ascaled = imfilter(A, F1);
+    Tscaled = imfilter(T, F2);
 end
 
 % detect surf features
