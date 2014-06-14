@@ -12,20 +12,20 @@ cropsx = floor(sizeximg/30);
 img = img-min(img(:));  % minimum = 0
 img = uint8(img.*(255/max(img(:))));    % range from 0 to 255
 
-% regionprops on binary image
-bw = im2bw(img, 0.8);
-rp = regionprops(bw);
-
 % padarray (in case peak is at edge) and update peak location
 imgpad = padarray(img, [cropsy, cropsx], 'symmetric');
 yp = ypeak+cropsy;
 xp = xpeak+cropsx;
 
 % crop padded image
-cropped = imgpad(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
+croppedimg = imgpad(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
+
+% regionprops on binary image
+bw = im2bw(croppedimg, 0.95);
+rp = regionprops(bw);
 
 % compute Gradient and  Laplacian
-[Gmag, ~] = imgradient(cropped);
+[Gmag, ~] = imgradient(croppedimg);
 [Lmag, ~] = imgradient(Gmag);
 
 % extract feature vector
@@ -34,11 +34,11 @@ features(1) = sizeyimg*sizeximg;    % # of pixels
 features(2) = rp.Area;  % area of binary 'on' region
 features(3) = max(max(Gmag));
 features(4) = max(max(Lmag));
-features(5) = skewness(double(cropped(:)));
+features(5) = skewness(double(croppedimg(:)));
 
 % ypeakcrop = 1+cropsy;
 % xpeakcrop = 1+cropsx;
-% figure; subplot(2,1,1);  subimage(cropped);
+% figure; subplot(2,1,1);  subimage(croppedimg);
 % hold on
 % plot(xpeakcrop, ypeakcrop, 'ro');
 % hold off
