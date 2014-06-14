@@ -7,55 +7,41 @@ sizeyimg = size(img,1);
 sizeximg = size(img,2);
 cropsy = floor(sizeyimg/30);
 cropsx = floor(sizeximg/30);
-features = NaN(1,5);
-
-% get binary image
-imgbw = im2bw(img, max(img(:))*0.5);
-rp = regionprops(imgbw);
-
-features(1) = sizeyimg*sizeximg;
-features(2) = rp.Area;
 
 % normalize to between 0 and 255 and convert to uint8
 img = img-min(img(:));  % minimum = 0
 img = uint8(img.*(255/max(img(:))));    % range from 0 to 255
 
-% padarray and crop
-img = padarray(img, [cropsy, cropsx], 'symmetric');
+% regionprops on binary image
+bw = im2bw(img, 0.8);
+rp = regionprops(bw);
+
+% padarray (in case peak is at edge) and update peak location
+imgpad = padarray(img, [cropsy, cropsx], 'symmetric');
 yp = ypeak+cropsy;
 xp = xpeak+cropsx;
-c = img(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
-ypeakcrop = 1+cropsy;
-xpeakcrop = 1+cropsx;
-sizeycrop = size(c,1);
-sizexcrop = size(c,2);
 
-% figure; imshow(c, [min(c(:)),max(c(:))]);
-% hold on
-% plot(xpeakcrop, ypeakcrop, 'ro');
-% hold off
+% crop padded image
+cropped = imgpad(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
 
-% gradient, Laplacian
-[Gmag, ~] = imgradient(c);
-features(3) = max(max(Gmag));
+% compute Gradient and  Laplacian
+[Gmag, ~] = imgradient(cropped);
 [Lmag, ~] = imgradient(Gmag);
+
+% extract feature vector
+features = NaN(1,5);
+features(1) = sizeyimg*sizeximg;    % # of pixels
+features(2) = rp.Area;  % area of binary 'on' region
+features(3) = max(max(Gmag));
 features(4) = max(max(Lmag));
+features(5) = skewness(double(cropped(:)));
 
-% statistics
-features(5) = skewness(double(c(:)));
-
-% figure; imshow(Gmag, [min(Gmag(:)),max(Gmag(:))]);
+% ypeakcrop = 1+cropsy;
+% xpeakcrop = 1+cropsx;
+% figure; subplot(2,1,1);  subimage(cropped);
 % hold on
 % plot(xpeakcrop, ypeakcrop, 'ro');
 % hold off
-% figure; imshow(Lmag, [min(Lmag(:)),max(Lmag(:))]);
-% hold on
-% plot(xpeakcrop, ypeakcrop, 'ro');
-% hold off
-
-% contour map
-% imcontour(c);
-% find highest value contour line, within region of x pixels around it,
-% are there multiple contour line values??
+% subplot(2,1,2); subimage(bw);
 
 end

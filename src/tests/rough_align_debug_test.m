@@ -1,12 +1,13 @@
 % various tests.
-
-% load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svm1.mat');
-% setup;
-
+clear all
+close all
+load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svm1.mat');
+classifier = svm1;
+setup;
 
 % test identical image with large rotations, moderate shifts
 load('/Users/rogerzou/Projects/openconnectome/alignment/data/AC4_matrices.mat')
-rng; % control random number generator
+rng(5); % control random number generator
 n1 = 30;
 r1 = ceil(rand(1,n1)*200);
 r2 = ceil(rand(1,n1)*200);

@@ -108,13 +108,18 @@ if classify
 else
     [y1, x1] = find(c1==max(c1(:)));
     [y2, x2] = find(c2==max(c2(:)));
-%     [y1, x1] = detectpeakxcorr(c1, ceil(length(c1)/8), 'gaussian', 'yx');
-%     [y2, x2] = detectpeakxcorr(c2, ceil(length(c2)/8), 'gaussian', 'yx');
+end
+if x1 == -1
+    max1 = 0;
+else
+    max1 = c1(y1,x1);
+end
+if x2 == -1
+    max2 = 0;
+else
+    max2 = c2(y2,x2);
 end
 select = 0;
-% one is rejected
-max1 = c1(y1,x1);
-max2 = c2(y2,x2);
 if max1 > max2
     select = 1;
 elseif max2 > max1
