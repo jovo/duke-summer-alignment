@@ -3,7 +3,7 @@ function [ params ] = matrix2params( matrix )
 %   [params] = matrix2params(matrix) takes in transformation matrix 
 %   dtm'd by Rotation*Translation, where TranslateX = T(3,1) and 
 %   TranslateY = T(3,2) and converts it into vector of parameters,
-%   params = [TranslateY, TranslateX, THETA, SCALE, 0]
+%   params = [TranslateY, TranslateX, THETA]
 
 TranslateX = matrix(3, 1);
 TranslateY = matrix(3, 2);
