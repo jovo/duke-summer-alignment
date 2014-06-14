@@ -7,7 +7,7 @@ global minnonzeropercent peakclassifier errormeasure;
 % union of two images. This basically indicates the minimum amount of
 % overlap acceptable for the alignment of two images. Any alignment with
 % less than this percent overlap is rejected.
-minnonzeropercent = 0.3;
+minnonzeropercent = 0.2;
 
 % classifier for detecting peaks. If peakclassifier is unassigned, then
 % don't use a classfier for peak detection.

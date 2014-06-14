@@ -15,15 +15,6 @@ function [ Error, flag, nonzeropercent ] = errormetrics( M, type, varargin )
 %   'mse': Mean-Squared Error (MSE)
 %   'pxdiff': Mean Pixel intensity difference
 
-% retrieve global variable
-global minnonzeropercent;
-if isempty(minnonzeropercent)
-    minnonzeropercent = 0.3;
-end
-
-% minimum acceptable proportion of alignment overlap.
-minimum = minnonzeropercent;
-
 % validate inputs
 narginchk(2,5);
 maxval = NaN;

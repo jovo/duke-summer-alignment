@@ -2,7 +2,6 @@
 clear all
 close all
 load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svm1.mat');
-classifier = svm1;
 setup;
 
 % test identical image with large rotations, moderate shifts

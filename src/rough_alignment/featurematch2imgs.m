@@ -42,8 +42,7 @@ prevtform = params2matrix(tparams);
 tempmerged = affinetransform(T, A, prevtform);
 [newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
 newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
-[newtform,merged] = xcorr2imgs(newT, newA, 'align', 'pad');
-%     figure; imshowpair(merged(:,:,1), merged(:,:,2), 'montage');
+[newtform, ~] = xcorr2imgs(newT, newA, 'align', 'pad');
 updatedtform = prevtform * newtform;
 merged = affinetransform(T, A, updatedtform);
 end
