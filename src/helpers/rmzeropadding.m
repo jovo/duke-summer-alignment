@@ -2,10 +2,10 @@ function [ M_new, yshiftmin, xshiftmin, yshiftmax, xshiftmax ] = rmzeropadding( 
 %RMZEROPADDING Removes zero padding from image.
 %   [ M_new, yshiftmin, xshiftmin, yshiftmax, xshiftmax ] = rmzeropadding( M, force )
 %   M_new is the cropped M with variable levels of zero padding removed.
-%   yshiftmin is the # of zero rows removed from top left of image.
-%   yshiftmax is the $ of zero rows removed from bottom right of image.
-%   xshiftmin and yshiftmin follows. The force parameter determines the
-%   amount of zeros to remove.
+%   yshiftmin is the # of vertically-removed zero rows from top left of image.
+%   yshiftmax is the # of vertically-removed zero rows from bottom right of image.
+%   xshiftmin and xshiftmax follow. The force parameter determines the
+%   number of zeros to remove.
 %   force parameter missing: only remove all zero rows and cols
 %   (1): start from all four edges, remove zeros until one edge hits a
 %   non-zero pixel. Some zero padding may exist, and the image may be
