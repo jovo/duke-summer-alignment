@@ -5,12 +5,18 @@ function [ params ] = matrix2params( matrix )
 %   TranslateY = T(3,2) and converts it into vector of parameters,
 %   params = [TranslateY, TranslateX, THETA]
 
-TranslateX = matrix(3, 1);
-TranslateY = matrix(3, 2);
-ssin = matrix(2, 1);
-scos = matrix(1, 1);
-THETA = atan2(ssin, scos) * 180 / pi;
+% separate rotation and translation matrices
+rot = [ [matrix(1:2,1:2),[0;0]]; [0,0,1] ];
+trans = matrix/rot;
 
-params = [TranslateY, TranslateX, THETA];
+% determine rotation and translation parameters
+ssin = rot(2, 1);
+scos = rot(1, 1);
+TH = -atan2(ssin, scos) * 180 / pi;
+TX = trans(3, 1);
+TY = trans(3, 2);
+
+% output parameter variable
+params = [TY, TX, TH];
 
 end

@@ -1,4 +1,4 @@
-function [ Transforms ] = constructtransforms( M, varargin )
+function [ Transforms ] = constructtransforms( M, improve )
 %CONSTRUCTTRANSFORMS determines transform parameters to align pairwise
 %images from image cube.
 %   [ Transforms ] = constructtransforms( M )
@@ -16,9 +16,10 @@ if isempty(minnonzeropercent)
 end
 
 % validate inputs
-improve = 0;
-if nargin == 2 && strcmpi(varargin{1}, 'improve')
-    improve = 1;
+narginchk(1,2);
+improveaction = 0;
+if nargin == 2 && strcmpi(improve, 'improve')
+    improveaction = 1;
 end
 
 % stores variables as matfile to save memory
@@ -26,11 +27,11 @@ filename = strcat('constructtransform_tempfile_', lower(randseq(8, 'Alphabet', '
 save(filename, 'M', '-v7.3');
 data = matfile(filename, 'Writable', true);
 looplength = size(M, 3) - 1;
-ids = cell(1, looplength);
-tforms = cell(1, looplength);
-newerrors = NaN(1, looplength);
-origerrors = NaN(1, looplength);
-errordiff = NaN(1, looplength);
+ids = cell(looplength, 1);
+tforms = cell(looplength, 1);
+newerrors = NaN(looplength, 1);
+origerrors = NaN(looplength, 1);
+errordiff = NaN(looplength, 1);
 errorupdate = [0,0];
 clear M;
 
@@ -40,17 +41,11 @@ for i=1:looplength
     img1 = data.M(:,:,i);
     img2 = data.M(:,:,i+1);
 
-    origerrors(1,i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax, minnonzeropercent);
+    origerrors(i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax, minnonzeropercent);
     % feature match for rough angle alignment, then xcorr for precision.
-    [tform1, merged1] = featurematch2imgs(img2, img1);
-    [error1, ~] = errormetrics(merged1, errormeasure, '', intmax, minnonzeropercent);
-    if error1 < origerrors(1,i)
-        tform = tform1;
-        error = error1;
-    else
-        tform = eye(3);
-        error = origerrors(1,i);
-    end
+    tform = featurematch2imgs(img2, img1, 0.5);
+    merged = affinetransform(img2, img1, tform);
+    [error, ~] = errormetrics(merged, errormeasure, '', intmax, minnonzeropercent);
 
     % because transforms are discrete, minimize slight error in theta
     % values. the best params are initially set to no transforms at all.
@@ -71,22 +66,23 @@ for i=1:looplength
     updatedmerged = affinetransform(img2, img1, updatedtform);
 
     % store ids and transforms, and error
-    ids(1,i) = {indices2key(i, i+1)};
-    tforms(1,i) = {updatedtform};
-    newerrors(1,i) = errormetrics(updatedmerged, errormeasure, '', intmax, minnonzeropercent);
-    errordiff(1,i) = origerrors(1,i)-newerrors(1,i);
+    ids(i) = {indices2key(i, i+1)};
+    tforms(i) = {updatedtform};
+    newerrors(i) = errormetrics(updatedmerged, errormeasure, '', intmax, minnonzeropercent);
+    errordiff(i) = origerrors(i)-newerrors(i);
 
     % conditions to update error.
-    if errordiff(1,i) < 0
+%     if errordiff(i) < 0
+%         disp('oh no')
         errorupdate = cat(1, errorupdate, [i, i+1]);
-    end
+%     end
 end
 errorupdate = errorupdate(2:end,:);
 
 % save ids and transforms into table.
 Transforms = containers.Map(ids, tforms);
 
-if improve
+if improveaction
     %% minimize error caused by transformations with linear programming.
     % let index1 and index2 be the indices of images and its corresponding
     % transformation parameters we wish to optimize. Let preindex be the index
@@ -96,8 +92,8 @@ if improve
     for i=1:size(errorupdate, 1)
 
         % important indices
-        index1 = errorupdate(i,1);
-        index2 = errorupdate(i,2);
+        index1 = errorupdate(i,1)
+        index2 = errorupdate(i,2)
         preindex = index1 - 1;
         postindex = index2 + 1;
 
@@ -105,13 +101,13 @@ if improve
         if preindex >= 1 && ~isKey(addtforms, {indices2key(preindex, index2)})
             img1 = data.M(:,:, preindex);
             img2 = data.M(:,:, index2);
-            tform = xcorr2imgs(img2, img1, '', 'pad');
+            tform = xcorr2imgs(img2, img1, 'pad');
             addtforms(indices2key(preindex, index2)) = tform;
         end
         if postindex <= looplength+1 && ~isKey(addtforms, {indices2key(index1, postindex)})
             img1 = data.M(:,:, index1);
             img2 = data.M(:,:, postindex);
-            tform = xcorr2imgs(img2, img1, '', 'pad');
+            tform = xcorr2imgs(img2, img1, 'pad');
             addtforms(indices2key(index1, postindex)) = tform;
         end
 
@@ -122,11 +118,20 @@ if improve
         % images exist, then the error is set to intmax.
         if preindex >= 1
             val1 = values(addtforms, {indices2key(preindex, index2)});
-            B = val1{1};
             val2 = values(Transforms, {indices2key(preindex, index1)});
+            B = val1{1};
             A = val2{1};
-            preT = A\B;
+            r = [ [B(1:2,1:2),[0;0]]; [0,0,1] ];
+            t = B/r;
+            r1 = [ [A(1:2,1:2),[0;0]]; [0,0,1] ];
+            t1 = A/r1;
+            r2 = r1\r;
+            t2 = t1\t;
+            preT = t2*r2;
+            val = values(Transforms, {indices2key(index1, index2)});
+            val = val{1};
             pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preT);
+%             figure; imshowpair(pretf(:,:,1), pretf(:,:,2));
             preTerror = errormetrics(pretf, errormeasure, '', intmax, minnonzeropercent);
         else
             preT = eye(3);
@@ -137,7 +142,13 @@ if improve
             B = val1{1};
             val2 = values(Transforms, {indices2key(index2, postindex)});
             A = val2{1};
-            postT = B/A;
+            r = [ [B(1:2,1:2),[0;0]]; [0,0,1] ];
+            t = B/r;
+            r2 = [ [A(1:2,1:2),[0;0]]; [0,0,1] ];
+            t2 = A/r2;
+            r1 = r/r2;
+            t1 = t/t2;
+            postT = t1*r1;
             posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postT);
             postTerror = errormetrics(posttf, errormeasure, '', intmax, minnonzeropercent);
         else
@@ -146,15 +157,15 @@ if improve
         end
 
         % retrieves original transform and error
-        curT = tforms{1, index1};
-        Terror = newerrors(1, index1);
+        curT = tforms{index1};
+        Terror = newerrors(index1);
 
         % retrieves trivial solution: no transformation at all
         nochangeT = eye(3);
-        nochangeTerror = origerrors(1, index1);
+        nochangeTerror = origerrors(index1);
 
         % solve linear program
-        f = [double(preTerror); double(postTerror); double(Terror); double(nochangeTerror)];
+        f = [double(preTerror); double(postTerror); double(Terror); double(nochangeTerror)]
         A = [];
         b = [];
         Aeq = [1, 1, 1, 1];

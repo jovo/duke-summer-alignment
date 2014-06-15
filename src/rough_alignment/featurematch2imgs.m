@@ -1,10 +1,10 @@
-function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
+function [ tform ] = featurematch2imgs( T, A, resize )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
-%   [ updatedtform, merged ] = matchlocalfeatures( T, A )
-%   [ updatedtform, merged ] = featurematch2imgs( T, A, resize ) T is the
-%   image that should be matched to A. scale should probably be <= 1, and
-%   scale the images before matching to improve efficiency. If feature
-%   matching does a poor job, reverts back to xcorr methods.
+%   [ tform ] = matchlocalfeatures( T, A )
+%   [ tform ] = featurematch2imgs( T, A, resize ) T is the image that
+%   should be matched to A. scale parameter indicates how much to scale the
+%   image before feature matching to improve efficiency. Realistically, the
+%   parameter should be 0.5 <= scale <= 1.
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
@@ -38,19 +38,24 @@ indexPairs = matchFeatures(featuresA, featuresT, 'Prenormalized', true);
 matchptsA = vptsA(indexPairs(:, 1));
 matchptsT = vptsT(indexPairs(:, 2));
 try
-    [tform, ~, ~] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
+    [geotform, ~, ~] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
 catch
-    tform = affine2d(eye(3));
+    geotform = affine2d(eye(3));
 end
 
-% determine transformations
-featuret = matrix2params(tform.T);
-tparams = [0, 0, featuret(3)];
-prevtform = params2matrix(tparams);
-tempmerged = affinetransform(T, A, prevtform);
-[newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
+% determine rotation parameter, r1
+featuret = matrix2params(geotform.T);
+r1 = params2matrix([0, 0, featuret(3)]);
+
+% transform input by r1 and use as input to xcorr2imgs
+merged = affinetransform(T, A, r1);
+[newT, ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(merged(:,:,1), 1);
 newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
-[newtform, ~] = xcorr2imgs(newT, newA, 'align', 'pad');
-updatedtform = prevtform * newtform;
-merged = affinetransform(T, A, updatedtform);
+t2r2 = xcorr2imgs(newT, newA, 'pad');
+
+% compute overall transformation
+r2 = [ [t2r2(1:2,1:2),[0;0]]; [0,0,1] ];
+t2 = t2r2/r2;
+tform = t2*r1*r2;
+
 end
