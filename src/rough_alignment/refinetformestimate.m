@@ -20,8 +20,8 @@ end
 % initialize best transform results with inputted values
 bestmerged = affinetransform(T, A, tform);
 besterror = errormetrics(bestmerged, errormeasure, '', intmax, minnonzeropercent);
+besttform = tform;
 if besterror == intmax  % if greater than minnonzeropercent, terminate
-    besttform = tform;
     return;
 end
 besttparam = matrix2params(tform);
