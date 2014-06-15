@@ -1,7 +1,7 @@
 addpath(genpath('data'));
 addpath(genpath('src'));
 
-global minnonzeropercent peakclassifier errormeasure;
+global minnonzeropercent peakclassifier errormeasure minpercenterrorimprovement;
 
 % the the minimum value of the intersection of two images divided by the
 % union of two images. This basically indicates the minimum amount of
@@ -17,3 +17,9 @@ peakclassifier = classifier;
 % available error metrics include peak signal to noise ratio (psnr) and
 % pixel difference (pxdiff)
 errormeasure = 'mse';
+
+% the minimum acceptable value for the amount of error improvement as a
+% result of alignment. Any error improvement less than this value will
+% undergo further optimization by utilizing images surrounding the image
+% pair of interest.
+minpercenterrorimprovement = 0.1;
