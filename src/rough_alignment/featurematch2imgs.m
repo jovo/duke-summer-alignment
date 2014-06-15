@@ -6,26 +6,25 @@ function [ updatedtform, merged ] = featurematch2imgs( T, A, resize )
 %   scale the images before matching to improve efficiency. If feature
 %   matching does a poor job, reverts back to xcorr methods.
 
-% retrieve global variable
-global scalethreshold;
-if isempty(scalethreshold)
-    scalethreshold = 1.05;
-end
-
-% threshold for possible image scaling.
-threshold = scalethreshold;
-
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 T = uint8(T);
 
-% apply median filter to filter noise and resize as specified.
+% apply gaussian blur to filter noise and resize as specified.
+hsizeA = floor(size(A)/100);
+hsizeT = floor(size(T)/100);
+sigmaA = floor(size(A,1)/200);
+sigmaT = floor(size(T,1)/200);
+F1 = fspecial('gaussian', hsizeA, sigmaA);
+F2 = fspecial('gaussian', hsizeT, sigmaT);
+
+% validate inputs
 if nargin > 2
-    Ascaled = imresize(medfilt2(A, [10,10]), resize);
-    Tscaled = imresize(medfilt2(T, [10,10]), resize);
+    Ascaled = imresize(imfilter(A, F1), resize);
+    Tscaled = imresize(imfilter(T, F2), resize);
 else
-    Ascaled = medfilt2(A, [10,10]);
-    Tscaled = medfilt2(T, [10,10]);
+    Ascaled = imfilter(A, F1);
+    Tscaled = imfilter(T, F2);
 end
 
 % detect surf features
@@ -46,15 +45,12 @@ end
 
 % determine transformations
 featuret = matrix2params(tform.T);
-tparams = [0, 0, featuret(3), 1];
+tparams = [0, 0, featuret(3)];
 prevtform = params2matrix(tparams);
-if featuret(4) < threshold || featuret(4) > 1/threshold
-    tempmerged = affinetransform(T, A, prevtform);
-    newtform = xcorr2imgs(tempmerged(:,:,1), A, '', 'pad');
-    updatedtform = prevtform * newtform;
-    merged = affinetransform(T, A, updatedtform);
-else
-    [updatedtform, merged] = xcorr2imgs(T, A, 'align', 'pad');
-end
-
+tempmerged = affinetransform(T, A, prevtform);
+[newT,ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(tempmerged(:,:,1), 1);
+newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
+[newtform, ~] = xcorr2imgs(newT, newA, 'align', 'pad');
+updatedtform = prevtform * newtform;
+merged = affinetransform(T, A, updatedtform);
 end

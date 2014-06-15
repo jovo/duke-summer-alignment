@@ -4,7 +4,13 @@ function [ Error, s ] = errorreport( M, name, type )
 %   stack, name is the name of the test run, type is the type of error.
 %   s is the string output of the error report.
 
-Error = errormetrics(M, type, 'warn', -1, 0);
+% retrieve global variable
+global minnonzeropercent;
+if isempty(minnonzeropercent)
+    minnonzeropercent = 0.3;
+end
+
+Error = errormetrics(M, type, 'warn', intmax, minnonzeropercent);
 
 s = sprintf('ERROR REPORT:\n #############################################\n');
 s = [s, [' Error for image stack ', name, ':'], sprintf('\n')];
