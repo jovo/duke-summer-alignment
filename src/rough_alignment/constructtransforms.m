@@ -6,13 +6,16 @@ function [ Transforms ] = constructtransforms( M, improve )
 %   stack, the optional improve parameter attempts to correct faulty
 %   alignments by using adjacent images.
 
-% retrieve global variable
-global errormeasure minnonzeropercent;
+% retrieve global variables
+global errormeasure minnonzeropercent minpercenterrorimprovement;
 if isempty(errormeasure)
     errormeasure = 'mse';
 end
 if isempty(minnonzeropercent)
     minnonzeropercent = 0.3;
+end
+if isempty(minpercenterrorimprovement)
+    minpercenterrorimprovement = 0;
 end
 
 % validate inputs
@@ -32,6 +35,7 @@ tforms = cell(looplength, 1);
 newerrors = NaN(looplength, 1);
 origerrors = NaN(looplength, 1);
 errordiff = NaN(looplength, 1);
+percenterrordiff = NaN(looplength, 1);
 errorupdate = [0,0];
 clear M;
 
@@ -51,10 +55,11 @@ for i=1:looplength
     ids(i) = {indices2key(i, i+1)};
     tforms(i) = {tform};
     errordiff(i) = origerrors(i)-newerrors(i);
+    percenterrordiff(i) = errordiff(i)/origerrors(i);
 
     % conditions to update error.
-    if errordiff(i) < 0
-        disp('oh no')
+    if percenterrordiff(i) < minpercenterrorimprovement
+        disp('CONSTRUCTTRANSFORMS: % error improvement less than threshold; will attempt further optimization.');
         errorupdate = cat(1, errorupdate, [i, i+1]);
     end
 end
