@@ -9,7 +9,7 @@ prevT = eye(3);
 for i=1:(size(IStack, 3)-1)
     vals = values(Transforms, {indices2key(i, i+1)});
     % performs affine transformation as specified by transform params
-    [ISAligned, prevT] = affinetransform(IStack(:,:,i+1), ISAligned, vals{1}, prevT);
+    [ISAligned, prevT] = affinetransform(IStack(:,:,i+1), ISAligned, prevT*vals{1});
 end
 ISAligned = flip(ISAligned, 3);
 end

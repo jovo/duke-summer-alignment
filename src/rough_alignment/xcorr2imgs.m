@@ -1,15 +1,14 @@
-function [ Transforms, Merged, flag ] = xcorr2imgs( template, A, varargin )
+function [ Transforms, flag ] = xcorr2imgs( T, A, pad )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation. Assumed for scale to always be 1.
-%   Performs automated alignment to template and A. performs the same
-%   transformations to templateStack and AStack, respectively.
-%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A )
-%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align )
-%   [ Transforms, Merged, flag ] = xcorr2imgs( template, A, align, pad )
-%   If align parameter is set to 'align', then Merged will be the aligned
-%   images. Otherwise Merged is nil. If the pad parameter is set to 'pad',
-%   then program will add extra padding, at the cost of more computation
-%   time. flag is raised if alignment is deemed to fail.
+%   Computes the transformations that result in automated alignment between
+%   template and A. 
+%   [ tform, flag ] = xcorr2imgs( template, A )
+%   [ tform, flag ] = xcorr2imgs( template, A, pad )
+%   If the pad parameter is set to 'pad', then program will add extra
+%   padding that helps with the integrity of taking fourier transforms,
+%   though at the cost of more computation time. flag is raised if
+%   alignment is deemed to fail.
 %   ASSUMPTIONS: template and A are the SAME size, and DO NOT have any
 %   zero pad. These assumptions are consistent with inputs from EM
 %   sections.
@@ -27,24 +26,19 @@ if strcmpi(class(peakclassifier), 'ClassificationSVM')
     classify = 1;
 end
 
-% stop program early if one image is flat (all one color).
-if std(double(template(:))) == 0 || std(double(A(:))) == 0
-    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
-    Transforms = eye(3);
-    Merged = cat(3, template, A);
-    flag = 1;
-    return;
+% validate inputs.
+narginchk(2,3);
+padaction = 0;
+if nargin == 3 && strcmpi(pad, 'pad') % align and pad param
+    padaction = 1;
 end
 
-% validate inputs.
-narginchk(2,4);
-align = 0;
-pad = 0;
-if nargin > 2 && strcmpi(varargin{1}, 'align')  % align param
-	align = 1;
-end
-if nargin > 3 && strcmpi(varargin{2}, 'pad') % align and pad param
-    pad = 1;
+% stop program early if one image is flat (all one color).
+if std(double(T(:))) == 0 || std(double(A(:))) == 0
+    warning('XCORR2IMGS: one image is completely flat; no transformations performed');
+    Transforms = eye(3);
+    flag = 1;
+    return;
 end
 
 % flag to indicate failed alignment.
@@ -52,15 +46,15 @@ flag = 0;
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
-template = uint8(template);
+T = uint8(T);
 
 % apply hamming window.
 Amod = hamming2dwindow(A);
-Tmod = hamming2dwindow(template);
+Tmod = hamming2dwindow(T);
 
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
-if pad
+if padaction
     ypad = min(floor(size(Amod, 1)/2), floor(size(Tmod, 1)/2));
     xpad = min(floor(size(Amod, 2)/2), floor(size(Tmod, 2)/2));
     Amod = padarray(Amod, [ypad, xpad]);
@@ -91,8 +85,8 @@ THETA2 = -th - 180;
 clear c;
 
 % rotate template image two possible ways.
-RotatedT1 = imrotate(template, THETA1, 'nearest', 'crop');
-RotatedT2 = imrotate(template, THETA2, 'nearest', 'crop');
+RotatedT1 = imrotate(T, THETA1, 'nearest', 'crop');
+RotatedT2 = imrotate(T, THETA2, 'nearest', 'crop');
 
 % pick correct rotation by maximizing cross correlation. compute best
 % transformation parameters.
@@ -149,8 +143,4 @@ clear RotatedT1 RotatedT2
 % save transformations
 Transforms = params2matrix([TranslateY, TranslateX, THETA]);
 
-% if align is true, applies transformations
-Merged = [];
-if align
-    Merged  = affinetransform(template, A, Transforms);
 end
