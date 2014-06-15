@@ -3,7 +3,7 @@ classdef indices2key_test < matlab.unittest.TestCase
     %   indices2key_test verifies that indices and key are equal 
     
     methods (Test)
-        function testTransformations(testCase)
+        function testKey(testCase)
             num1 = randi([1,1024],1,1); 
             num2 = randi([1,1024],1,1); 
             key = indices2key(num1,num2);
