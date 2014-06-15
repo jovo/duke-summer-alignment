@@ -5,8 +5,12 @@ classdef params2matrix_test < matlab.unittest.TestCase
     
     methods (Test)
         function testTransformations(testCase)
-            theta = rand(1)*360;
-            params = [randn(1,2) theta 1 0];
+            % specify range [a,b] of randomly generated translations
+            a = -10;
+            b = 10;
+            
+            theta = (2*rand(1,1)-1)*360;
+            params = [(b-a).*rand(1,2)+a, theta];
             matrix = params2matrix(params);
             
             % transformations 
@@ -16,24 +20,22 @@ classdef params2matrix_test < matlab.unittest.TestCase
             expTy = params(1);
             
             if params(3) < 0; 
-                actTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
-                expTHETA = round((params(3)+360)*1e10)*(1e-10);
+                if params(3) < -180;
+                    actTHETA = round((-360+acosd(matrix(1,1)))*1e10)*(1e-10);
+                else
+                actTHETA = round(-acosd(matrix(1,1))*1e10)*(1e-10);
+                end
             elseif params(3) > 180;
                 actTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
-                expTHETA = round((params(3))*1e10)*(1e-10);
                 else
-                actTHETA = round((acosd(matrix(1,1)))*1e10)*(1e-10);
-                expTHETA = round((params(3))*1e10)*(1e-10);
+                actTHETA = round((acosd(matrix(1,1)))*1e10)*(1e-10); 
             end
-                                                     
-            actSCALE = round((sqrt(matrix(1,1)^2 + matrix(2,1)^2))*1e10)*(1e-10);
-            expSCALE = params(4); 
+            expTHETA = round((params(3))*1e10)*(1e-10);
             
             % tests for equality 
             testCase.verifyEqual(actTx, expTx);
             testCase.verifyEqual(actTy, expTy);
             testCase.verifyEqual(actTHETA, expTHETA);
-            testCase.verifyEqual(actSCALE, expSCALE);
         end
     end
-end
+end 
