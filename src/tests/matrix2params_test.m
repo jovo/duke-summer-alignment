@@ -9,7 +9,7 @@ classdef matrix2params_test < matlab.unittest.TestCase
             a = -10;
             b = 10;
             
-            theta = rand(1)*360;
+            theta = (2*rand(1,1)-1)*360;
             c1 = [cosd(theta) -sind(theta) 0];
             c2 = [sind(theta) cosd(theta) 0];
             c3 = [(b-a).*rand(1,2)+a,1];
@@ -24,8 +24,14 @@ classdef matrix2params_test < matlab.unittest.TestCase
             
             actTHETA = round(mod(params(3),360)*1e10)*(1e-10);
             if params(3) < 0;
+                if params(3) < -180;
+                    expTHETA = round((acosd(matrix(1,1)))*(1e10))*(1e-10);
+                else    
                 expTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
-            else
+                end
+            elseif params(3) > 180;
+                expTHETA = round((360-acosd(matrix(1,1)))*(1e10))*(1e-10);
+                else
                 expTHETA = round((acosd(matrix(1,1)))*(1e10))*(1e-10);
             end
             
