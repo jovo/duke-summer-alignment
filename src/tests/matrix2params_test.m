@@ -5,10 +5,15 @@ classdef matrix2params_test < matlab.unittest.TestCase
    
     methods (Test) 
         function testTransformations(testCase)
+            % specify range [a,b] of randomly generated translations
+            a = -10;
+            b = 10;
+            
             theta = rand(1)*360;
             c1 = [cosd(theta) -sind(theta) 0];
             c2 = [sind(theta) cosd(theta) 0];
-            matrix = [c1;c2;[randn(1,2),1]];
+            c3 = [(b-a).*rand(1,2)+a,1];
+            matrix = [c1;c2;c3]; 
             params = matrix2params(matrix);
             
             % transformations 
@@ -17,22 +22,17 @@ classdef matrix2params_test < matlab.unittest.TestCase
             actTy = params(1);
             expTy = matrix(3,2);
             
-            if params(3) < 0; 
-                actTHETA = round((params(3)+360)*1e10)*(1e-10);
+            actTHETA = round(mod(params(3),360)*1e10)*(1e-10);
+            if params(3) < 0;
                 expTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
             else
-                actTHETA = round((params(3))*1e10)*(1e-10);
                 expTHETA = round((acosd(matrix(1,1)))*(1e10))*(1e-10);
             end
-            
-            actSCALE = params(4);
-            expSCALE = sqrt(matrix(1,1)^2 + matrix(2,1)^2);
             
             % tests for equality 
             testCase.verifyEqual(actTx, expTx);
             testCase.verifyEqual(actTy, expTy);
             testCase.verifyEqual(actTHETA, expTHETA);
-            testCase.verifyEqual(actSCALE, expSCALE);
         end
     end
     
