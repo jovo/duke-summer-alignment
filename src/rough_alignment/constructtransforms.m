@@ -43,39 +43,20 @@ for i=1:looplength
 
     origerrors(i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax, minnonzeropercent);
     % feature match for rough angle alignment, then xcorr for precision.
-    tform = featurematch2imgs(img2, img1, 0.5);
-    merged = affinetransform(img2, img1, tform);
-    [error, ~] = errormetrics(merged, errormeasure, '', intmax, minnonzeropercent);
+    tformtemp = xcorr2imgs(img2, img1, 'pad');
+    % refine original tform estimate and save
+    [tform, newerrors(i), ~] = refinetformestimate(img2, img1, tformtemp);
 
-    % because transforms are discrete, minimize slight error in theta
-    % values. the best params are initially set to no transforms at all.
-    besttparam = matrix2params(tform);
-    besterror = error;
-    invariantparam = besttparam;
-    bounds = 360/min(min(size(img1), size(img2)));
-    for theta = linspace(-bounds, bounds, 6);
-        tempparam = invariantparam + [0, 0, theta];
-        tempaligned = affinetransform(img2, img1, params2matrix(tempparam));
-        [temperror, tempflag] = errormetrics(tempaligned, errormeasure, '', intmax, minnonzeropercent);
-        if ~tempflag && temperror < besterror
-            besttparam = tempparam;
-            besterror = temperror;
-        end
-    end
-    updatedtform = params2matrix(besttparam);
-    updatedmerged = affinetransform(img2, img1, updatedtform);
-
-    % store ids and transforms, and error
+    % store ids and compute error difference
     ids(i) = {indices2key(i, i+1)};
-    tforms(i) = {updatedtform};
-    newerrors(i) = errormetrics(updatedmerged, errormeasure, '', intmax, minnonzeropercent);
+    tforms(i) = {tform};
     errordiff(i) = origerrors(i)-newerrors(i);
 
     % conditions to update error.
-%     if errordiff(i) < 0
-%         disp('oh no')
+    if errordiff(i) < 0
+        disp('oh no')
         errorupdate = cat(1, errorupdate, [i, i+1]);
-%     end
+    end
 end
 errorupdate = errorupdate(2:end,:);
 
@@ -92,8 +73,8 @@ if improveaction
     for i=1:size(errorupdate, 1)
 
         % important indices
-        index1 = errorupdate(i,1)
-        index2 = errorupdate(i,2)
+        index1 = errorupdate(i,1);
+        index2 = errorupdate(i,2);
         preindex = index1 - 1;
         postindex = index2 + 1;
 
@@ -121,39 +102,22 @@ if improveaction
             val2 = values(Transforms, {indices2key(preindex, index1)});
             B = val1{1};
             A = val2{1};
-            r = [ [B(1:2,1:2),[0;0]]; [0,0,1] ];
-            t = B/r;
-            r1 = [ [A(1:2,1:2),[0;0]]; [0,0,1] ];
-            t1 = A/r1;
-            r2 = r1\r;
-            t2 = t1\t;
-            preT = t2*r2;
-            val = values(Transforms, {indices2key(index1, index2)});
-            val = val{1};
-            pretf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), preT);
-%             figure; imshowpair(pretf(:,:,1), pretf(:,:,2));
-            preTerror = errormetrics(pretf, errormeasure, '', intmax, minnonzeropercent);
+            preTtemp = A\B;
+            [preT, preE, ~] = refinetformestimate(data.M(:,:,index2), data.M(:,:,index1), preTtemp);
         else
             preT = eye(3);
-            preTerror = intmax;
+            preE = intmax;
         end
         if postindex <= looplength + 1
             val1 = values(addtforms, {indices2key(index1, postindex)});
-            B = val1{1};
             val2 = values(Transforms, {indices2key(index2, postindex)});
+            B = val1{1};
             A = val2{1};
-            r = [ [B(1:2,1:2),[0;0]]; [0,0,1] ];
-            t = B/r;
-            r2 = [ [A(1:2,1:2),[0;0]]; [0,0,1] ];
-            t2 = A/r2;
-            r1 = r/r2;
-            t1 = t/t2;
-            postT = t1*r1;
-            posttf = affinetransform(data.M(:,:,index2), data.M(:,:,index1), postT);
-            postTerror = errormetrics(posttf, errormeasure, '', intmax, minnonzeropercent);
+            postTtemp = B/A;
+            [postT, postE, ~] = refinetformestimate(data.M(:,:,index2), data.M(:,:,index1), postTtemp);
         else
             postT = eye(3);
-            postTerror = intmax;
+            postE = intmax;
         end
 
         % retrieves original transform and error
@@ -165,7 +129,7 @@ if improveaction
         nochangeTerror = origerrors(index1);
 
         % solve linear program
-        f = [double(preTerror); double(postTerror); double(Terror); double(nochangeTerror)]
+        f = [double(preE); double(postE); double(Terror); double(nochangeTerror)];
         A = [];
         b = [];
         Aeq = [1, 1, 1, 1];
