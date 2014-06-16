@@ -5,37 +5,36 @@ classdef params2matrix_test < matlab.unittest.TestCase
     
     methods (Test)
         function testTransformations(testCase)
-            % specify range [a,b] of randomly generated translations
-            a = -10;
-            b = 10;
-            
             theta = (2*rand(1,1)-1)*360;
-            params = [(b-a).*rand(1,2)+a, theta];
+            params = [randi([-10,10],[1,2]), theta]; % assumes range of translations = [-10,10]
             matrix = params2matrix(params);
+            rot = [cosd(theta),-sind(theta);sind(theta),cosd(theta)];
             
-            % transformations 
-            actTx = matrix(3,1);
+            % translations
+            X = linsolve(rot,[matrix(3,1);matrix(3,2)]);
+            actTx = X(1); 
             expTx = params(2);
-            actTy = matrix(3,2);
+            actTy = X(2); 
             expTy = params(1);
             
+            % rotation 
             if params(3) < 0; 
                 if params(3) < -180;
-                    actTHETA = round((-360+acosd(matrix(1,1)))*1e10)*(1e-10);
+                    actTHETA = -360+acosd(matrix(1,1));
                 else
-                actTHETA = round(-acosd(matrix(1,1))*1e10)*(1e-10);
+                actTHETA = -acosd(matrix(1,1));
                 end
             elseif params(3) > 180;
-                actTHETA = round((360-acosd(matrix(1,1)))*1e10)*(1e-10);
+                actTHETA = 360-acosd(matrix(1,1));
                 else
-                actTHETA = round((acosd(matrix(1,1)))*1e10)*(1e-10); 
+                actTHETA = acosd(matrix(1,1)); 
             end
-            expTHETA = round((params(3))*1e10)*(1e-10);
+            expTHETA = params(3);
             
-            % tests for equality 
-            testCase.verifyEqual(actTx, expTx);
-            testCase.verifyEqual(actTy, expTy);
-            testCase.verifyEqual(actTHETA, expTHETA);
+            % tests for equality within perscribed tolerance 
+            testCase.verifyEqual(actTx,expTx,'AbsTol',1e-10);
+            testCase.verifyEqual(actTy,expTy,'AbsTol',1e-10);
+            testCase.verifyEqual(actTHETA,expTHETA,'AbsTol',1e-10);
         end
     end
 end 
