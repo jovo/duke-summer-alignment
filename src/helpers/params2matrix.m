@@ -1,6 +1,6 @@
 function [ matrix ] = params2matrix( params )
 %PARAMS2MATRIX Converts transformation parameters to matrix form
-%   Takes vector of parameters and converts into 3-by-3 matrix. Note that
+%   Takes 1x3 vector of parameters and converts into 3x3 matrix. Note that
 %   translation is performed first BEFORE rotation. Theta is performed in
 %   the counterclockwise direction.
 
