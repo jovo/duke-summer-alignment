@@ -14,7 +14,7 @@ im = cutout.data;
 % the alignment performance on 1024 by 1024 images.
 scale = 0.5;
 % 3) run roughalign(im);
-[transforms, merged] = roughalign(im, 1, scale);
+[transforms, merged] = roughalign(im, 'align', scale);
 % 4) wait. depending on cube size, this may take a while.
 % 5) once done running, error metrics showing the difference in MSE is
 % displayed for each adjacent pair. An error report summary for original
