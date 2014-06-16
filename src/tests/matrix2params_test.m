@@ -19,30 +19,30 @@ classdef matrix2params_test < matlab.unittest.TestCase
             matrix = trans*rot;  
             params = matrix2params(matrix);
             
-            % transformations 
+            % translation
             actTx = params(2);
             expTx = trans(3,1);
             actTy = params(1);
             expTy = trans(3,2);
             
-            % rotation 
-            actTHETA = round(mod(params(3),360)*1e10)*(1e-10);
+            % rotation
+            actTHETA = mod(params(3),360);
             if params(3) < 0;
                 if params(3) < -180;
-                    expTHETA = round((acosd(rot(1,1)))*(1e10))*(1e-10);
+                    expTHETA = acosd(rot(1,1));
                 else    
-                expTHETA = round((360-acosd(rot(1,1)))*1e10)*(1e-10);
+                expTHETA = 360-acosd(rot(1,1));
                 end
             elseif params(3) > 180;
-                expTHETA = round((360-acosd(rot(1,1)))*(1e10))*(1e-10);
+                expTHETA = 360-acosd(rot(1,1));
                 else
-                expTHETA = round((acosd(rot(1,1)))*(1e10))*(1e-10);
+                expTHETA = acosd(rot(1,1));
             end
             
-            % tests for equality 
-            testCase.verifyEqual(actTx, expTx);
-            testCase.verifyEqual(actTy, expTy);
-            testCase.verifyEqual(actTHETA, expTHETA);
+            % tests for equality within perscribed tolerance
+            testCase.verifyEqual(actTx,expTx,'AbsTol',1e-10);
+            testCase.verifyEqual(actTy,expTy,'AbsTol',1e-10);
+            testCase.verifyEqual(actTHETA,expTHETA,'AbsTol',1e-10);
         end
     end
     
