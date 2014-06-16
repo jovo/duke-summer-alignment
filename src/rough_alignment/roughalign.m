@@ -26,16 +26,32 @@ switch nargin
     case 1  % only image stack
         Mtemp = M;
         align = 0;
+        scale = 1;
     case 2  % image stack with align params
         Mtemp = M;
         align = strcmpi(varargin{1}, 'align');
+        scale = 1;
     case 3  % image stack, align, and scale params
         Mtemp = imresize(M, varargin{2});
         align = strcmpi(varargin{1}, 'align');
+        scale = varargin{2};
 end
 
 % compute pairwise transforms
-Transforms = constructtransforms(Mtemp, 'improve');
+tformstemp  = constructtransforms(Mtemp, 'improve');
+Transforms = tformstemp;
+
+% undo the initial resizing
+if scale ~= 1
+	keySet = keys(tformstemp);
+	for i=1:length(keySet)
+        val = values(tformstemp, keySet(i));
+        params = matrix2params(val{1});
+        params(1:2) = params(1:2)/scale;
+        newmatrix = params2matrix(params);
+        Transforms(keySet{i}) = newmatrix;
+	end
+end
 
 % aligns the image based on the transforms if required
 M_new = [];
