@@ -17,6 +17,16 @@ if isempty(errormeasure)
     errormeasure = 'mse';
 end
 
+% remove images that are all one color
+removed = false(size(M, 3),1);
+for i=1:size(M, 3)
+    curimage = M(:,:,i);
+    if std(double(curimage(:))) == 0
+        removed(i) = 1;
+    end
+end
+Mremoved = M(:,:,~removed);
+
 % validate inputs
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
@@ -24,15 +34,15 @@ end
 narginchk(1,3);
 switch nargin
     case 1  % only image stack
-        Mtemp = M;
+        Mtemp = Mremoved;
         align = 0;
         scale = 1;
     case 2  % image stack with align params
-        Mtemp = M;
+        Mtemp = Mremoved;
         align = strcmpi(varargin{1}, 'align');
         scale = 1;
     case 3  % image stack, align, and scale params
-        Mtemp = imresize(M, varargin{2});
+        Mtemp = imresize(Mremoved, varargin{2});
         align = strcmpi(varargin{1}, 'align');
         scale = varargin{2};
 end
@@ -56,10 +66,10 @@ end
 % aligns the image based on the transforms if required
 M_new = [];
 if align
-    M_new = constructalignment(M, Transforms);
+    M_new = constructalignment(Mremoved, Transforms);
     % output error report for both original and aligned stacks.
     format long g;
-    [origE, orig] = errorreport(M, 'Original', errormeasure);
+    [origE, orig] = errorreport(Mremoved, 'Original', errormeasure);
     [alignedE, aligned] = errorreport(M_new, 'Aligned', errormeasure);
     disp('Error improvement:');
     disp( ['Index', 'improvement', '% improvement'] );
