@@ -5,6 +5,30 @@ function [ maxM, maxB, inrangeprop ] = ransac( Indices, d )
 %   can be considered to be inliers. epsilon indicates the fraction of
 %   outliers.
 
+% find a random point from list of points
+function [ points ] = randpoint(indices, count)
+    numInd = size(indices,1);
+    randRow = randi([1,numInd],[count,1]);
+    points = indices(randRow,:);
+    if points(1,2) == points(2,2) && points(1,1) == points(2,1) % ensures for count = 2, unique points 
+        points = randpoint(indices, count);
+    end
+end
+
+% fit a line in standard form to two points
+function [ A, B, C ] = fitline(point1, point2)
+    if point1(2) ~= point2(2)
+        A = (point1(1)-point2(1))/(point1(2)-point2(2));
+        B = -1;
+        C = point1(1)-point1(2)*A; % A = slope
+    else 
+        A = -1;
+        B = 0;
+        C = point1(2);
+    end    
+end
+
+% begin ransac algorithm 
 totalcount = size(Indices, 1);
 s = 2;
 N = 1;
@@ -17,17 +41,17 @@ maxB = 0;
 
 while i < N
     pts = randpoint(Indices, 2);
-    [m, b] = fitline(pts(1,:), pts(2,:));
-    inrange = ( ...
-                Indices(:,2)*m+(b-d) < Indices(:,1) & ...
-                Indices(:,2)*m+(b+d) > Indices(:,1) ...
-              );
+    [A,B,C] = fitline(pts(1,:), pts(2,:));
+    inrange = (A*Indices(:,2)+B*Indices(:,1)+C <= d*sqrt(A^2+B^2));
+          
     inrangecount = sum(inrange);
+    
     if inrangecount > maxinrange
         maxinrange = inrangecount;
-        maxM = m;
-        maxB = b;
+        maxM = A;  
+        maxB = C; 
     end
+    
     outlierfract = 1-inrangecount/totalcount;
     if outlierfract < epsilon
         epsilon = outlierfract;
@@ -37,16 +61,5 @@ while i < N
 end
 
 inrangeprop = 1-epsilon;
-
-    % find a random point from list of points
-    function [ points ] = randpoint(indices, count)
-        points = indices(ceil(rand(count,1)*size(indices,1)),:);
-    end
-
-    % fit a line to two points
-    function [ m, b ] = fitline(point1, point2)
-        m = (point1(1)-point2(1))/(point1(2)-point2(2));
-        b = point1(1)-point1(2)*m;
-    end
 
 end
