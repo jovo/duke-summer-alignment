@@ -69,7 +69,7 @@ else
         % update shifted counts
         yshiftmin = yshiftmin + ymin - 1;
         xshiftmin = xshiftmin + xmin - 1;
-        yshiftmax = yshiftmax + size(M_new,2) - ymax;
+        yshiftmax = yshiftmax + size(M_new,1) - ymax;
         xshiftmax = xshiftmax + size(M_new,2) - xmax;
         M_new = M_new(ymin:ymax, xmin:xmax);
     end
