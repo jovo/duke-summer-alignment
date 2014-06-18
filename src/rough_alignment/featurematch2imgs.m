@@ -18,6 +18,8 @@ sigmaT = floor(size(T,1)/200);
 F1 = fspecial('gaussian', hsizeA, sigmaA);
 F2 = fspecial('gaussian', hsizeT, sigmaT);
 
+A = imhistmatch(A, T);
+T = imhistmatch(T, A);
 % validate inputs
 if nargin > 2
     Ascaled = imresize(imfilter(A, F1), resize);
@@ -37,6 +39,7 @@ pointsT = detectSURFFeatures(Tscaled);
 indexPairs = matchFeatures(featuresA, featuresT, 'Prenormalized', true);
 matchptsA = vptsA(indexPairs(:, 1));
 matchptsT = vptsT(indexPairs(:, 2));
+% figure; showMatchedFeatures(Ascaled, Tscaled, matchptsA, matchptsT, 'montage');
 try
     [geotform, ~, ~] = estimateGeometricTransform(matchptsT, matchptsA, 'affine');
 catch

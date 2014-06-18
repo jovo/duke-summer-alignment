@@ -63,3 +63,9 @@ data/
 
 # vim temp viles
 *.swp
+
+# image files
+*.png
+*.jpg
+*.tiff
+*.tif

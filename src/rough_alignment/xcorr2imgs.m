@@ -49,8 +49,8 @@ A = uint8(A);
 T = uint8(T);
 
 % apply hamming window.
-Amod = hamming2dwindow(A);
-Tmod = hamming2dwindow(T);
+Amod = window2d(A, 'hamming');
+Tmod = window2d(T, 'hamming');
 
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
