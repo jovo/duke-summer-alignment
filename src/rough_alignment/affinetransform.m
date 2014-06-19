@@ -19,13 +19,9 @@ updatedtparam = zeros(1, 3);
 updatedtparam(3) = newtparam(3);
 if TranslateY > 0
     updatedtparam(1) = TranslateYunrounded;
-    if TranslateX > 0
-        updatedtparam(2) = TranslateXunrounded;
-    end
-elseif TranslateY < 0
-    if TranslateX > 0
-        updatedtparam(2) = TranslateXunrounded;
-    end
+end
+if TranslateX > 0
+    updatedtparam(2) = TranslateXunrounded;
 end
 updatedtform = params2matrix(updatedtparam);
 
