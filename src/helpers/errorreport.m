@@ -10,7 +10,8 @@ if isempty(minnonzeropercent)
     minnonzeropercent = 0.3;
 end
 
-Error = errormetrics(M, type, 'warn', intmax, minnonzeropercent);
+Error = errormetrics(M, type, 'warn', -1, minnonzeropercent);
+Error(isnan(Error)) = [];
 
 s = sprintf('ERROR REPORT:\n #############################################\n');
 s = [s, [' Error for image stack ', name, ':'], sprintf('\n')];

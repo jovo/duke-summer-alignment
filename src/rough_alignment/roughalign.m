@@ -66,10 +66,23 @@ end
 % aligns the image based on the transforms if required
 M_new = [];
 if align
+
+    % global alignment using piecewise transformation parameters
     M_new = constructalignment(Mremoved, Transforms);
+
+    % add back removed image slices
+    if removed(1)
+        M_new = cat(3, zeros(size(M_new(:,:,1)), 'uint8'), M_new);
+    end
+    for i=2:size(M,3)
+        if removed(i)
+            M_new = cat(3, M_new(:,:,1:i-1), zeros(size(M_new(:,:,i)), 'uint8'), M_new(:,:,i:end));
+        end
+    end
+
     % output error report for both original and aligned stacks.
     format long g;
-    [origE, orig] = errorreport(Mremoved, 'Original', errormeasure);
+    [origE, orig] = errorreport(M, 'Original', errormeasure);
     [alignedE, aligned] = errorreport(M_new, 'Aligned', errormeasure);
     disp('Error improvement:');
     disp( ['Index', 'improvement', '% improvement'] );
