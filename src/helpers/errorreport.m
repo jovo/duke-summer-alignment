@@ -10,16 +10,21 @@ if isempty(minnonzeropercent)
     minnonzeropercent = 0.3;
 end
 
+% compute error metrics
 Error = errormetrics(M, type, 'warn', -1, minnonzeropercent);
-Error(isnan(Error)) = [];
 
+% remove NaNs from error display string
+disperror = Error;
+disperror(isnan(disperror)) = [];
+
+% save error display to string
 s = sprintf('ERROR REPORT:\n #############################################\n');
 s = [s, [' Error for image stack ', name, ':'], sprintf('\n')];
 s = [s, ['Error metric: ', upper(type), sprintf('\n')]];
-s = [s, sprintf('Sum: %f\n', sum(Error))];
-s = [s, sprintf('Mean: %f\n', mean(Error))];
-s = [s, sprintf('Median: %f\n', median(Error))];
-s = [s, sprintf('Max: %f\n', max(Error))];
-s = [s, sprintf('Min: %f\n', min(Error))];
+s = [s, sprintf('Sum: %f\n', sum(disperror))];
+s = [s, sprintf('Mean: %f\n', mean(disperror))];
+s = [s, sprintf('Median: %f\n', median(disperror))];
+s = [s, sprintf('Max: %f\n', max(disperror))];
+s = [s, sprintf('Min: %f\n', min(disperror))];
 
 end

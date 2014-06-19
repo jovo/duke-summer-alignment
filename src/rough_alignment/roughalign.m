@@ -81,11 +81,11 @@ if align
     end
 
     % output error report for both original and aligned stacks.
-    format long g;
+    format short g;
     [origE, orig] = errorreport(M, 'Original', errormeasure);
     [alignedE, aligned] = errorreport(M_new, 'Aligned', errormeasure);
     disp('Error improvement:');
-    disp( ['Index', 'improvement', '% improvement'] );
+    disp([sprintf('\tIndex\tImprovement\t'), '% Improvement']);
     disp( [(1:size(origE,1))', origE-alignedE, (origE-alignedE)./origE] );
     disp(orig);
     disp(aligned);
