@@ -44,6 +44,16 @@ end
 % flag to indicate failed alignment.
 flag = 0;
 
+% histogram equalization
+T = histeq(T);
+A = histeq(A);
+
+% median filter to remove noise
+yrm = floor(size(A,1)/100);
+xrm = floor(size(A,2)/100);
+A = medfilt2(A, [yrm, xrm]);
+T = medfilt2(T, [yrm, xrm]);
+
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
 T = uint8(T);
@@ -77,6 +87,7 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(Amod).*conj(fft2(Tmod));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
+c = c(1:10,:);
 clear xpowerspec Amod Tmod;
 [~, thetapeak] = find(c==max(c(:)));
 th = (thetapeak - 1) * 360 / size(c, 2);
