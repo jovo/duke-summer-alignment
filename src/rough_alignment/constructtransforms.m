@@ -46,7 +46,7 @@ for i=1:looplength
     img2 = data.M(:,:,i+1);
 
     origerrors(i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax, minnonzeropercent);
-    % feature match for rough angle alignment, then xcorr for precision.
+    % compute transformation for pairwise alignment by cross correlation
     tformtemp = xcorr2imgs(img2, img1, 'pad');
     % refine original tform estimate and save
     [tform, newerrors(i), ~] = refinetformestimate(img2, img1, tformtemp);

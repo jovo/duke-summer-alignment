@@ -30,8 +30,8 @@ else
 end
 
 % detect surf features
-pointsA = detectSURFFeatures(Ascaled);
-pointsT = detectSURFFeatures(Tscaled);
+pointsA = detectSURFFeatures(Ascaled, 'NumScaleLevels', 6);
+pointsT = detectSURFFeatures(Tscaled, 'NumScaleLevels', 6);
 [featuresA, vptsA] = extractFeatures(Ascaled, pointsA);
 [featuresT, vptsT] = extractFeatures(Tscaled, pointsT);
 

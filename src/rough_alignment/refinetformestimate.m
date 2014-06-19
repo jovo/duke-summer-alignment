@@ -28,21 +28,16 @@ besttparam = matrix2params(tform);
 invariantparam = besttparam;
 bounds = 360/min(min(size(A), size(T)));
 
-% iterate over all possible values in a narrow range
-for X = -2:1:2
-    for Y = -2:1:2
-        for theta = linspace(-bounds, bounds, 6);
-            tempparam = invariantparam + [Y, X, theta];
-            tempaligned = affinetransform(T, A, params2matrix(tempparam));
-            temperror = errormetrics(tempaligned, errormeasure, '', intmax, minnonzeropercent);
-            if temperror < besterror    % update best transform results
-                besttform = params2matrix(tempparam);
-                besterror = temperror;
-                bestmerged = tempaligned;
-            end
-        end
+% iterate over all possible theta values in a narrow range
+for theta = linspace(-bounds, bounds, 6);
+    tempparam = invariantparam + [0, 0, theta];
+    tempaligned = affinetransform(T, A, params2matrix(tempparam));
+    temperror = errormetrics(tempaligned, errormeasure, '', intmax, minnonzeropercent);
+    if temperror < besterror    % update best transform results
+        besttform = params2matrix(tempparam);
+        besterror = temperror;
+        bestmerged = tempaligned;
     end
 end
-    
-end
 
+end
