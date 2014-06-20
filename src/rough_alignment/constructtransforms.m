@@ -41,11 +41,13 @@ clear M;
 
 %% iterate through stack, compute transformations for rough alignment.
 for i=1:looplength
+
     % two images of interest.
     img1 = data.M(:,:,i);
     img2 = data.M(:,:,i+1);
 
-    origerrors(i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', intmax, minnonzeropercent);
+    % compute error metric without any transformations. NOTE: no intmax
+    origerrors(i) = errormetrics(data.M(:,:,i:i+1), errormeasure, '', -1, minnonzeropercent);
     % compute transformation for pairwise alignment by cross correlation
     tformtemp = xcorr2imgs(img2, img1, 'pad');
     % refine original tform estimate and save
@@ -144,8 +146,11 @@ if improveaction
         x = linprog(f, A, b, Aeq, beq, lb, ub);
 
         % use solution from LP to find optimal transformation parameters.
-        Tupdated = x(1).*preT + x(2).*postT + x(3).*curT + x(4).*nochangeT;
-        Transforms(indices2key(index1, index2)) = Tupdated;
+        Tupparam = x(1)*matrix2params(preT) + x(2)*matrix2params(postT) ...
+            + x(3)*matrix2params(curT) + x(4)*matrix2params(nochangeT);
+
+        % update Transformation map
+        Transforms(indices2key(index1, index2)) = params2matrix(Tupparam);
 
     end
 end
