@@ -64,7 +64,7 @@ for i=1:length(xindex)
 
 end
 
-pObj = parpool('local', 9);
+pObj = parpool('local', 6);
 [ValCells, KeyCells] = alignhelper(MemKeys, BaseIDs);
 Transforms = containers.Map(KeyCells, ValCells);
 
