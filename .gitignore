@@ -56,7 +56,8 @@ docs/_build/
 .DS_Store
 
 # ignore data files
-data/
+data/*
+!svm/
 
 # matlab temp files
 *.m~

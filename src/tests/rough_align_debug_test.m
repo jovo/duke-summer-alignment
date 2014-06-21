@@ -1,8 +1,8 @@
 % various tests.
 clear all
 close all
-load('/Users/rogerzou/Projects/openconnectome/alignment/data/svm/svm1.mat');
-setup;
+
+setup();
 
 % test identical image with large rotations, moderate shifts
 ac4 = load('/Users/rogerzou/Projects/openconnectome/alignment/data/bock11_example1.mat');
