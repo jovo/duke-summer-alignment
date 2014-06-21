@@ -1,6 +1,9 @@
 function [ Transforms ] = alignimagecube ( imgtoken, xsize, ysize, res )
 %PROCESSIMAGECUBE Process an entire image stack from API
 
+% setup config variables
+config = setup();
+
 % connect to API
 oo = OCP();
 oo.setImageToken(imgtoken);
@@ -78,7 +81,7 @@ delete('data/aligntemp_*.dat');
 
         parfor j=1:length(memkeys)
             % calculate transformations for affine global alignment
-            [tforms, ~] = roughalign(memkeys{j}.Data.data, '', 0.5);
+            [tforms, ~] = roughalign(memkeys{j}.Data.data, '', 0.5, config);
             tformkeys = keys(tforms);
             for k=1:length(tformkeys)
                 curkey = tformkeys{k};

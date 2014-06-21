@@ -1,10 +1,10 @@
-function [ Transforms, flag ] = xcorr2imgs( T, A, pad )
+function [ Transforms, flag ] = xcorr2imgs( T, A, config )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation. Assumed for scale to always be 1.
 %   Computes the transformations that result in automated alignment between
 %   template and A. 
 %   [ tform, flag ] = xcorr2imgs( template, A )
-%   [ tform, flag ] = xcorr2imgs( template, A, pad )
+%   [ tform, flag ] = xcorr2imgs( template, A, config )
 %   If the pad parameter is set to 'pad', then program will add extra
 %   padding that helps with the integrity of taking fourier transforms,
 %   though at the cost of more computation time. flag is raised if
@@ -16,21 +16,15 @@ function [ Transforms, flag ] = xcorr2imgs( T, A, pad )
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
 
-% retrieve global variables
-global peakclassifier;
-
-% whether to use a trained classifier
-classify = 0;
-if strcmpi(class(peakclassifier), 'ClassificationSVM')
-    classifier = peakclassifier;
-    classify = 1;
-end
-
 % validate inputs.
 narginchk(2,3);
-padaction = 0;
-if nargin == 3 && strcmpi(pad, 'pad') % align and pad param
-    padaction = 1;
+% retrieve config variables: whether to use a trained classifier
+peakclassifier = [];
+classify = 0;
+try
+    peakclassifier = config.peakclassifier;
+    classify = 1;
+catch
 end
 
 % stop program early if one image is flat (all one color).
@@ -64,12 +58,10 @@ Tmod = window2d(T, 'hamming');
 
 % additional zero padding to avoid edge bias. Tests show this improves
 % image alignment, but slows down program.
-if padaction
-    ypad = min(floor(size(Amod, 1)/2), floor(size(Tmod, 1)/2));
-    xpad = min(floor(size(Amod, 2)/2), floor(size(Tmod, 2)/2));
-    Amod = padarray(Amod, [ypad, xpad]);
-    Tmod = padarray(Tmod, [ypad, xpad]);
-end
+ypad = min(floor(size(Amod, 1)/2), floor(size(Tmod, 1)/2));
+xpad = min(floor(size(Amod, 2)/2), floor(size(Tmod, 2)/2));
+Amod = padarray(Amod, [ypad, xpad]);
+Tmod = padarray(Tmod, [ypad, xpad]);
 
 % DFT of template and A.
 Amod = fft2(Amod);
@@ -108,8 +100,8 @@ Atemp2 = A(1+ysmin2:size(A,1)-ysmax2, 1+xsmin2:size(A,1)-xsmax2);
 c1 = normxcorr2(RotatedT1, Atemp1);
 c2 = normxcorr2(RotatedT2, Atemp2);
 if classify
-    [y1, x1] = detectpeaksvm(c1, classifier);
-    [y2, x2] = detectpeaksvm(c2, classifier);
+    [y1, x1] = detectpeaksvm(c1, peakclassifier);
+    [y2, x2] = detectpeaksvm(c2, peakclassifier);
 else
     [y1, x1] = find(c1==max(c1(:)));
     [y2, x2] = find(c2==max(c2(:)));

@@ -1,20 +1,22 @@
-function [ besttform, besterror, bestmerged ] = refinetformestimate( T, A, tform )
+function [ besttform, besterror, bestmerged ] = refinetformestimate( T, A, tform, config )
 %REFINETFORMESTIMATE Improve alignment by iterating over a small range of
 %possible rotation angles
-%   [ besttform, besterror, bestmerged ] = refinetformestimate( T, A, tform )
+%   [ besttform, besterror, bestmerged ] = refinetformestimate( T, A, tform, config )
 %   T and A are two matrices, unaligned, and tfrom is the transformation
 %   matrix that aligns T with A. The reason for this refinement is because
 %   the rotation angle is discretized. By refining, a theta value within
 %   the original discrete theta units may be found that minimizes error
 %   function.
 
-% retrieve global variable
-global errormeasure minnonzeropercent;
-if isempty(errormeasure)
-    errormeasure = 'mse';
-end
-if isempty(minnonzeropercent)
-    minnonzeropercent = 0.3;
+narginchk(3,4);
+
+% retrieve config variables
+errormeasure = 'mse';
+minnonzeropercent = 0.3;
+try
+    errormeasure = config.errormeasure;
+    minnonzeropercent = config.minnonzeropercent;
+catch
 end
 
 % initialize best transform results with inputted values

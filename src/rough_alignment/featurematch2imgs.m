@@ -1,10 +1,12 @@
-function [ tform ] = featurematch2imgs( T, A, resize )
+function [ tform ] = featurematch2imgs( T, A, resize, config )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
 %   [ tform ] = matchlocalfeatures( T, A )
-%   [ tform ] = featurematch2imgs( T, A, resize ) T is the image that
+%   [ tform ] = featurematch2imgs( T, A, resize, config ) T is the image that
 %   should be matched to A. scale parameter indicates how much to scale the
 %   image before feature matching to improve efficiency. Realistically, the
 %   parameter should be 0.5 <= scale <= 1.
+
+narginchk(2,4);
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
@@ -54,7 +56,7 @@ r1 = params2matrix([0, 0, featuret(3)]);
 merged = affinetransform(T, A, r1);
 [newT, ycutmin, xcutmin, ycutmax, xcutmax] = rmzeropadding(merged(:,:,1), 1);
 newA = A(1+ycutmin:size(A,1)-ycutmax, 1+xcutmin:size(A,2)-xcutmax);
-t2r2 = xcorr2imgs(newT, newA, 'pad');
+t2r2 = xcorr2imgs(newT, newA, config);
 
 % compute overall transformation
 r2 = [ [t2r2(1:2,1:2),[0;0]]; [0,0,1] ];

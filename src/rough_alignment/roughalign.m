@@ -1,8 +1,7 @@
 function [ Transforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
 %	[ Transforms, M_new ] = roughalign( M )
-%   [ Transforms, M_new ] = roughalign( M, align )
-%   [ Transforms, M_new ] = roughalign( M, align, scale )
+%   [ Transforms, M_new ] = roughalign( M, align, scale, config )
 %   if align variable is 'align', M_new returns the aligned image stack;
 %   otherwise M_new is nil. scale indicates how much the image should be
 %   resized during the alignment process. Primarily used for large images
@@ -11,11 +10,7 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 
 tic
 
-% retrieve global variable
-global errormeasure;
-if isempty(errormeasure)
-    errormeasure = 'mse';
-end
+narginchk(1,4);
 
 % remove images that are all one color
 removed = false(size(M, 3),1);
@@ -31,24 +26,30 @@ Mremoved = M(:,:,~removed);
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
 end
-narginchk(1,3);
-switch nargin
-    case 1  % only image stack
-        Mtemp = Mremoved;
-        align = 0;
-        scale = 1;
-    case 2  % image stack with align params
-        Mtemp = Mremoved;
-        align = strcmpi(varargin{1}, 'align');
-        scale = 1;
-    case 3  % image stack, align, and scale params
-        Mtemp = imresize(Mremoved, varargin{2});
-        align = strcmpi(varargin{1}, 'align');
-        scale = varargin{2};
+align = 0;
+if nargin > 1
+    align = strcmpi(varargin{1}, 'align');
+end
+scale = 1;
+Mtemp = Mremoved;
+if nargin > 2 && varargin{2} ~= 1
+    scale = varargin{2};
+    Mtemp = imresize(Mremoved, scale);
+end
+config = struct;
+if nargin > 3
+    config = varargin{3};
+end
+
+% retrieve config variable
+errormeasure = 'mse';
+try
+    errormeasure = config.errormeasure;
+catch
 end
 
 % compute pairwise transforms
-tformstemp  = constructtransforms(Mtemp, 'improve');
+tformstemp  = constructtransforms(Mtemp, config);
 Transforms = tformstemp;
 
 % undo the initial resizing
