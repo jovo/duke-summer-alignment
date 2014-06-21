@@ -10,7 +10,11 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 
 tic
 
+% validate inputs
 narginchk(1,4);
+if size(M, 3) < 2
+    error('Size of stack must be at least 2');
+end
 
 % remove images that are all one color
 removed = false(size(M, 3),1);
@@ -22,10 +26,16 @@ for i=1:size(M, 3)
 end
 Mremoved = M(:,:,~removed);
 
-% validate inputs
-if size(M, 3) < 2
-    error('Size of stack must be at least 2');
+% initialize output variable
+M_new = [];
+
+% if # of valid images (after invalid img removal) is < 2, then return
+if size(Mremoved, 3) < 2
+    Transforms = containers.Map();
+    return;
 end
+
+% parse inputs
 align = 0;
 if nargin > 1
     align = strcmpi(varargin{1}, 'align');
@@ -65,7 +75,6 @@ if scale ~= 1
 end
 
 % aligns the image based on the transforms if required
-M_new = [];
 if align
 
     % global alignment using piecewise transformation parameters

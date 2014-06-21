@@ -19,12 +19,12 @@ xcount = floor(xcurimgsize/xsize);
 ycount = floor(ycurimgsize/ysize);
 
 % initialize index locations for query
-[xindex, yindex] = meshgrid(1:xcount, 1:ycount);
+[xindex, yindex] = meshgrid(1:xcount+1, 1:ycount+1);
 xindex = xindex(:)*xsize - xsize;
 yindex = yindex(:)*ysize - ysize;
 
 % use total depth for each sub-cube
-zsize = 2;%imgdepth;
+zsize = imgdepth;
 zoff = 0;
 
 MemKeys = cell(1, length(xindex));
@@ -34,12 +34,12 @@ BaseIDs = cell(1, length(xindex));
 for i=1:length(xindex)
 
     % set offsets and sizes
-    if xindex(i) == xcount * (xsize-1)
+    if xindex(i) == xsize * xcount
         xs = xcurimgsize - xindex(i);
     else
         xs = xsize;
     end
-    if yindex(i) == ycount * (ysize-1)
+    if yindex(i) == ysize * ycount
         ys = ycurimgsize - yindex(i);
     else
         ys = ysize;
@@ -68,7 +68,6 @@ pObj = parpool('local', 9);
 [ValCells, KeyCells] = alignhelper(MemKeys, BaseIDs);
 Transforms = containers.Map(KeyCells, ValCells);
 
-clear MemKeys;
 delete(pObj);
 delete('data/aligntemp_*.dat');
 
@@ -76,22 +75,32 @@ delete('data/aligntemp_*.dat');
 
     function [ valcells, keycells ] = alignhelper( memkeys, baseids )
 
-        valcells = cell(length(memkeys), 1);
-        keycells = cell(length(memkeys), 1);
+        celly = length(memkeys);
+        cellx = size(memkeys{1}.Data.data,3)-1;
+        valcells = cell(celly, cellx);
+        keycells = cell(celly, cellx);
 
         parfor j=1:length(memkeys)
             % calculate transformations for affine global alignment
             [tforms, ~] = roughalign(memkeys{j}.Data.data, '', 0.5, config);
             tformkeys = keys(tforms);
+            valrow = cell(1, cellx);
+            keyrow = cell(1, cellx);
             for k=1:length(tformkeys)
                 curkey = tformkeys{k};
                 curval = values(tforms, {curkey});
-                ids = [ baseids{j}, '_', curkey ];
-                valcells(j) = {curval};
-                keycells(j) = {ids};
+                ids = [ baseids{j}, '_[', curkey, ']' ];
+                valrow(k) = {curval};
+                keyrow(k) = {ids};
             end
-
+            valcells(j,:) = valrow;
+            keycells(j,:) = keyrow;
         end
+        emptycells = cellfun('isempty', keycells);
+        valcells = valcells(~emptycells);
+        keycells = keycells(~emptycells);
+        valcells = valcells(:);
+        keycells = keycells(:);
 
     end
 
