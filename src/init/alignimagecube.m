@@ -59,8 +59,8 @@ for i=1:length(xindex)
 
     % store sub-cube and its base ids
     MemKeys(i) = {m};
-    BaseIDs(i) = {[num2str(res), '_', num2str(xoff), '_', num2str(yoff), '_', ...
-                  num2str(zoff), '_', num2str(xs), '_', num2str(ys)]};
+    BaseIDs(i) = {[imgtoken, '_', num2str(res), '_', num2str(xoff), '_', ...
+        num2str(yoff), '_', num2str(zoff), '_', num2str(xs), '_', num2str(ys)]};
 
 end
 
