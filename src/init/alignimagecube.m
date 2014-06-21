@@ -2,7 +2,7 @@ function [ Transforms ] = alignimagecube ( imgtoken, xsize, ysize, res )
 %PROCESSIMAGECUBE Process an entire image stack from API
 
 % setup config variables
-config = setup();
+config = setupconfigvars();
 
 % connect to API
 oo = OCP();

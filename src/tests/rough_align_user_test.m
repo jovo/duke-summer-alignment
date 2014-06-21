@@ -14,7 +14,7 @@ im = cutout.data;
 % the alignment performance on 1024 by 1024 images. Config sets
 % configuration variables for alignment. See setup.m for more info.
 scale = 0.5;
-config = setup();
+config = setupconfigvars();
 % 3) run roughalign(im);
 [transforms, merged] = roughalign(im, 'align', scale, config);
 % 4) wait. depending on cube size, this may take a while.

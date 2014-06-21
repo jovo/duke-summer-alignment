@@ -1,4 +1,4 @@
-function [ config ] = setup
+function [ config ] = setupconfigvars
 %SETUP loads peak detection svm, store variables in a struct.
 
 config = struct;
