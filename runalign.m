@@ -4,4 +4,4 @@
 Transforms = alignimagecube(    'lee14', ...    % token
                                 1024, ...       % xsize
                                 1024, ...       % ysize
-                                7);             % resolution
+                                1);             % resolution
