@@ -42,14 +42,14 @@ pObj = parpool('local', workersize);
 % save all sub-cubes as memmapfiles
 c = 1;  % counter
 for i=1:numIterations   % iterate over partitions
-    
+
     % data structure for memmapfile keys and ids in current iteration
     MemKeys = cell(1, partitionsize);
     BaseIDs = cell(1, partitionsize);
-    
+
     % starting index for current iteration
     curIndex = c;
-    
+
     for j=1:partitionsize   % iterate over each partition
 
         % set offsets and sizes
@@ -69,8 +69,6 @@ for i=1:numIterations   % iterate over partitions
         % query API
         cutout = read_api(oo, xoff, yoff, zoff, xs, ys, zsize, res);
 
-        size(cutout.data)
-        
         % save as memmapfile
         filename = [ 'data/aligntemp_', num2str(j), '.dat' ];
         fileID = fopen(filename, 'w');
@@ -89,7 +87,7 @@ for i=1:numIterations   % iterate over partitions
         else
             c = c + 1;
         end
-        
+
     end
 
     [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
@@ -119,28 +117,28 @@ delete('data/aligntemp_*.dat');
 
         % iterate over each sub-cube
         parfor u=1:length(memkeys)
-            
+
             % calculate transformations for affine global alignment
             [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, config);
             tformkeys = keys(tforms);
             valrow = cell(1, cellx);
             keyrow = cell(1, cellx);
-            
+
             % iterate over each transformation for one sub-cube
             for v=1:length(tformkeys)
-                
+
                 % change keys to reflect global coordinates
                 curkey = tformkeys{v};
                 curval = values(tforms, {curkey});
                 ids = [ baseids{u}, '_[', curkey, ']' ];
                 valrow(v) = {curval};
                 keyrow(v) = {ids};
-                
+
             end
             valcells(u,:) = valrow;
             keycells(u,:) = keyrow;
         end
-        
+
         emptycells = cellfun('isempty', keycells);
         valcells = valcells(~emptycells);
         keycells = keycells(~emptycells);
