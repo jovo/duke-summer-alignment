@@ -80,14 +80,25 @@ if align
     % global alignment using piecewise transformation parameters
     M_new = constructalignment(Mremoved, Transforms);
 
+    origIndices = 1:size(M_new,3);
     % add back removed image slices
     if removed(1)
         M_new = cat(3, zeros(size(M_new(:,:,1)), 'uint8'), M_new);
+        origIndices = origIndices + 1;
     end
     for i=2:size(M,3)
         if removed(i)
             M_new = cat(3, M_new(:,:,1:i-1), zeros(size(M_new(:,:,i)), 'uint8'), M_new(:,:,i:end));
+            origIndices(i:end) = origIndices(i:end)+1;
         end
+    end
+
+    % update transform map keys after adding back image slices
+    keySet = keys(Transforms);
+    for i=1:size(origIndices)-1
+        curVal = values(Transforms, keySet(i));
+        remove(Transforms, keySet{i});
+        Transforms(indices2key(origIndices(i), origIndices(i+1))) = curVal;
     end
 
     % output error report for both original and aligned stacks.

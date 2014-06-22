@@ -1,4 +1,4 @@
-function [ Transforms ] = alignimagecube ( imgtoken, xsize, ysize, res )
+function [ Transforms ] = alignimagecube ( imgtoken, xsize, ysize, res, workersize )
 %PROCESSIMAGECUBE Process an entire image stack from API
 
 % setup config variables
@@ -23,79 +23,124 @@ ycount = floor(ycurimgsize/ysize);
 xindex = xindex(:)*xsize - xsize;
 yindex = yindex(:)*ysize - ysize;
 
-% use total depth for each sub-cube
+% use total depth for z direction
 zsize = imgdepth;
 zoff = 0;
 
-MemKeys = cell(1, length(xindex));
-BaseIDs = cell(1, length(xindex));
+% specify number of sub-cubes and iterations
+numCubes = length(xindex);
+partitionsize = workersize;
+numIterations = ceil(numCubes/partitionsize);
+
+% data structure for transforms and associated keys
+KeyCells = cell(numCubes, zsize-1);
+ValCells = cell(numCubes, zsize-1);
+
+% set pool of workers
+pObj = parpool('local', workersize);
 
 % save all sub-cubes as memmapfiles
-for i=1:length(xindex)
+c = 1;  % counter
+for i=1:numIterations   % iterate over partitions
+    
+    % data structure for memmapfile keys and ids in current iteration
+    MemKeys = cell(1, partitionsize);
+    BaseIDs = cell(1, partitionsize);
+    
+    % starting index for current iteration
+    curIndex = c;
+    
+    for j=1:partitionsize   % iterate over each partition
 
-    % set offsets and sizes
-    if xindex(i) == xsize * xcount
-        xs = xcurimgsize - xindex(i);
-    else
-        xs = xsize;
+        % set offsets and sizes
+        if xindex(c) == xsize * xcount
+            xs = xcurimgsize - xindex(c);
+        else
+            xs = xsize;
+        end
+        if yindex(c) == ysize * ycount
+            ys = ycurimgsize - yindex(c);
+        else
+            ys = ysize;
+        end
+        xoff = xindex(c);
+        yoff = yindex(c);
+
+        % query API
+        cutout = read_api(oo, xoff, yoff, zoff, xs, ys, zsize, res);
+
+        size(cutout.data)
+        
+        % save as memmapfile
+        filename = [ 'data/aligntemp_', num2str(j), '.dat' ];
+        fileID = fopen(filename, 'w');
+        fwrite(fileID, cutout.data, 'uint8');
+        fclose(fileID);
+        m = memmapfile(filename, 'Format', {'uint8', size(cutout.data), 'data'});
+
+        % store sub-cube and its base ids
+        MemKeys(j) = {m};
+        BaseIDs(j) = {[imgtoken, '_', num2str(res), '_', num2str(xoff), '_', ...
+            num2str(yoff), '_', num2str(zoff), '_', num2str(xs), '_', num2str(ys)]};
+
+        % update status for next procedure
+        if c >= numCubes
+            break;
+        else
+            c = c + 1;
+        end
+        
     end
-    if yindex(i) == ysize * ycount
-        ys = ycurimgsize - yindex(i);
-    else
-        ys = ysize;
-    end
-    xoff = xindex(i);
-    yoff = yindex(i);
 
-    % query API
-    cutout = read_api(oo, xoff, yoff, zoff, xs, ys, zsize, res);
+    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
 
-    % save as memmapfile
-    filename = [ 'data/aligntemp_', num2str(i), '.dat' ];
-    fileID = fopen(filename, 'w');
-    fwrite(fileID, cutout.data, 'uint8');
-    fclose(fileID);
-    m = memmapfile(filename, 'Format', {'uint8', size(cutout.data), 'data'});
-
-    % store sub-cube and its base ids
-    MemKeys(i) = {m};
-    BaseIDs(i) = {[imgtoken, '_', num2str(res), '_', num2str(xoff), '_', ...
-        num2str(yoff), '_', num2str(zoff), '_', num2str(xs), '_', num2str(ys)]};
+    KeyCells(curIndex, 1:size(curKeyCells,1)) = curKeyCells;
+    ValCells(curIndex, 1:size(curValCells,1)) = curValCells;
 
 end
 
-pObj = parpool('local', 6);
-[ValCells, KeyCells] = alignhelper(MemKeys, BaseIDs);
-Transforms = containers.Map(KeyCells, ValCells);
+% save transforms as map
+Transforms = containers.Map(KeyCells(:), ValCells(:));
 
+% delete parpool and temp files
 delete(pObj);
 delete('data/aligntemp_*.dat');
 
 %% Helper function
 
-    function [ valcells, keycells ] = alignhelper( memkeys, baseids )
+    % given a few sub-cubes, will align then and output transformations.
+    function [ keycells, valcells ] = alignhelper( memkeys, baseids )
 
+        % specify sizes and initialize data structures
         celly = length(memkeys);
         cellx = size(memkeys{1}.Data.data,3)-1;
         valcells = cell(celly, cellx);
         keycells = cell(celly, cellx);
 
-        parfor j=1:length(memkeys)
+        % iterate over each sub-cube
+        parfor u=1:length(memkeys)
+            
             % calculate transformations for affine global alignment
-            [tforms, ~] = roughalign(memkeys{j}.Data.data, '', 0.5, config);
+            [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, config);
             tformkeys = keys(tforms);
             valrow = cell(1, cellx);
             keyrow = cell(1, cellx);
-            for k=1:length(tformkeys)
-                curkey = tformkeys{k};
+            
+            % iterate over each transformation for one sub-cube
+            for v=1:length(tformkeys)
+                
+                % change keys to reflect global coordinates
+                curkey = tformkeys{v};
                 curval = values(tforms, {curkey});
-                ids = [ baseids{j}, '_[', curkey, ']' ];
-                valrow(k) = {curval};
-                keyrow(k) = {ids};
+                ids = [ baseids{u}, '_[', curkey, ']' ];
+                valrow(v) = {curval};
+                keyrow(v) = {ids};
+                
             end
-            valcells(j,:) = valrow;
-            keycells(j,:) = keyrow;
+            valcells(u,:) = valrow;
+            keycells(u,:) = keyrow;
         end
+        
         emptycells = cellfun('isempty', keycells);
         valcells = valcells(~emptycells);
         keycells = keycells(~emptycells);

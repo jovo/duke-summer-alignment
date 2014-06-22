@@ -45,8 +45,10 @@ A = histeq(A);
 % median filter to remove noise
 yrm = floor(size(A,1)/100);
 xrm = floor(size(A,2)/100);
-A = medfilt2(A, [yrm, xrm]);
-T = medfilt2(T, [yrm, xrm]);
+if yrm > 0 && xrm > 0
+    A = medfilt2(A, [yrm, xrm]);
+    T = medfilt2(T, [yrm, xrm]);
+end
 
 % convert inputs to unsigned 8-bit integers.
 A = uint8(A);
@@ -91,12 +93,21 @@ clear c;
 RotatedT1 = imrotate(T, THETA1, 'nearest', 'crop');
 RotatedT2 = imrotate(T, THETA2, 'nearest', 'crop');
 
-% pick correct rotation by maximizing cross correlation. compute best
-% transformation parameters.
+% try two possible rotations.
 [RotatedT1, ysmin1, xsmin1, ysmax1, xsmax1] = rmzeropadding(RotatedT1, 2);
 [RotatedT2, ysmin2, xsmin2, ysmax2, xsmax2] = rmzeropadding(RotatedT2, 2);
 Atemp1 = A(1+ysmin1:size(A,1)-ysmax1, 1+xsmin1:size(A,1)-xsmax1);
 Atemp2 = A(1+ysmin2:size(A,1)-ysmax2, 1+xsmin2:size(A,1)-xsmax2);
+
+% stop if any images are flat at this point.
+if std(double(Atemp1(:))) == 0 || std(double(Atemp2(:))) == 0 || ...
+        std(double(RotatedT1(:))) == 0 || std(double(RotatedT2(:))) == 0
+    Transforms = eye(3);
+    flag = 1;
+    return;
+end
+
+% pick correct rotation by maximizing cross correlation.
 c1 = normxcorr2(RotatedT1, Atemp1);
 c2 = normxcorr2(RotatedT2, Atemp2);
 if classify
