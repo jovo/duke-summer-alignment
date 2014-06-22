@@ -81,7 +81,6 @@ clear filteredFT filteredFA;
 % compute phase correlation to find best theta.
 xpowerspec = fft2(Amod).*conj(fft2(Tmod));
 c = real(ifft2(xpowerspec.*(1/norm(xpowerspec))));
-c = c(1:10,:);
 clear xpowerspec Amod Tmod;
 [~, thetapeak] = find(c==max(c(:)));
 th = (thetapeak - 1) * 360 / size(c, 2);
