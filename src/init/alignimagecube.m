@@ -15,11 +15,11 @@ imgdepth = oo.imageInfo.DATASET.SLICERANGE(2);
 % size of specific image cube
 xcurimgsize = imgsizemap(1);
 ycurimgsize = imgsizemap(2);
-xcount = floor(xcurimgsize/xsize);
-ycount = floor(ycurimgsize/ysize);
+xcount = ceil(xcurimgsize/xsize);
+ycount = ceil(ycurimgsize/ysize);
 
 % initialize index locations for query
-[xindex, yindex] = meshgrid(1:xcount+1, 1:ycount+1);
+[xindex, yindex] = meshgrid(1:xcount, 1:ycount);
 xindex = xindex(:)*xsize - xsize;
 yindex = yindex(:)*ysize - ysize;
 
@@ -33,8 +33,8 @@ partitionsize = workersize;
 numIterations = ceil(numCubes/partitionsize);
 
 % data structure for transforms and associated keys
-KeyCells = cell(numCubes, zsize-1);
-ValCells = cell(numCubes, zsize-1);
+KeyCells = cell(numIterations, (zsize-1)*partitionsize);
+ValCells = cell(numIterations, (zsize-1)*partitionsize);
 
 % set pool of workers
 pObj = parpool('local', workersize);
@@ -43,22 +43,23 @@ pObj = parpool('local', workersize);
 c = 1;  % counter
 for i=1:numIterations   % iterate over partitions
 
-    % data structure for memmapfile keys and ids in current iteration
-    MemKeys = cell(1, partitionsize);
-    BaseIDs = cell(1, partitionsize);
-
-    % starting index for current iteration
+    % starting index and size of current iteration
     curIndex = c;
+    curItCount = min(numCubes-curIndex+1,partitionsize);
 
-    for j=1:partitionsize   % iterate over each partition
+    % data structure for memmapfile keys and ids in current iteration
+    MemKeys = cell(1, curItCount);
+    BaseIDs = cell(1, curItCount);
+
+    for j=1: curItCount % iterate over each partition
 
         % set offsets and sizes
-        if xindex(c) == xsize * xcount
+        if xindex(c) == xsize * (xcount-1)
             xs = xcurimgsize - xindex(c);
         else
             xs = xsize;
         end
-        if yindex(c) == ysize * ycount
+        if yindex(c) == ysize * (ycount-1)
             ys = ycurimgsize - yindex(c);
         else
             ys = ysize;
@@ -90,12 +91,19 @@ for i=1:numIterations   % iterate over partitions
 
     end
 
+    % helper to compute transforms in parallel
     [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
 
-    KeyCells(curIndex, 1:size(curKeyCells,1)) = curKeyCells;
-    ValCells(curIndex, 1:size(curValCells,1)) = curValCells;
+    % update data structure with computed transforms
+    KeyCells(i, 1:size(curKeyCells,1)) = curKeyCells';
+    ValCells(i, 1:size(curValCells,1)) = curValCells';
 
 end
+
+% format output by removing empty cells
+nancells = cellfun('isempty', KeyCells);
+KeyCells = KeyCells(~nancells);
+ValCells = ValCells(~nancells);
 
 % save transforms as map
 Transforms = containers.Map(KeyCells(:), ValCells(:));
@@ -106,23 +114,23 @@ delete('data/aligntemp_*.dat');
 
 %% Helper function
 
-    % given a few sub-cubes, will align then and output transformations.
+    % computes tranforms in parallel for sub-cubes specified in inputs
     function [ keycells, valcells ] = alignhelper( memkeys, baseids )
 
         % specify sizes and initialize data structures
-        celly = length(memkeys);
-        cellx = size(memkeys{1}.Data.data,3)-1;
-        valcells = cell(celly, cellx);
-        keycells = cell(celly, cellx);
+        cellsizey = length(memkeys);
+        cellsizex = size(memkeys{1}.Data.data, 3) - 1;
+        valcells = cell(cellsizey, cellsizex);
+        keycells = cell(cellsizey, cellsizex);
 
         % iterate over each sub-cube
-        parfor u=1:length(memkeys)
+        parfor u=1:cellsizey
 
             % calculate transformations for affine global alignment
             [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, config);
             tformkeys = keys(tforms);
-            valrow = cell(1, cellx);
-            keyrow = cell(1, cellx);
+            valrow = cell(1, cellsizex);
+            keyrow = cell(1, cellsizex);
 
             % iterate over each transformation for one sub-cube
             for v=1:length(tformkeys)
@@ -135,13 +143,12 @@ delete('data/aligntemp_*.dat');
                 keyrow(v) = {ids};
 
             end
+
             valcells(u,:) = valrow;
             keycells(u,:) = keyrow;
+
         end
 
-        emptycells = cellfun('isempty', keycells);
-        valcells = valcells(~emptycells);
-        keycells = keycells(~emptycells);
         valcells = valcells(:);
         keycells = keycells(:);
 
