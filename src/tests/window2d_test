@@ -1,0 +1,22 @@
+classdef window2d_test < matlab.unittest.TestCase
+    %WINDOW2D_TEST Summary of this class goes here
+    %   Detailed explanation goes here
+    
+    methods (Test)
+        function testHamming(testCase)
+            M = randi([1,10],[5,5]);
+            y = hamming(5);
+            M_hamm = M.*(y(:)*y(:)');
+            M_new = window2d(M,'hamming');
+            testCase.verifyEqual(M_hamm,M_new);
+        end
+        function testHann(testCase)
+            M = randi([1,10],[5,5]);
+            y = hann(5);
+            M_hann = M.*(y(:)*y(:)');
+            M_new = window2d(M,'hann');
+            testCase.verifyEqual(M_hann,M_new);
+        end
+    end
+    
+end
