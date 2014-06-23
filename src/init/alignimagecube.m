@@ -139,7 +139,7 @@ delete('data/aligntemp_*.dat');
                 curkey = tformkeys{v};
                 curval = values(tforms, {curkey});
                 ids = [ baseids{u}, '_[', curkey, ']' ];
-                valrow(v) = {curval};
+                valrow(v) = curval;
                 keyrow(v) = {ids};
 
             end

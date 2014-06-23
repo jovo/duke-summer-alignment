@@ -52,10 +52,10 @@ if nargin > 3
 end
 
 % retrieve config variable
-errormeasure = 'mse';
 try
     errormeasure = config.errormeasure;
 catch
+    errormeasure = 'mse';
 end
 
 % compute pairwise transforms

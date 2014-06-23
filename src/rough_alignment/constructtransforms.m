@@ -10,14 +10,16 @@ function [ Transforms ] = constructtransforms( M, config )
 narginchk(1,2);
 
 % retrieve config variables
-errormeasure = 'mse';
-minnonzeropercent = 0.3;
-minpercenterrorimprovement = 0;
+
 try
     errormeasure = config.errormeasure;
     minnonzeropercent = config.minnonzeropercent;
     minpercenterrorimprovement = config.minpercenterrorimprovement;
 catch
+    config = struct;
+    config.errormeasure = 'mse';
+    config.minnonzeropercent = 0.3;
+    config.minpercenterrorimprovement = 0;
 end
 
 % initialize data structures

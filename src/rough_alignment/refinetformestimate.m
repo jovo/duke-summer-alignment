@@ -11,12 +11,12 @@ function [ besttform, besterror, bestmerged ] = refinetformestimate( T, A, tform
 narginchk(3,4);
 
 % retrieve config variables
-errormeasure = 'mse';
-minnonzeropercent = 0.3;
 try
     errormeasure = config.errormeasure;
     minnonzeropercent = config.minnonzeropercent;
 catch
+    errormeasure = 'mse';
+    minnonzeropercent = 0.3;
 end
 
 % initialize best transform results with inputted values

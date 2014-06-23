@@ -19,12 +19,12 @@ function [ Transforms, flag ] = xcorr2imgs( T, A, config )
 % validate inputs.
 narginchk(2,3);
 % retrieve config variables: whether to use a trained classifier
-peakclassifier = [];
-classify = 0;
 try
     peakclassifier = config.peakclassifier;
     classify = 1;
 catch
+    peakclassifier = [];
+    classify = 0;
 end
 
 % stop program early if one image is flat (all one color).
