@@ -23,7 +23,7 @@ croppedimg = imgpad(yp-cropsy:yp+cropsy, xp-cropsx:xp+cropsx);
 % regionprops on binary image
 bw = im2bw(croppedimg, 0.95);
 rp = regionprops(bw);
-if size(rp) == [0,1]
+if isequal(size(rp), [0,1])
     rparea = 0;
 else
     rparea = rp.Area;
@@ -40,6 +40,7 @@ features(2) = rparea;  % area of binary 'on' region
 features(3) = max(max(Gmag));
 features(4) = max(max(Lmag));
 features(5) = skewness(double(croppedimg(:)));
+features(isnan(features)) = 0;
 
 % ypeakcrop = 1+cropsy;
 % xpeakcrop = 1+cropsx;

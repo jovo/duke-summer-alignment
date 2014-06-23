@@ -33,7 +33,15 @@ for i=1:size(maxIndices,1);
     yptemp = maxIndices(i,2);
     xptemp = maxIndices(i,3);
     feature = getpeakfeatures(c, yptemp, xptemp);
-    [label,~] = predict(classifier, feature);
+    if sum(isnan(feature)) > 0
+        disp('oh no');
+        feature
+    end
+    if strcmpi(class(classifier), 'ClassificationSVM')
+        [label,~] = predict(classifier, feature);
+    else
+        label = svmclassify(classifier, feature);
+    end
     if label
         ypeak = yptemp;
         xpeak = xptemp;

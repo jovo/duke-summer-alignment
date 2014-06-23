@@ -11,10 +11,12 @@ im = cutout.data;
 % 2) the scale is set to 0.5 right now. This means that each image is
 % scaled by 0.5 before computing the transforms. This improves the running
 % time especially for big images. A few tests show this minimally impacts
-% the alignment performance on 1024 by 1024 images.
+% the alignment performance on 1024 by 1024 images. Config sets
+% configuration variables for alignment. See setup.m for more info.
 scale = 0.5;
+config = setupconfigvars();
 % 3) run roughalign(im);
-[transforms, merged] = roughalign(im, 'align', scale);
+[transforms, merged] = roughalign(im, 'align', scale, config);
 % 4) wait. depending on cube size, this may take a while.
 % 5) once done running, error metrics showing the difference in MSE is
 % displayed for each adjacent pair. An error report summary for original
