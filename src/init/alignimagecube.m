@@ -79,8 +79,15 @@ for i=1:numIterations   % iterate over partitions
 
         % store sub-cube and its base ids
         MemKeys(j) = {m};
-        BaseIDs(j) = {[imgtoken, '_', num2str(res), '_', num2str(xoff), '_', ...
-            num2str(yoff), '_', num2str(zoff), '_', num2str(xs), '_', num2str(ys)]};
+        BaseIDs(j) = {struct( ...
+                            'imgtoken', imgtoken, ...
+                            'resolution', res, ...
+                            'xoffset', xoff, ...
+                            'yoffset', yoff, ...
+                            'zoffset', zoff, ...
+                            'xsize', xs, ...
+                            'ysize', ys ...
+                           )};
 
         % update status for next procedure
         if c >= numCubes
@@ -138,9 +145,10 @@ delete('data/aligntemp_*.dat');
                 % change keys to reflect global coordinates
                 curkey = tformkeys{v};
                 curval = values(tforms, {curkey});
-                ids = [ baseids{u}, '_[', curkey, ']' ];
+                index = baseids{u};
+                [index.zslice1, index.zslice2] = key2indices(curkey);
                 valrow(v) = curval;
-                keyrow(v) = {ids};
+                keyrow(v) = {globalindices2key(index)};
 
             end
 
