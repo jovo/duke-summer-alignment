@@ -1,5 +1,5 @@
-function [ Transforms ] = alignimagecube ( imgtoken, xsize, ysize, res, workersize )
-%PROCESSIMAGECUBE Process an entire image stack from API
+function [ Transforms ] = computeimgcubetransforms ( imgtoken, xsize, ysize, res, workersize )
+%COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image stack.
 
 % setup config variables
 config = setupconfigvars();
