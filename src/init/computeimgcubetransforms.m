@@ -1,4 +1,4 @@
-function [ Transforms ] = computeimgcubetransforms ( imgtoken, xsize, ysize, res, workersize )
+function [ Transforms ] = computeimgcubetransforms ( imgtoken, xsubsize, ysubsize, res, workersize )
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image stack.
 
 % setup config variables
@@ -15,13 +15,13 @@ imgdepth = oo.imageInfo.DATASET.SLICERANGE(2);
 % size of specific image cube
 xcurimgsize = imgsizemap(1);
 ycurimgsize = imgsizemap(2);
-xcount = ceil(xcurimgsize/xsize);
-ycount = ceil(ycurimgsize/ysize);
+xcount = ceil(xcurimgsize/xsubsize);
+ycount = ceil(ycurimgsize/ysubsize);
 
 % initialize index locations for query
 [xindex, yindex] = meshgrid(1:xcount, 1:ycount);
-xindex = xindex(:)*xsize - xsize;
-yindex = yindex(:)*ysize - ysize;
+xindex = xindex(:)*xsubsize - xsubsize;
+yindex = yindex(:)*ysubsize - ysubsize;
 
 % use total depth for z direction
 zsize = imgdepth;
@@ -54,15 +54,15 @@ for i=1:numIterations   % iterate over partitions
     for j=1: curItCount % iterate over each partition
 
         % set offsets and sizes
-        if xindex(c) == xsize * (xcount-1)
+        if xindex(c) == xsubsize * (xcount-1)
             xs = xcurimgsize - xindex(c);
         else
-            xs = xsize;
+            xs = xsubsize;
         end
-        if yindex(c) == ysize * (ycount-1)
+        if yindex(c) == ysubsize * (ycount-1)
             ys = ycurimgsize - yindex(c);
         else
-            ys = ysize;
+            ys = ysubsize;
         end
         xoff = xindex(c);
         yoff = yindex(c);
@@ -112,8 +112,13 @@ nancells = cellfun('isempty', KeyCells);
 KeyCells = KeyCells(~nancells);
 ValCells = ValCells(~nancells);
 
-% save transforms as map
-Transforms = containers.Map(KeyCells(:), ValCells(:));
+% save transforms
+Transforms = struct;
+Transforms.imgtoken = imgtoken;
+Transforms.resolution = res;
+Transforms.xsubsize = xsubsize;
+Transforms.ysubsize = ysubsize;
+Transforms.transforms = containers.Map(KeyCells(:), ValCells(:));
 
 % delete parpool and temp files
 delete(pObj);

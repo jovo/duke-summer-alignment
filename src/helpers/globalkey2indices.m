@@ -11,8 +11,8 @@ index.resolution = str2double(basekeysplit{2});
 index.xoffset = str2double(basekeysplit{3});
 index.yoffset = str2double(basekeysplit{4});
 index.zoffset = str2double(basekeysplit{5});
-index.xsize = str2double(basekeysplit{6});
-index.ysize = str2double(basekeysplit{7});
+index.xsubsize = str2double(basekeysplit{6});
+index.ysubsize = str2double(basekeysplit{7});
 slicekey = basekeysplit{8};
 
 [index.zslice1,index.zslice2]  = key2indices(slicekey(2:end-1));
