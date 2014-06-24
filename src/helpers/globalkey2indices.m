@@ -4,17 +4,16 @@ function [ index ] = globalkey2indices( key )
 %   index that contains global positioning data of the slice.
 
 basekeysplit = strsplit(key, '_');
+basekeysplit(2:end) = str2double(str2double(basekeysplit(2:end));
 
 index = struct;
 index.imgtoken = basekeysplit{1};
-index.resolution = str2double(basekeysplit{2});
-index.xoffset = str2double(basekeysplit{3});
-index.yoffset = str2double(basekeysplit{4});
-index.zoffset = str2double(basekeysplit{5});
-index.xsubsize = str2double(basekeysplit{6});
-index.ysubsize = str2double(basekeysplit{7});
-slicekey = basekeysplit{8};
-
-[index.zslice1,index.zslice2]  = key2indices(slicekey(2:end-1));
+index.resolution = basekeysplit{2};
+index.xoffset = basekeysplit{3};
+index.yoffset = basekeysplit{4};
+index.xsubsize = basekeysplit{5};
+index.ysubsize = basekeysplit{6};
+index.zslice1 = basekeysplit{7};
+index.zslice2 = basekeysplit{8};
 
 end

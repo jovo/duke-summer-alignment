@@ -95,8 +95,8 @@ RotatedT2 = imrotate(T, THETA2, 'nearest', 'crop');
 % try two possible rotations.
 [RotatedT1, ysmin1, xsmin1, ysmax1, xsmax1] = rmzeropadding(RotatedT1, 2);
 [RotatedT2, ysmin2, xsmin2, ysmax2, xsmax2] = rmzeropadding(RotatedT2, 2);
-Atemp1 = A(1+ysmin1:size(A,1)-ysmax1, 1+xsmin1:size(A,1)-xsmax1);
-Atemp2 = A(1+ysmin2:size(A,1)-ysmax2, 1+xsmin2:size(A,1)-xsmax2);
+Atemp1 = A(1+ysmin1:size(A,1)-ysmax1, 1+xsmin1:size(A,2)-xsmax1);
+Atemp2 = A(1+ysmin2:size(A,1)-ysmax2, 1+xsmin2:size(A,2)-xsmax2);
 
 % stop if any images are flat at this point.
 if std(double(Atemp1(:))) == 0 || std(double(Atemp2(:))) == 0 || ...
