@@ -4,8 +4,8 @@ classdef indices2key_test < matlab.unittest.TestCase
     
     methods (Test)
         function testKey(testCase)
-            num1 = randi([1,1024],1,1); 
-            num2 = randi([1,1024],1,1); 
+            num1 = randi(1024,1); 
+            num2 = randi(1024,1); 
             key = indices2key(num1,num2);
             split = strsplit(key,'_');
             k1 = str2double(split(1));
