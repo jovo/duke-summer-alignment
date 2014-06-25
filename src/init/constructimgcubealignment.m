@@ -50,12 +50,12 @@ zsliceLength = zcubeimgsize;
 for i=1:itLength
     
     % set offsets and sizes
-    if xstartindex(i) == xsubsize * (xItCount-1)
+    if xstartindex(i) == xsubsize * (xItCount-1) + xoffsetmark
         xs = xcubeimgsize - xstartindex(i);
     else
         xs = xsubsize;
     end
-    if ystartindex(i) == ysubsize * (yItCount-1)
+    if ystartindex(i) == ysubsize * (yItCount-1) + yoffsetmark
         ys = ycubeimgsize - ystartindex(i);
     else
         ys = ysubsize;

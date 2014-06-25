@@ -37,9 +37,9 @@ zItCount = ceil((zcubeimgsize-1)/(zsubsize-1));
 
 % initialize index locations for query
 [xstartindex, ystartindex, zstartindex] = meshgrid(1:xItCount, 1:yItCount, 1:zItCount);
-xstartindex = xstartindex(:)*xsubsize - xsubsize;
-ystartindex = ystartindex(:)*ysubsize - ysubsize;
-zstartindex = zstartindex(:)*(zsubsize-1) - 1;
+xstartindex = xstartindex(:)*xsubsize - xsubsize + xoffset;
+ystartindex = ystartindex(:)*ysubsize - ysubsize + yoffset;
+zstartindex = zstartindex(:)*(zsubsize-1) - 1 + zoffset;
 
 % specify number of sub-cubes and iterations
 numCubes = length(xstartindex);
@@ -68,18 +68,18 @@ for i=1:numIterations   % iterate over partitions
     for j=1:curItCount % iterate over each partition
 
         % set offsets and sizes
-        if xstartindex(c) == xsubsize * (xItCount-1)
-            xs = xcubeimgsize - xstartindex(c);
+        if xstartindex(c) == xsubsize * (xItCount-1) + xoffset
+            xs = xoffset + xcubeimgsize - xstartindex(c);
         else
             xs = xsubsize;
         end
-        if ystartindex(c) == ysubsize * (yItCount-1)
-            ys = ycubeimgsize - ystartindex(c);
+        if ystartindex(c) == ysubsize * (yItCount-1) + yoffset
+            ys = yoffset + ycubeimgsize - ystartindex(c);
         else
             ys = ysubsize;
         end
-        if zstartindex(c) == zsubsize * (zItCount-1)
-            zs = zcubeimgsize - zstartindex(c);
+        if zstartindex(c) == zsubsize * (zItCount-1) + zoffset
+            zs = zoffset + zcubeimgsize - zstartindex(c);
         else
             zs = zsubsize;
         end
