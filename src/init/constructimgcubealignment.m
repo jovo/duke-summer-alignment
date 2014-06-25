@@ -118,15 +118,15 @@ for i=1:itLength
             replaced = data(ystart:yend, xstart:xend, :);
             
             % replace image cube with aligned data only w/ non-zero entries
-            alignedseg = alignedseg(1:min(size(replaced,1), end), 1:min(size(replated,2), end), :);
+            alignedseg = alignedseg(1:min(size(replaced,1), end), 1:min(size(replaced,2), end), :);
             notzero = alignedseg~=0;
-            replaced(notzero) = alignedseg;
+            replaced(notzero) = alignedseg(notzero);
             data(ystart:yend, xstart:xend, :) = replaced;
 
         end
     end
 end
 
-data = data(yoffset-yoffsetmark:end, xoffset-xoffsetmark:end, :);
+data = data(1+yoffset-yoffsetmark:end, 1+xoffset-xoffsetmark:end, :);
 
 end
