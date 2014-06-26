@@ -14,8 +14,6 @@ function [ Transforms ] = constructimgcubetransforms( ...
                                                     )
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image stack.
 
-tic
-
 % setup config variables
 config = setupconfigvars();
 
@@ -202,7 +200,5 @@ delete('data/aligntemp_*.dat');
         keycells = keycells(:);
 
     end
-
-toc
 
 end

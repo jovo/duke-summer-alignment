@@ -8,8 +8,6 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 %   that may take up too much memory. 0.5 < scale < 1 is an appropriate
 %   range. The default scale is 1. M is the image stack.
 
-tic
-
 % validate inputs
 narginchk(1,4);
 if size(M, 3) < 2
@@ -111,7 +109,5 @@ if align
     disp(orig);
     disp(aligned);
 end
-
-toc
 
 end

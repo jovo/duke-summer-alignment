@@ -83,10 +83,8 @@ for i=1:itLength
                             'zslice1', zoffset + j-1, ...
                             'zslice2', zoffset + j ...
                            ));
-                       globalkey
         try
             val = values(Transforms.transforms, {globalkey});
-            disp('yay');
         catch
             val = {eye(3)};
         end

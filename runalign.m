@@ -1,5 +1,7 @@
 %RUNALIGN Run runalign to align everything.
 
+tic
+
 % align all images from specific token
 Transforms = constructimgcubetransforms( ...
                                             'lee14', ...    % token
@@ -25,3 +27,5 @@ Merged = constructimgcubealignment( ...
                                         20000, ...              % yoffset
                                         5 ...               % zoffset
                                   );
+
+toc
