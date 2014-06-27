@@ -43,7 +43,7 @@ scale = 1;
 Mtemp = Mremoved;
 errormeasure = 'mse';
 if nargin > 2
-    config = varargin{3};
+    config = varargin{2};
     scale = config.downsample;
     Mtemp = imresize(Mremoved, scale);
     errormeasure = config.errormeasure;

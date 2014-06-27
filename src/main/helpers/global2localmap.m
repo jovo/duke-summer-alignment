@@ -18,7 +18,9 @@ end
     %GLOBAL2LOCALKEY convert from global key to a key for local (depth) slices.
 
     splitted = strsplit(globalkey, '_');
-    localkey = num2str(str2double(splitted{end-1:end})-str2double(splitted{5}));
+    endtemp = splitted(end-1:end);
+    doubletemp = str2double(endtemp) - str2double(splitted{4});
+    localkey = [num2str(doubletemp(1)), '_', num2str(doubletemp(2))];
 
     end
 

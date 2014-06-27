@@ -11,14 +11,14 @@ localinvtforms = global2localmap(Transforms);
 k = keys(localinvtforms);
 for i=1:length(k)
     curval = values(localinvtforms, k(i));
-    localinvtforms(k{i}) = inverse(curval);
+    localinvtforms(k{i}) = inv(curval{1});
 end
 
 % unalign already aligned data using inverse transforms
 [ unaligned ] = constructalignment(RAMONAligned.data, localinvtforms);
 
 % store unaligned data as 
-RAMONOrig = RAMONAligned;
+RAMONOrig = RAMONAligned.clone();
 RAMONOrig.setCutout(unaligned);
 
 end

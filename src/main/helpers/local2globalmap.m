@@ -38,7 +38,7 @@ for i=1:length(k)
     [ index.zslice1, index.zslice2 ] = localkey2indices(localkey);
     index.zslice1 = index.zslice1 + index.zoffset;
     index.zslice2 = index.zslice2 + index.zoffset;
-    globaltforms(globalindices2key(index)) = localval;
+    globaltforms(globalindices2key(index)) = localval{1};
 end
 
 end

@@ -13,7 +13,10 @@ narginchk(1,2);
 
 % retrieve data from RAMONVolume
 resolution = RAMONOrig.resolution;
-[ xoffset, yoffset, zoffset ] = RAMONOrig.xyzOffset;
+xyz = RAMONOrig.xyzOffset;
+xoffset = xyz(1);
+yoffset = xyz(2);
+zoffset = xyz(3);
 [ ysubsize, xsubsize, zsubsize ] = size(RAMONOrig.data);
 
 % compute alignment with/without existing transforms
@@ -22,7 +25,7 @@ if nargin == 1
     % retrieve config variables for alignment
     alignconfig = configalignvars();
     % compute alignment transforms and align image cube
-    [ aligned, temptforms ] = roughalign(RAMONOrig.data, 'align', alignconfig);
+    [ temptforms, aligned ] = roughalign(RAMONOrig.data, 'align', alignconfig);
     % convert from local key back to global key
     TransformsNew = local2globalmap( ...
                                         temptforms, ...
@@ -56,7 +59,7 @@ elseif nargin == 2
 end
 
 % store aligned stack as RAMONVolume
-RAMONAligned = RAMONOrig;
+RAMONAligned = RAMONOrig.clone();
 RAMONAligned.setCutout(aligned);
 
 end

@@ -53,7 +53,7 @@ for i=1:looplength
 
     % conditions to update error.
     if percenterrordiff(i) < minpercenterrorimprovement
-        disp('CONSTRUCTTRANSFORMS: % error improvement less than threshold; will attempt further optimization.');
+%         disp('CONSTRUCTTRANSFORMS: % error improvement less than threshold; will attempt further optimization.');
         errorupdate = cat(1, errorupdate, [i, i+1]);
     end
 end
