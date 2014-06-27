@@ -2,7 +2,7 @@
 clear all
 close all
 
-config = setupconfigvars();
+config = configalignvars();
 
 % test identical image with large rotations, moderate shifts
 ac4 = load('/Users/rogerzou/Projects/openconnectome/alignment/data/examples/bock11_example1.mat');

@@ -10,7 +10,6 @@ function [ Transforms ] = constructtransforms( M, config )
 narginchk(1,2);
 
 % retrieve config variables
-
 try
     errormeasure = config.errormeasure;
     minnonzeropercent = config.minnonzeropercent;
@@ -47,7 +46,7 @@ for i=1:looplength
     [tform, newerrors(i), ~] = refinetformestimate(img2, img1, tformtemp);
 
     % store ids and compute error difference
-    ids(i) = {indices2key(i, i+1)};
+    ids(i) = {localindices2key(i, i+1)};
     tforms(i) = {tform};
     errordiff(i) = origerrors(i)-newerrors(i);
     percenterrordiff(i) = errordiff(i)/origerrors(i);
@@ -78,17 +77,17 @@ for i=1:size(errorupdate, 1)
     postindex = index2 + 1;
 
     % compute additional alignments (preindex to index2, index1 to postindex)
-    if preindex >= 1 && ~isKey(addtforms, {indices2key(preindex, index2)})
+    if preindex >= 1 && ~isKey(addtforms, {localindices2key(preindex, index2)})
         img1 = M(:,:, preindex);
         img2 = M(:,:, index2);
         tform = xcorr2imgs(img2, img1, config);
-        addtforms(indices2key(preindex, index2)) = tform;
+        addtforms(localindices2key(preindex, index2)) = tform;
     end
-    if postindex <= looplength+1 && ~isKey(addtforms, {indices2key(index1, postindex)})
+    if postindex <= looplength+1 && ~isKey(addtforms, {localindices2key(index1, postindex)})
         img1 = M(:,:, index1);
         img2 = M(:,:, postindex);
         tform = xcorr2imgs(img2, img1, config);
-        addtforms(indices2key(index1, postindex)) = tform;
+        addtforms(localindices2key(index1, postindex)) = tform;
     end
 
     % retrieve transformation parameters from additional alignments.
@@ -97,8 +96,8 @@ for i=1:size(errorupdate, 1)
     % postindex. Also retrieves transformation error. If no adjacent
     % images exist, then the error is set to intmax.
     if preindex >= 1
-        val1 = values(addtforms, {indices2key(preindex, index2)});
-        val2 = values(Transforms, {indices2key(preindex, index1)});
+        val1 = values(addtforms, {localindices2key(preindex, index2)});
+        val2 = values(Transforms, {localindices2key(preindex, index1)});
         B = val1{1};
         A = val2{1};
         preTtemp = A\B;
@@ -108,8 +107,8 @@ for i=1:size(errorupdate, 1)
         preE = intmax;
     end
     if postindex <= looplength + 1
-        val1 = values(addtforms, {indices2key(index1, postindex)});
-        val2 = values(Transforms, {indices2key(index2, postindex)});
+        val1 = values(addtforms, {localindices2key(index1, postindex)});
+        val2 = values(Transforms, {localindices2key(index2, postindex)});
         B = val1{1};
         A = val2{1};
         postTtemp = B/A;
@@ -142,7 +141,7 @@ for i=1:size(errorupdate, 1)
         + x(3)*matrix2params(curT) + x(4)*matrix2params(nochangeT);
 
     % update Transformation map
-    Transforms(indices2key(index1, index2)) = params2matrix(Tupparam);
+    Transforms(localindices2key(index1, index2)) = params2matrix(Tupparam);
 
 end
 

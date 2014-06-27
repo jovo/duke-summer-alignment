@@ -1,7 +1,7 @@
 function [ Transforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
 %	[ Transforms, M_new ] = roughalign( M )
-%   [ Transforms, M_new ] = roughalign( M, align, scale, config )
+%   [ Transforms, M_new ] = roughalign( M, align, config )
 %   if align variable is 'align', M_new returns the aligned image stack;
 %   otherwise M_new is nil. scale indicates how much the image should be
 %   resized during the alignment process. Primarily used for large images
@@ -9,7 +9,7 @@ function [ Transforms, M_new ] = roughalign( M, varargin )
 %   range. The default scale is 1. M is the image stack.
 
 % validate inputs
-narginchk(1,4);
+narginchk(1,3);
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
 end
@@ -38,22 +38,15 @@ align = 0;
 if nargin > 1
     align = strcmpi(varargin{1}, 'align');
 end
+config = struct;
 scale = 1;
 Mtemp = Mremoved;
-if nargin > 2 && varargin{2} ~= 1
-    scale = varargin{2};
-    Mtemp = imresize(Mremoved, scale);
-end
-config = struct;
-if nargin > 3
+errormeasure = 'mse';
+if nargin > 2
     config = varargin{3};
-end
-
-% retrieve config variable
-try
+    scale = config.downsample;
+    Mtemp = imresize(Mremoved, scale);
     errormeasure = config.errormeasure;
-catch
-    errormeasure = 'mse';
 end
 
 % compute pairwise transforms
@@ -96,7 +89,7 @@ if align
     for i=1:size(origIndices)-1
         curVal = values(Transforms, keySet(i));
         remove(Transforms, keySet{i});
-        Transforms(indices2key(origIndices(i), origIndices(i+1))) = curVal;
+        Transforms(localindices2key(origIndices(i), origIndices(i+1))) = curVal;
     end
 
     % output error report for both original and aligned stacks.

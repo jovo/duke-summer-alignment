@@ -1,21 +1,20 @@
-function [ Transforms ] = constructimgcubetransforms( ...
-                                                        imgtoken, ...
-                                                        resolution, ...
-                                                        xtotalsize, ...
-                                                        ytotalsize, ...
-                                                        ztotalsize, ...
-                                                        xsubsize, ...
-                                                        ysubsize, ...
-                                                        zsubsize, ...
-                                                        xoffset, ...
-                                                        yoffset, ...
-                                                        zoffset, ...
-                                                        workersize ...
-                                                    )
+function [ Transforms ] = constructimgcubetransforms( alignvars, apivars )
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image stack.
 
-% setup config variables
-config = setupconfigvars();
+% retrieve config variables
+imgtoken = apivars.imgtoken;
+resolution = apivars.resolution;
+xtotalsize = apivars.xtotalsize;
+ytotalsize = apivars.ytotalsize;
+ztotalsize = apivars.ztotalsize;
+xsubsize = apivars.xsubsize;
+ysubsize = apivars.ysubsize;
+zsubsize = apivars.zsubsize;
+xoffset = apivars.xoffset;
+yoffset = apivars.yoffset;
+zoffset = apivars.zoffset;
+parallelize = apivars.parallelize;
+workersize = apivars.workersize;
 
 % connect to API
 oo = OCP();
@@ -26,12 +25,15 @@ image_size = oo.imageInfo.DATASET.IMAGE_SIZE(resolution);
 slicerange = oo.imageInfo.DATASET.SLICERANGE(2);
 
 % size of specific image cube
-xcubeimgsize = min(image_size(1)-xoffset, xtotalsize);
-ycubeimgsize = min(image_size(2)-yoffset, ytotalsize);
-zcubeimgsize = min(slicerange-zoffset, ztotalsize);
-xItCount = ceil(xcubeimgsize/xsubsize);
-yItCount = ceil(ycubeimgsize/ysubsize);
-zItCount = ceil((zcubeimgsize-1)/(zsubsize-1));
+xtotalsize = min(image_size(1)-xoffset, xtotalsize);
+ytotalsize = min(image_size(2)-yoffset, ytotalsize);
+ztotalsize = min(slicerange-zoffset, ztotalsize);
+xsubsize = min(image_size(1)-xoffset, xsubsize);
+ysubsize = min(image_size(2)-yoffset, ysubsize);
+zsubsize = min(slicerange-zoffset, zsubsize);
+xItCount = ceil(xtotalsize/xsubsize);
+yItCount = ceil(ytotalsize/ysubsize);
+zItCount = ceil((ztotalsize-1)/(zsubsize-1));
 
 % initialize index locations for query
 [xstartindex, ystartindex, zstartindex] = meshgrid(1:xItCount, 1:yItCount, 1:zItCount);
@@ -39,17 +41,21 @@ xstartindex = xstartindex(:)*xsubsize - xsubsize + xoffset;
 ystartindex = ystartindex(:)*ysubsize - ysubsize + yoffset;
 zstartindex = zstartindex(:)*(zsubsize-1) - 1 + zoffset;
 
+% set pool of workers, define partition size (used for parallel computing)
+if parallelize
+    pObj = parpool('local', workersize);
+    partitionSize = workersize;
+else
+    partitionSize = 1;
+end
+
 % specify number of sub-cubes and iterations
 numCubes = length(xstartindex);
-partitionSize = workersize;
 numIterations = ceil(numCubes/partitionSize);
 
 % data structure for transforms and associated keys
 KeyCells = cell(numIterations, (zsubsize-1)*partitionSize);
 ValCells = cell(numIterations, (zsubsize-1)*partitionSize);
-
-% set pool of workers
-pObj = parpool('local', workersize);
 
 % save all sub-cubes as memmapfiles
 c = 1;  % counter
@@ -67,17 +73,17 @@ for i=1:numIterations   % iterate over partitions
 
         % set offsets and sizes
         if xstartindex(c) == xsubsize * (xItCount-1) + xoffset
-            xs = xoffset + xcubeimgsize - xstartindex(c);
+            xs = xoffset + xtotalsize - xstartindex(c);
         else
             xs = xsubsize;
         end
         if ystartindex(c) == ysubsize * (yItCount-1) + yoffset
-            ys = yoffset + ycubeimgsize - ystartindex(c);
+            ys = yoffset + ytotalsize - ystartindex(c);
         else
             ys = ysubsize;
         end
         if zstartindex(c) == zsubsize * (zItCount-1) + zoffset
-            zs = zoffset + zcubeimgsize - zstartindex(c);
+            zs = zoffset + ztotalsize - zstartindex(c);
         else
             zs = zsubsize;
         end
@@ -106,7 +112,6 @@ for i=1:numIterations   % iterate over partitions
         % store sub-cube and its base ids
         MemKeys(j) = {m};
         BaseIDs(j) = {struct( ...
-                            'imgtoken', imgtoken, ...
                             'resolution', resolution, ...
                             'xoffset', xoff, ...
                             'yoffset', yoff, ...
@@ -125,7 +130,7 @@ for i=1:numIterations   % iterate over partitions
     end
 
     % helper to compute transforms in parallel
-    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
+    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs, parallelize);
 
     % update data structure with computed transforms
     KeyCells(i, 1:size(curKeyCells,1)) = curKeyCells';
@@ -151,9 +156,11 @@ Transforms.xoffset = xoffset;
 Transforms.yoffset = yoffset;
 Transforms.zoffset = zoffset;
 Transforms.transforms = containers.Map(KeyCells(:), ValCells(:));
-                                                
+
 % delete parpool and temp files
-delete(pObj);
+if parallelize
+    delete(pObj);
+end
 delete('data/aligntemp_*.dat');
 
 %% Helper function
@@ -166,33 +173,56 @@ delete('data/aligntemp_*.dat');
         numZSlices = size(memkeys{1}.Data.data, 3) - 1;
         valcells = cell(numParIterations, numZSlices);
         keycells = cell(numParIterations, numZSlices);
+        
+        if parallelize
 
-        % iterate over each sub-cube
-        parfor u=1:numParIterations
-
-            % calculate transformations for affine global alignment
-            [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, config);
-            tformkeys = keys(tforms);
-            valrow = cell(1, numZSlices);
-            keyrow = cell(1, numZSlices);
-
-            % iterate over each transformation for one sub-cube
-            for v=1:length(tformkeys)
-
-                % change keys to reflect global coordinates
-                curkey = tformkeys{v};
-                curval = values(tforms, {curkey});
-                index = baseids{u};
-                [index.zslice1, index.zslice2] = key2indices(curkey);
-                index.zslice1 = index.zslice1 + index.zoffset;
-                index.zslice2 = index.zslice2 + index.zoffset;
-                valrow(v) = curval;
-                keyrow(v) = {globalindices2key(index)};
-
+            % iterate over each sub-cube
+            parfor u=1:numParIterations
+                % calculate transformations for affine global alignment
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                tformkeys = keys(tforms);
+                valrow = cell(1, numZSlices);
+                keyrow = cell(1, numZSlices);
+                % iterate over each transformation for one sub-cube
+                for v=1:length(tformkeys)
+                    % change keys to reflect global coordinates
+                    curkey = tformkeys{v};
+                    curval = values(tforms, {curkey});
+                    index = baseids{u};
+                    [index.zslice1, index.zslice2] = localkey2indices(curkey);
+                    index.zslice1 = index.zslice1 + index.zoffset;
+                    index.zslice2 = index.zslice2 + index.zoffset;
+                    valrow(v) = curval;
+                    keyrow(v) = {globalindices2key(index)};
+                end
+                valcells(u,:) = valrow;
+                keycells(u,:) = keyrow;
             end
 
-            valcells(u,:) = valrow;
-            keycells(u,:) = keyrow;
+        else
+
+            % iterate over each sub-cube
+            for u=1:numParIterations
+                % calculate transformations for affine global alignment
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                tformkeys = keys(tforms);
+                valrow = cell(1, numZSlices);
+                keyrow = cell(1, numZSlices);
+                % iterate over each transformation for one sub-cube
+                for v=1:length(tformkeys)
+                    % change keys to reflect global coordinates
+                    curkey = tformkeys{v};
+                    curval = values(tforms, {curkey});
+                    index = baseids{u};
+                    [index.zslice1, index.zslice2] = localkey2indices(curkey);
+                    index.zslice1 = index.zslice1 + index.zoffset;
+                    index.zslice2 = index.zslice2 + index.zoffset;
+                    valrow(v) = curval;
+                    keyrow(v) = {globalindices2key(index)};
+                end
+                valcells(u,:) = valrow;
+                keycells(u,:) = keyrow;
+            end
 
         end
 

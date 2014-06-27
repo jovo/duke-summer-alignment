@@ -6,8 +6,8 @@ classdef indices2key_test < matlab.unittest.TestCase
         function testKey(testCase)
             num1 = randi([1,1024],1,1); 
             num2 = randi([1,1024],1,1); 
-            key = indices2key(num1,num2);
-            k = str2num(key); 
+            key = localindices2key(num1,num2);
+            k = str2double(key); 
             
             % tests for equality 
             testCase.verifyEqual(num1,k(1));

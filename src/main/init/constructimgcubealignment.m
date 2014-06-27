@@ -1,5 +1,5 @@
 function [ data ] = constructimgcubealignment( ...
-                                                    Transforms, ...
+                                                    TransformData, ...
                                                     xtotalsize, ...
                                                     ytotalsize, ...
                                                     ztotalsize, ...
@@ -10,62 +10,63 @@ function [ data ] = constructimgcubealignment( ...
 
 % connect to API
 oo = OCP();
-oo.setImageToken(Transforms.imgtoken);
+oo.setImageToken(TransformData.imgtoken);
 
 % retrieve sizes from API
-image_size = oo.imageInfo.DATASET.IMAGE_SIZE(Transforms.resolution);
+image_size = oo.imageInfo.DATASET.IMAGE_SIZE(TransformData.resolution);
 slicerange = oo.imageInfo.DATASET.SLICERANGE(2);
 % sub-cube size
-xsubsize = Transforms.xsubsize;
-ysubsize = Transforms.ysubsize;
+xsubsize = TransformData.xsubsize;
+ysubsize = TransformData.ysubsize;
 % round offset to nearest subcube
-xoffsetdiff = xoffset-Transforms.xoffset;
-yoffsetdiff = yoffset-Transforms.yoffset;
-xoffsetmark = Transforms.xoffset + floor(xoffsetdiff/xsubsize)*xsubsize;
-yoffsetmark = Transforms.yoffset + floor(yoffsetdiff/ysubsize)*ysubsize;
+xoffsetdiff = xoffset-TransformData.xoffset;
+yoffsetdiff = yoffset-TransformData.yoffset;
+xoffsetmark = TransformData.xoffset + floor(xoffsetdiff/xsubsize)*xsubsize;
+yoffsetmark = TransformData.yoffset + floor(yoffsetdiff/ysubsize)*ysubsize;
 zoffsetmark = zoffset;
 % compute modified total size
-xcubeimgsize = min(image_size(1)-xoffsetmark, xtotalsize+xoffset-xoffsetmark);
-ycubeimgsize = min(image_size(2)-yoffsetmark, ytotalsize+yoffset-yoffsetmark);
-zcubeimgsize = min(slicerange-zoffset, ztotalsize);
+xtotalsize = min(image_size(1)-xoffsetmark, xtotalsize+xoffset-xoffsetmark);
+ytotalsize = min(image_size(2)-yoffsetmark, ytotalsize+yoffset-yoffsetmark);
+ztotalsize = min(slicerange-zoffset, ztotalsize);
 
 % retrieve data from API
 cutout = read_api(  oo, ...
                     double(xoffsetmark), ...
                     double(yoffsetmark), ...
                     double(zoffsetmark), ...
-                    double(xcubeimgsize), ...
-                    double(ycubeimgsize), ...
-                    double(zcubeimgsize), ...
-                    double(Transforms.resolution) ...
+                    double(xtotalsize), ...
+                    double(ytotalsize), ...
+                    double(ztotalsize), ...
+                    double(TransformData.resolution) ...
                 );
 data = cutout.data;
 
 % define start indices
-xItCount = ceil(xcubeimgsize/xsubsize);
-yItCount = ceil(ycubeimgsize/ysubsize);
+xItCount = ceil(xtotalsize/xsubsize);
+yItCount = ceil(ytotalsize/ysubsize);
 [xstartindex, ystartindex] = meshgrid(1:xItCount, 1:yItCount);
 xstartindex = (xstartindex(:)*xsubsize - xsubsize);
 ystartindex = (ystartindex(:)*ysubsize - ysubsize);
 
 % iterate over each sub-cube defined when computing transformations
 itLength = size(xstartindex, 1);
-zsliceLength = zcubeimgsize;
+zsliceLength = ztotalsize;
 for i=1:itLength
 
     % set offsets and sizes
     if xstartindex(i) == xsubsize * (xItCount-1)
-        xs = xcubeimgsize - xstartindex(i);
+        xs = xtotalsize - xstartindex(i);
     else
         xs = xsubsize;
     end
     if ystartindex(i) == ysubsize * (yItCount-1)
-        ys = ycubeimgsize - ystartindex(i);
+        ys = ytotalsize - ystartindex(i);
     else
         ys = ysubsize;
     end
     xoff = xstartindex(i);
     yoff = ystartindex(i);
+    zoff = 0;
 
     % retrieve sub-cube of interest from entire data set
     dataseg = data(1+yoff:ys+yoff, 1+xoff:xs+xoff, :);
@@ -74,17 +75,17 @@ for i=1:itLength
     % iterate over each slice, retrieve local transformations
     for j=1:zsliceLength
         globalkey = globalindices2key(struct( ...
-                            'imgtoken', Transforms.imgtoken, ...
-                            'resolution', Transforms.resolution, ...
+                            'resolution', TransformData.resolution, ...
                             'xoffset', xoffsetmark + xoff, ...
                             'yoffset', yoffsetmark + yoff, ...
+                            'zoffset', zoffsetmark + zoff, ...
                             'xsubsize', xs, ...
                             'ysubsize', ys, ...
                             'zslice1', zoffset + j-1, ...
                             'zslice2', zoffset + j ...
                            ));
         try
-            val = values(Transforms.transforms, {globalkey});
+            val = values(TransformData.transforms, {globalkey});
         catch
             val = {eye(3)};
         end
