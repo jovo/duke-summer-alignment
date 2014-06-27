@@ -1,6 +1,6 @@
-function [ MergedStack, updatedtform ] = affinetransform( templateStack, AStack, curtform )
+function [ MergedStack ] = affinetransform( templateStack, AStack, curtform )
 %AFFINETRANSFORM Performs translation and rotation to align images
-%   [ MergedStack, templatetforms ] = affinetransform( templateStack, AStack, tforms )
+%   [ MergedStack ] = affinetransform( templateStack, AStack, curtforms )
 %   only templateStack gets rotated and/or scaled, and recorded in
 %   templatetforms. If templateStack gets shifted in positive directions,
 %   then that direction is recorded in templateForms. If templateStack gets
@@ -21,21 +21,7 @@ xsizediff = (size(TStack,2)-size(templateStack,2))/2;
 TranslateY = TranslateY - round(ysizediff);
 TranslateX = TranslateX - round(xsizediff);
 
-% save the actual transformation to updatedtform
-updatedtparam = zeros(1, 3);
-updatedtparam(1) = ysizediff;
-updatedtparam(2) = xsizediff;
-updatedtparam(3) = newtparam(3);
-if TranslateY > 0
-    updatedtparam(1) = max(TranslateYunrounded, ysizediff);
-end
-if TranslateX > 0
-    updatedtparam(2) = max(TranslateXunrounded, xsizediff);
-end
-updatedtform = params2matrix(updatedtparam);
-
 % Perform translation, rotation, scaling transformations to images
-
 clear templateStack;
 depthA = size(AStack, 3);
 depthT = size(TStack, 3);
