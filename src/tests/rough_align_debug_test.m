@@ -22,18 +22,23 @@ for i=1:n1
 end
 [transforms1, merged1] = roughalign(data1, 'align', config);
 
+% inverse alignment
+original1 = constructalignment(merged1, transforms1, 1);
 
-% test more realistic EM section data. Artifically add large rotations
-% prior to alignment.
-lee14 = load('/Users/rogerzou/Projects/openconnectome/alignment/data/examples/lee14_example1.mat');
-n2 = size(lee14.data,3);
-rot2 = floor(rand(1,n2)*360);
-start = floor(256/sqrt(2));
-finish = ceil(1024-256/sqrt(2));
-data2 = zeros(finish-start+1, finish-start+1, n2, 'uint8');
+% % test more realistic EM section data. Artifically add large rotations
+% % prior to alignment.
+% lee14 = load('/Users/rogerzou/Projects/openconnectome/alignment/data/examples/lee14_example1.mat');
+% n2 = size(lee14.data,3);
+% rot2 = floor(rand(1,n2)*360);
+% start = floor(256/sqrt(2));
+% finish = ceil(1024-256/sqrt(2));
+% data2 = zeros(finish-start+1, finish-start+1, n2, 'uint8');
+% 
+% for i=1:n2
+% 	d = imrotate(lee14.data(:,:,i), rot2(i), 'nearest', 'crop');
+% 	data2(:,:,i) = d(start:finish, start:finish);
+% end
+% [transforms2, merged2] = roughalign(data2, 'align', config);
 
-for i=1:n2
-	d = imrotate(lee14.data(:,:,i), rot2(i), 'nearest', 'crop');
-	data2(:,:,i) = d(start:finish, start:finish);
-end
-[transforms2, merged2] = roughalign(data2, 'align', config);
+
+
