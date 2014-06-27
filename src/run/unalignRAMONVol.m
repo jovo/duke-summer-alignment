@@ -1,4 +1,8 @@
 function [ RAMONOrig ] = unalignRAMONVol( RAMONAligned, Transforms )
+%UNALIGNRAMONVOL Undo alignRAMONVol
+% RAMONAligned is the aligned RAMONVolume, Transforms is a containers.Map
+% object of the transforms that aligned RAMONAligned. RAMONOrig is the
+% original RAMONVolume.
 
 % convert from global to local transforms
 localinvtforms = global2localmap(Transforms);

@@ -1,4 +1,12 @@
 function [ RAMONAligned, TransformsNew ] = alignRAMONVol( RAMONOrig, Transforms )
+%ALIGNRAMONVOL Aligns RAMONVolumes
+%   [ RAMONAligned, TransformsNew ] = alignRAMONVol( RAMONOrig, Transforms )
+%   RAMONOrig is the unaligned image stack, Transforms is an optional
+%   argument. Transforms can either be a structure outputted from
+%   constructimgcubetransforms that contains the containers.Map or the
+%   transform map themselves. If there is no Transforms parameter, then it
+%   calculates the transforms and outputs them in a containers.Map object
+%   TransformsNew. RAMONAligned is the aligned RAMONOrig.
 
 % validate inputs
 narginchk(1,2);
@@ -27,7 +35,7 @@ if nargin == 1
                                     );
 
 elseif nargin == 2
-    
+
     if isa(Transforms, 'struct')
         aligned = constructimgcubealignment(    Transforms, ...
                                                 xsubsize, ...
@@ -37,7 +45,7 @@ elseif nargin == 2
                                                 yoffset, ...
                                                 zoffset ...
                                             );
-    else
+    elseif isa(Transforms, 'containers.Map')
         % convert from global to local key
         localtforms = global2localmap(Transforms);
         % align image cube using transforms
