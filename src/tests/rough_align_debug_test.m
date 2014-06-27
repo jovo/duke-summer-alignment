@@ -20,7 +20,7 @@ for i=1:n1
     d = imrotate(im, rot1(i), 'nearest', 'crop');
     data1(:,:,i) = d(start:finish, start:finish);
 end
-[transforms1, merged1] = roughalign(data1, 'align', 0.5, config);
+[transforms1, merged1] = roughalign(data1, 'align', config);
 
 
 % test more realistic EM section data. Artifically add large rotations
@@ -36,4 +36,4 @@ for i=1:n2
 	d = imrotate(lee14.data(:,:,i), rot2(i), 'nearest', 'crop');
 	data2(:,:,i) = d(start:finish, start:finish);
 end
-[transforms2, merged2] = roughalign(data2, 'align', 0.5, config);
+[transforms2, merged2] = roughalign(data2, 'align', config);
