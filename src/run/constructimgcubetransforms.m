@@ -1,7 +1,10 @@
-function [ Transforms ] = constructimgcubetransforms( alignvars, apivars )
+function [ Transforms ] = constructimgcubetransforms
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
 % retrieve config variables
+alignvars = configalignvars();
+apivars = configapivars();
+
 imgtoken = apivars.imgtoken;
 resolution = apivars.resolution;
 xtotalsize = apivars.xtotalsize;
