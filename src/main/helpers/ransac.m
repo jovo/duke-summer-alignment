@@ -21,12 +21,12 @@ while i < N
     pts = randpoint(Indices, 2);
     [A, B, C] = fitline(pts(1,:), pts(2,:));    
 
-    % find vector from pts used to fit line   
+    % find vector from pts used in fitline   
     u = pts(2,:) - pts(1,:);
 
     % project v onto u, find perpendicular distance vperp 
     v = [Indices(:,1)-pts(1,1), Indices(:,2)-pts(1,2)]; % nx2
-    vmag = sqrt(v(:,1).^2 + v(:,2).^2)'; % 1xn, magnitude of v
+    vmag = sqrt(v(:,1).^2 + v(:,2).^2)'; % 1xn
     vpara = ((u*v')/(u*u')); % 1xn
     vperp = sqrt(vmag.^2 - vpara.^2); % 1xn
 
@@ -52,7 +52,7 @@ inrangeprop = 1-epsilon;
 
 end
 
-% find random points from points of interest
+% choose random points from points of interest
 function [ points ] = randpoint(indices, count)
     numInd = size(indices,1);
     randRow = randi([1,numInd],[count,1]);
