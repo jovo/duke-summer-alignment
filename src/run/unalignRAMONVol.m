@@ -5,17 +5,12 @@ function [ RAMONOrig ] = unalignRAMONVol( RAMONAligned, Transforms )
 % original RAMONVolume.
 
 % convert from global to local transforms
-localinvtforms = global2localmap(Transforms);
-
-% change map to inverse transforms
-k = keys(localinvtforms);
-for i=1:length(k)
-    curval = values(localinvtforms, k(i));
-    localinvtforms(k{i}) = inv(curval{1});
-end
+Transforms.pairwise = global2localmap(Transforms.pairwise);
+Transforms.global = global2localmap(Transforms.global);
 
 % unalign already aligned data using inverse transforms
-[ unaligned ] = constructalignment(RAMONAligned.data, localinvtforms);
+inverse = 1;
+[ unaligned ] = constructalignment(RAMONAligned.data, Transforms, inverse);
 
 % store unaligned data as 
 RAMONOrig = RAMONAligned.clone();

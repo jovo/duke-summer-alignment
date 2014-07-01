@@ -15,19 +15,21 @@ if nargin == 3 && inverse
     imgsize = Transforms.size;
     ISAligned = zeros(imgsize);
     for i=1:size(IStack, 3)
-        val = values(Transforms.global, {num2str(i)});
-        tform = val{1};
-        tparam = matrix2params(tform);
-        center = round( [imgsize(1)/2, imgsize(2)/2] );
-        newcenter = center + round(tparam(1:2));
-        halfsizey = min(size(IStack(:,:,i),1)-newcenter(1), newcenter(1)-1);
-        halfsizex = min(size(IStack(:,:,i),2)-newcenter(2), newcenter(2)-1);
-        imcropped = IStack(newcenter(1)-halfsizey:newcenter(1)+halfsizey, newcenter(2)-halfsizex:newcenter(2)+halfsizex, i);
-        newcenter = [halfsizey, halfsizex]+1;
+        val = values(Transforms.global, {localindices2key(i, i)});
+        tparam = matrix2params(val{1});
+        center = round([imgsize(1)/2, imgsize(2)/2]) + round(tparam(1:2));
+        hsizey = min(size(IStack(:,:,i),1)-center(1), center(1)-1);
+        hsizex = min(size(IStack(:,:,i),2)-center(2), center(2)-1);
+        imcropped = IStack(center(1)-hsizey:center(1)+hsizey, center(2)-hsizex:center(2)+hsizex, i);
+        center = [hsizey, hsizex]+1;
         imrotated = imrotate(imcropped,-tparam(3));
         sizediff = round((size(imrotated)-size(imcropped))/2);
-        newcenter = newcenter + sizediff;
-        aligned = imrotated(1+newcenter(1)-ceil(imgsize(1)/2):newcenter(1)+ceil(imgsize(1)/2)-1, 1+newcenter(2)-ceil(imgsize(2)/2):newcenter(2)+ceil(imgsize(2)/2)-1);
+        center = center + sizediff;
+        ystart = 1+center(1)-ceil(imgsize(1)/2);
+        yend = center(1)+ceil(imgsize(1)/2)-1;
+        xstart = 1+center(2)-ceil(imgsize(2)/2);
+        xend = center(2)+ceil(imgsize(2)/2)-1;
+        aligned = imrotated(ystart:yend, xstart:xend);
         ISAligned(1:size(aligned,1), 1:size(aligned,2), i) = aligned;
     end
 % aligns image stack
@@ -44,8 +46,7 @@ else
         globalT = zeros(size(IStack, 3), 3);
         for i=1:size(IStack, 3)-1
             val = values(Transforms.pairwise, {localindices2key(i, i+1)});
-            matrix = val{1};
-            params = matrix2params(matrix);
+            params = matrix2params(val{1});
             globalT(i+1,:) = globalT(i,:);
             globalT(i+1,3) = globalT(i+1,3) + params(3);
 
@@ -66,14 +67,14 @@ else
         % saves the global transforms to Transforms.global
         Transforms.global = containers.Map;
         for i=1:size(IStack, 3)
-            Transforms.global(num2str(i)) = params2matrix(globalT(i,:));
+            Transforms.global(localindices2key(i, i)) = params2matrix(globalT(i,:));
         end
     end
 
     % align image stack using Transforms.global
     ISAligned = zeros(size(IStack,1)*2, size(IStack,2)*2, size(IStack, 3));
     for i=1:size(IStack, 3)
-        val = values(Transforms.global, {num2str(i)});
+        val = values(Transforms.global, {localindices2key(i, i)});
         aligned = affinetransform(IStack(:,:,i), zeros(size(IStack(:,:,i))), val{1});
         ISAligned(1:size(aligned,1), 1:size(aligned,2), i) = aligned(:,:,1);
     end

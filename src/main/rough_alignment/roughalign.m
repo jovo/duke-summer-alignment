@@ -1,7 +1,7 @@
 function [ FinalTransforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
-%	[ Transforms, M_new ] = roughalign( M )
-%   [ Transforms, M_new ] = roughalign( M, align, config )
+%	[ FinalTransforms, M_new ] = roughalign( M )
+%   [ FinalTransforms, M_new ] = roughalign( M, align, config )
 %   if align variable is 'align', M_new returns the aligned image stack;
 %   otherwise M_new is nil. scale indicates how much the image should be
 %   resized during the alignment process. Primarily used for large images
@@ -89,17 +89,17 @@ if align
     end
 
     % update transform map keys after adding back image slices
-    TkeySet = keys(FinalTransforms.pairwise);
-    for i=1:size(origIndices)-1
-        curVal = values(FinalTransforms.pairwise, TkeySet(i));
-        remove(FinalTransforms.pairwise, TkeySet{i});
-        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curVal{1};
+    for i=1:length(origIndices)-1
+        curLKey = localindices2key(i, i+1);
+        curLVal = values(FinalTransforms.pairwise, {curLKey});
+        remove(FinalTransforms.pairwise, curLKey);
+        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curLVal{1};
     end
-    GTkeySet = keys(FinalTransforms.global);
-    for i=1:size(origIndices)
-        curGVal = values(FinalTransforms.global, GTkeySet(i));
-        remove(FinalTransforms.global, GTkeySet{i});
-        FinalTransforms.global(num2str(origIndices(i))) = curGVal{1};
+    for i=1:length(origIndices)
+        curGKey = localindices2key(i, i);
+        curGVal = values(FinalTransforms.global, {curGKey});
+        remove(FinalTransforms.global, curGKey);
+        FinalTransforms.global(localindices2key(origIndices(i), origIndices(i))) = curGVal{1};
     end
 
     % output error report for both original and aligned stacks.

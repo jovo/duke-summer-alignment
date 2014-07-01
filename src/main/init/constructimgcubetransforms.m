@@ -1,5 +1,5 @@
 function [ Transforms ] = constructimgcubetransforms( alignvars, apivars )
-%COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image stack.
+%COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
 % retrieve config variables
 imgtoken = apivars.imgtoken;
@@ -180,14 +180,14 @@ delete('data/aligntemp_*.dat');
             parfor u=1:numParIterations
                 % calculate transformations for affine global alignment
                 [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
-                tformkeys = keys(tforms);
+                tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
                 % iterate over each transformation for one sub-cube
                 for v=1:length(tformkeys)
                     % change keys to reflect global coordinates
                     curkey = tformkeys{v};
-                    curval = values(tforms, {curkey});
+                    curval = values(tforms.pairwise, {curkey});
                     index = baseids{u};
                     [index.zslice1, index.zslice2] = localkey2indices(curkey);
                     index.zslice1 = index.zslice1 + index.zoffset;
@@ -205,14 +205,14 @@ delete('data/aligntemp_*.dat');
             for u=1:numParIterations
                 % calculate transformations for affine global alignment
                 [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
-                tformkeys = keys(tforms);
+                tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
                 % iterate over each transformation for one sub-cube
                 for v=1:length(tformkeys)
                     % change keys to reflect global coordinates
                     curkey = tformkeys{v};
-                    curval = values(tforms, {curkey});
+                    curval = values(tforms.pairwise, {curkey});
                     index = baseids{u};
                     [index.zslice1, index.zslice2] = localkey2indices(curkey);
                     index.zslice1 = index.zslice1 + index.zoffset;
