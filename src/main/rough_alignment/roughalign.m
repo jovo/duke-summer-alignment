@@ -93,13 +93,13 @@ if align
     for i=1:size(origIndices)-1
         curVal = values(FinalTransforms.pairwise, TkeySet(i));
         remove(FinalTransforms.pairwise, TkeySet{i});
-        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curVal;
+        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curVal{1};
     end
     GTkeySet = keys(FinalTransforms.global);
     for i=1:size(origIndices)
         curGVal = values(FinalTransforms.global, GTkeySet(i));
         remove(FinalTransforms.global, GTkeySet{i});
-        FinalTransforms.global(num2str(origIndices(i))) = curGVal;
+        FinalTransforms.global(num2str(origIndices(i))) = curGVal{1};
     end
 
     % output error report for both original and aligned stacks.
