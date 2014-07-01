@@ -1,5 +1,6 @@
-function [ config ] = setupconfigvars
-%SETUP loads peak detection svm, store variables in a struct.
+function [ config ] = configalignvars
+%CONFIGALIGNVARS outputs variables necessary for alignment in a structure
+%that is later called by alignment functions.
 
 config = struct;
 
@@ -26,5 +27,9 @@ config.errormeasure = 'mse';
 % undergo further optimization by utilizing images surrounding the image
 % pair of interest.
 config.minpercenterrorimprovement = 0.1;
+
+% downsampling before computing alignment on image stack. The
+% transformations are then scaled back to the original sizes.
+config.downsample = 0.5;
 
 end

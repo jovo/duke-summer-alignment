@@ -1,17 +1,15 @@
-function [ Transforms, M_new ] = roughalign( M, varargin )
+function [ FinalTransforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
-%	[ Transforms, M_new ] = roughalign( M )
-%   [ Transforms, M_new ] = roughalign( M, align, scale, config )
+%	[ FinalTransforms, M_new ] = roughalign( M )
+%   [ FinalTransforms, M_new ] = roughalign( M, align, config )
 %   if align variable is 'align', M_new returns the aligned image stack;
 %   otherwise M_new is nil. scale indicates how much the image should be
 %   resized during the alignment process. Primarily used for large images
 %   that may take up too much memory. 0.5 < scale < 1 is an appropriate
 %   range. The default scale is 1. M is the image stack.
 
-tic
-
 % validate inputs
-narginchk(1,4);
+narginchk(1,3);
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
 end
@@ -26,12 +24,14 @@ for i=1:size(M, 3)
 end
 Mremoved = M(:,:,~removed);
 
-% initialize output variable
+% initialize output variables
 M_new = [];
+FinalTransforms = struct;
+FinalTransforms.pairwise = containers.Map;
+FinalTransforms.global = containers.Map;
 
 % if # of valid images (after invalid img removal) is < 2, then return
 if size(Mremoved, 3) < 2
-    Transforms = containers.Map();
     return;
 end
 
@@ -40,27 +40,20 @@ align = 0;
 if nargin > 1
     align = strcmpi(varargin{1}, 'align');
 end
+config = struct;
 scale = 1;
 Mtemp = Mremoved;
-if nargin > 2 && varargin{2} ~= 1
-    scale = varargin{2};
+errormeasure = 'mse';
+if nargin > 2
+    config = varargin{2};
+    scale = config.downsample;
     Mtemp = imresize(Mremoved, scale);
-end
-config = struct;
-if nargin > 3
-    config = varargin{3};
-end
-
-% retrieve config variable
-try
     errormeasure = config.errormeasure;
-catch
-    errormeasure = 'mse';
 end
 
 % compute pairwise transforms
 tformstemp  = constructtransforms(Mtemp, config);
-Transforms = tformstemp;
+pairwiseTransforms = tformstemp;
 
 % undo the initial resizing
 if scale ~= 1
@@ -70,16 +63,18 @@ if scale ~= 1
         params = matrix2params(val{1});
         params(1:2) = params(1:2)/scale;
         newmatrix = params2matrix(params);
-        Transforms(keySet{i}) = newmatrix;
+        pairwiseTransforms(keySet{i}) = newmatrix;
 	end
 end
+
+% assigns pairwise transforms to FinalTranforms
+FinalTransforms.pairwise = pairwiseTransforms;
 
 % aligns the image based on the transforms if required
 if align
 
     % global alignment using piecewise transformation parameters
-    M_new = constructalignment(Mremoved, Transforms);
-
+    [ M_new, FinalTransforms ] = constructalignment(Mremoved, FinalTransforms);
     origIndices = 1:size(M_new,3);
     % add back removed image slices
     if removed(1)
@@ -94,11 +89,17 @@ if align
     end
 
     % update transform map keys after adding back image slices
-    keySet = keys(Transforms);
-    for i=1:size(origIndices)-1
-        curVal = values(Transforms, keySet(i));
-        remove(Transforms, keySet{i});
-        Transforms(indices2key(origIndices(i), origIndices(i+1))) = curVal;
+    for i=1:length(origIndices)-1
+        curLKey = localindices2key(i, i+1);
+        curLVal = values(FinalTransforms.pairwise, {curLKey});
+        remove(FinalTransforms.pairwise, curLKey);
+        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curLVal{1};
+    end
+    for i=1:length(origIndices)
+        curGKey = localindices2key(i, i);
+        curGVal = values(FinalTransforms.global, {curGKey});
+        remove(FinalTransforms.global, curGKey);
+        FinalTransforms.global(localindices2key(origIndices(i), origIndices(i))) = curGVal{1};
     end
 
     % output error report for both original and aligned stacks.
@@ -111,7 +112,5 @@ if align
     disp(orig);
     disp(aligned);
 end
-
-toc
 
 end
