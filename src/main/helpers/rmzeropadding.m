@@ -41,7 +41,7 @@ else
         xmin = 1;
         ymax = size(M_new,1);
         xmax = size(M_new,2);
-        if force == 1       % force parameter set at (1)
+        if force == 1       
             while (M_new(ymin, xmin) + M_new(ymin, xmax) + M_new(ymax, xmin) + M_new(ymax, xmax)) == 0 ...
                 && ymax > ymin && xmax > xmin
                 xmin = xmin+1;
@@ -49,7 +49,7 @@ else
                 ymin = ymin+1;
                 ymax = ymax-1;
             end
-        elseif force == 2   % force parameter set at (2)
+        elseif force == 2   
             while M_new(ymin, xmin) == 0 && ymax > ymin && xmax > xmin
                 xmin = xmin+1;
                 ymin = ymin+1;
