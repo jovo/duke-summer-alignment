@@ -1,4 +1,4 @@
-function [ Transforms, M_new ] = roughalign( M, varargin )
+function [ FinalTransforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
 %	[ Transforms, M_new ] = roughalign( M )
 %   [ Transforms, M_new ] = roughalign( M, align, config )
@@ -24,12 +24,14 @@ for i=1:size(M, 3)
 end
 Mremoved = M(:,:,~removed);
 
-% initialize output variable
+% initialize output variables
 M_new = [];
+FinalTransforms = struct;
+FinalTransforms.pairwise = containers.Map;
+FinalTransforms.global = containers.Map;
 
 % if # of valid images (after invalid img removal) is < 2, then return
 if size(Mremoved, 3) < 2
-    Transforms = containers.Map();
     return;
 end
 
@@ -51,7 +53,7 @@ end
 
 % compute pairwise transforms
 tformstemp  = constructtransforms(Mtemp, config);
-Transforms = tformstemp;
+pairwiseTransforms = tformstemp;
 
 % undo the initial resizing
 if scale ~= 1
@@ -61,16 +63,18 @@ if scale ~= 1
         params = matrix2params(val{1});
         params(1:2) = params(1:2)/scale;
         newmatrix = params2matrix(params);
-        Transforms(keySet{i}) = newmatrix;
+        pairwiseTransforms(keySet{i}) = newmatrix;
 	end
 end
+
+% assigns pairwise transforms to FinalTranforms
+FinalTransforms.pairwise = pairwiseTransforms;
 
 % aligns the image based on the transforms if required
 if align
 
     % global alignment using piecewise transformation parameters
-    M_new = constructalignment(Mremoved, Transforms);
-
+    [ M_new, FinalTransforms ] = constructalignment(Mremoved, FinalTransforms);
     origIndices = 1:size(M_new,3);
     % add back removed image slices
     if removed(1)
@@ -85,11 +89,17 @@ if align
     end
 
     % update transform map keys after adding back image slices
-    keySet = keys(Transforms);
+    TkeySet = keys(FinalTransforms.pairwise);
     for i=1:size(origIndices)-1
-        curVal = values(Transforms, keySet(i));
-        remove(Transforms, keySet{i});
-        Transforms(localindices2key(origIndices(i), origIndices(i+1))) = curVal;
+        curVal = values(FinalTransforms.pairwise, TkeySet(i));
+        remove(FinalTransforms.pairwise, TkeySet{i});
+        FinalTransforms.pairwise(localindices2key(origIndices(i), origIndices(i+1))) = curVal;
+    end
+    GTkeySet = keys(FinalTransforms.global);
+    for i=1:size(origIndices)
+        curGVal = values(FinalTransforms.global, GTkeySet(i));
+        remove(FinalTransforms.global, GTkeySet{i});
+        FinalTransforms.global(num2str(origIndices(i))) = curGVal;
     end
 
     % output error report for both original and aligned stacks.

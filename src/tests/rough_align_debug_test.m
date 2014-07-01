@@ -1,5 +1,5 @@
 % various tests.
-clear all
+
 close all
 
 config = configalignvars();

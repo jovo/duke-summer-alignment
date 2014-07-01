@@ -1,8 +1,4 @@
-function [ updatedtform ] = updatetransform( templateStack, curtform, prevtform )
-
-
-% compute new transformation parameters
-newtform = prevtform * curtform;
+function [ updatedtform ] = updatetransform( templateStack, newtform )
 
 % compute the actual transformation to apply.
 newtparam = matrix2params(newtform);
