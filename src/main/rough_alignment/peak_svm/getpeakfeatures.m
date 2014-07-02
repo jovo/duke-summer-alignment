@@ -1,6 +1,7 @@
 function [ features ] = getpeakfeatures( img, ypeak, xpeak ) 
-% [ features ] = getpeakfeatures( img ) takes input image img, peak values 
-% xpeak, ypeak, and returns a 1 x k vector with values of k features 
+%GETPEAKFEATURES Returns various features of image peak 
+%   [ features ] = getpeakfeatures( img ) takes input image img, peak values 
+%   (ypeak, xpeak), and returns a 1xk vector with values of k features 
 
 % define sizes
 sizeyimg = size(img,1);
@@ -29,7 +30,7 @@ else
     rparea = rp.Area;
 end
 
-% compute Gradient and  Laplacian
+% compute Gradient and Laplacian
 [Gmag, ~] = imgradient(croppedimg);
 [Lmag, ~] = imgradient(Gmag);
 
