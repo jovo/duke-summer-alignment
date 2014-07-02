@@ -1,6 +1,7 @@
 function [ ypeak, xpeak ] = detectpeaksvm( c, classifier )
 %DETECTPEAKSVM Binary classification of peaks with a Support Vector Machine
-%   [ ypeak, xpeak ] = detectpeaksvm( c, classifier )
+%   [ ypeak, xpeak ] = detectpeaksvm( c, classifier ) Finds peak (ypeak,xpeak)
+%   of image c using classifier 
 
 % divide image into 9 subsections.
 ycrop = floor(size(c,1)/3);
