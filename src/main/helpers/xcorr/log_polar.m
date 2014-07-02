@@ -1,5 +1,5 @@
 function [ M_logpol, rho ] = log_polar( M )
-%LOG_POLAR Sample image in Log-Polar coordinates
+%LOG_POLAR Sample image M in Log-Polar coordinates, returning M_logpol.  
 
 [sizey, sizex] = size(M);
 minsize = min(sizey, sizex);

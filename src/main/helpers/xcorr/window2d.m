@@ -1,5 +1,5 @@
 function [ M_new ] = window2d( M, type )
-%WINDOW2D Applies a 2D hamming window to non-empty image M
+%WINDOW2D Applies a 2D window of desired type to non-empty image M
 
 switch type
     case 'hamming'
