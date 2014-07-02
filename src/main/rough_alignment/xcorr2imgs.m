@@ -18,7 +18,8 @@ function [ Transforms, flag ] = xcorr2imgs( T, A, config )
 
 % validate inputs.
 narginchk(2,3);
-% retrieve config variables: whether to use a trained classifier
+
+% retrieve config variables: dtm whether to use trained classifier
 try
     peakclassifier = config.peakclassifier;
     classify = 1;
@@ -133,6 +134,7 @@ elseif max2 > max1
     select = 2;
 end
 clear c1 c2 Atemp1 Atemp2;
+
 % pick rotation that produces the greatest peak
 if select == 1
     RotatedT = RotatedT1;
