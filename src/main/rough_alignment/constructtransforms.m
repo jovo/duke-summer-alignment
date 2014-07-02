@@ -92,9 +92,9 @@ for i=1:size(errorupdate, 1)
 
     % retrieve transformation parameters from additional alignments.
     % preT are the transform params based on preindex, index1, index2.
-    % postT are the transform aprams based on index1, index2,
-    % postindex. Also retrieves transformation error. If no adjacent
-    % images exist, then the error is set to intmax.
+    % postT are the transform params based on index1, index2, postindex.
+    % Also retrieves transformation error. If no adjacent images exist,
+    % then the error is set to intmax.
     if preindex >= 1
         val1 = values(addtforms, {localindices2key(preindex, index2)});
         val2 = values(Transforms, {localindices2key(preindex, index1)});
