@@ -2,9 +2,9 @@ function [ tform ] = featurematch2imgs( T, A, resize, config )
 %MATCHLOCALFEATURES Match local features with feature detection/matching.
 %   [ tform ] = matchlocalfeatures( T, A )
 %   [ tform ] = featurematch2imgs( T, A, resize, config ) T is the image that
-%   should be matched to A. scale parameter indicates how much to scale the
+%   should be matched to A. Resize parameter indicates how much to scale the
 %   image before feature matching to improve efficiency. Realistically, the
-%   parameter should be 0.5 <= scale <= 1.
+%   parameter should be 0.5 <= resize <= 1.
 
 narginchk(2,4);
 
@@ -22,6 +22,7 @@ F2 = fspecial('gaussian', hsizeT, sigmaT);
 
 A = imhistmatch(A, T);
 T = imhistmatch(T, A);
+
 % validate inputs
 if nargin > 2
     Ascaled = imresize(imfilter(A, F1), resize);
