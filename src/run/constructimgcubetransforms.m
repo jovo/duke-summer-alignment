@@ -2,8 +2,8 @@ function [ Transforms ] = constructimgcubetransforms
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
 % retrieve config variables
-alignvars = configalignvars();
-apivars = configapivars();
+alignvars = configalignvars;
+apivars = configapivars;
 
 imgtoken = apivars.imgtoken;
 resolution = apivars.resolution;
@@ -30,7 +30,7 @@ slicerange = oo.imageInfo.DATASET.SLICERANGE(2);
 % size of specific image cube
 xtotalsize = min(image_size(1)-xoffset, xtotalsize);
 ytotalsize = min(image_size(2)-yoffset, ytotalsize);
-ztotalsize = min(slicerange-zoffset, ztotalsize);
+ztotalsize = min(double(slicerange-zoffset), double(ztotalsize));
 xsubsize = min(image_size(1)-xoffset, xsubsize);
 ysubsize = min(image_size(2)-yoffset, ysubsize);
 zsubsize = min(slicerange-zoffset, zsubsize);
