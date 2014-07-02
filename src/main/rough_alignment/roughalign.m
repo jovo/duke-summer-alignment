@@ -1,12 +1,12 @@
 function [ FinalTransforms, M_new ] = roughalign( M, varargin )
 %ROUGHALIGN Aligns a stack of images
-%	[ FinalTransforms, M_new ] = roughalign( M )
+%   [ FinalTransforms, M_new ] = roughalign( M )
 %   [ FinalTransforms, M_new ] = roughalign( M, align, config )
-%   if align variable is 'align', M_new returns the aligned image stack;
-%   otherwise M_new is nil. scale indicates how much the image should be
-%   resized during the alignment process. Primarily used for large images
-%   that may take up too much memory. 0.5 < scale < 1 is an appropriate
-%   range. The default scale is 1. M is the image stack.
+%   M is the image stack. If align variable is 'align', M_new returns 
+%   the aligned image stack; otherwise M_new is nil. scale indicates 
+%   how much the image should be resized during the alignment process. 
+%   Primarily used for large images that may take up too much memory. 
+%   0.5 < scale < 1 is an appropriate range. 
 
 % validate inputs
 narginchk(1,3);
@@ -30,7 +30,7 @@ FinalTransforms = struct;
 FinalTransforms.pairwise = containers.Map;
 FinalTransforms.global = containers.Map;
 
-% if # of valid images (after invalid img removal) is < 2, then return
+% if # of valid images (after invalid img removal) < 2, then return
 if size(Mremoved, 3) < 2
     return;
 end
@@ -72,7 +72,6 @@ FinalTransforms.pairwise = pairwiseTransforms;
 
 % aligns the image based on the transforms if required
 if align
-
     % global alignment using piecewise transformation parameters
     [ M_new, FinalTransforms ] = constructalignment(Mremoved, FinalTransforms);
     origIndices = 1:size(M_new,3);
