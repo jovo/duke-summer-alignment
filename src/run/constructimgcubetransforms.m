@@ -133,7 +133,7 @@ for i=1:numIterations   % iterate over partitions
     end
 
     % helper to compute transforms in parallel
-    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs, parallelize);
+    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
 
     % update data structure with computed transforms
     KeyCells(i, 1:size(curKeyCells,1)) = curKeyCells';
