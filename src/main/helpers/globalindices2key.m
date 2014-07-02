@@ -1,6 +1,6 @@
 function [ key ] = globalindices2key( index )
 %GLOBALINDICES2KEY convert indices to a global key for container.Map
-%   [ key ] = globalindices2key( index ) converts global index, a structure,
+%   [ key ] = globalindices2key( index ) converts a struct global index
 %   into a string key for containers.Map usage.
 
 key =   [ ...
