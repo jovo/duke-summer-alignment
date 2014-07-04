@@ -111,6 +111,7 @@ for i=1:numIterations   % iterate over partitions
         fwrite(fileID, cutout.data, 'uint8');
         fclose(fileID);
         m = memmapfile(filename, 'Format', {'uint8', size(cutout.data), 'data'});
+        clear cutout;
 
         % store sub-cube and its base ids
         MemKeys(j) = {m};
