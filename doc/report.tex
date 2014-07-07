@@ -19,20 +19,11 @@
 \begin{document}  
 \maketitle
 
-\section{Image Enhancement}
-\subsection{Fold Removal}
-
-\begin{wrapfigure}{r}{0.3\textwidth}
-	\centering
-\includegraphics [width=4cm, height=3.3cm] {folddetection1}
-\includegraphics [width=4cm, height=3.3cm] {folddetection2}
-\end{wrapfigure}
-
-Haven't focused much on this. Right now uses RANSAC to detect linear folds. Images on either side of the fold are split into two images. The bottom right image are two images overlaid (pink, green) after using RANSAC to detect the fold in the top left image. \\
-\textbf{Problems:} Only detects linear folds right now that extend across image. \\
-\textbf{Improvements:} Are non-linear folds/other deformities a priority? Also, there are sometimes patches of very bright marks and patches of very dark marks. This may disrupt alignment with correlation, though unsure by how much. Would impainting help?
+\section{Overview}
+Alignment of 3D electron microscope sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between image slices.  See the README for details about the functions available to the user. This report aims to provide details on the methods and techniques used to achieve the desired outcome. The main concept of this program is using cross-correlation to determine rotatio and translation parameters that maximizes the correlation between pairwise images. This core technique is extended to provide scalable global alignment of terobytes of EM image data with further optimization and error checking steps for robustness, detailed below.
 
 \section{Global Pairwise Alignment}
+Before an entire 3D image cube can be aligned completely, we first must compete alignment between pairs of images. 
 Computes the pairwise alignment between adjacent two images in an image cube. Optionally first uses feature matching to determine the rotation parameter between two images. Then uses 2D Cross-Correlation to refine the rotation parameter and determine the translation parameters.
 
 \subsection{Feature Matching}
@@ -59,18 +50,11 @@ Iterate through image stack, and apply the following procedure to each adjacent 
 \end{enumerate}
 
 The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. The upper bound is because of the Fast Fourier Transform computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality. Scaling by 0.5 effectively decreases the constant in front of $nlogn$ in the running time by 4. \\
-\begin{wrapfigure}{r}{0.3\textwidth}
-	\centering
-\includegraphics [width=6cm, height=3.3cm] {inaccurate_rotation}
-\end{wrapfigure}
+
 \textbf{Problems:} For images that are more dissimilar, identifying the rotation parameter is a challenge; The rotation identified is often close to the true rotation, but not close enough (see bottom). For most image inputs, it appears that rotations are small to begin with, so this usually isn't a problem. However, the problem sometimes occurs when I artificially add large rotations to image inputs before alignment.\\
 \textbf{Improvements:} Are there better ways to identify the rotation angle needed to align images? Are there ways to improve the correlation strength? Some humans (or at least I) match outlines of noticeable cell structures. High-pass filtering ideally helps, but the noise and blemishes would probably pass through as well. One idea: selectively darken regions that we don't want to matter as much in the correlation? \\
 
 \subsubsection{Peak Detection}
-\begin{wrapfigure}{r}{0.3\textwidth}
-	\centering
-	\includegraphics [width=4cm, height=4cm] {peak_svm}
-\end{wrapfigure}
 
 Uses a SVM to classify a local maxima as a peak or non peak. 
 Simply picking the maximum values will not always work, as the example on the right demonstrates. The peak is quite obvious, but the maximum values (in red) are clustered elsewhere. The SVM is trained with shape features, and performs the best compared to other methods.\\
