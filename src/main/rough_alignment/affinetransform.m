@@ -4,7 +4,7 @@ function [ MergedStack ] = affinetransform( templateStack, AStack, curtform )
 %   templateStack gets rotated and recorded. Both AStack and templateStack
 %   could get shifted. curtform is the transformation matrix.
 
-% compute the actual transformation to apply.
+% compute the actual transformation to apply
 newtparam = matrix2params(curtform);
 TranslateYunrounded = newtparam(1);
 TranslateXunrounded = newtparam(2);

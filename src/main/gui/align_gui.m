@@ -1,5 +1,5 @@
 function align_gui
-% ALIGNMENTGUI GUI for visualizing alignment data in depth.
+% ALIGNGUI GUI for visualizing alignment data in depth.
 
     % Create GUI
     H.f = figure(...
@@ -36,7 +36,6 @@ function align_gui
     set(H.f, 'Visible', 'on');
 
     % GUI callbacks
-    
     function openvar_Callback(varargin)
         handles = varargin{3};
         

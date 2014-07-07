@@ -27,7 +27,7 @@ if M == zeros(size(M))
     yshiftmax = 0;
     xshiftmax = 0;
 else
-    % remove horizontal/vertical padding (force parameter missing)
+    % remove padding (force parameter missing)
     [ypad, xpad] = find(M);
     M_new = M(min(ypad):max(ypad), min(xpad):max(xpad));
     yshiftmin = min(ypad)-1;

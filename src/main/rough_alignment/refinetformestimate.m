@@ -19,7 +19,7 @@ catch
     minnonzeropercent = 0.3;
 end
 
-% initialize best transform results with inputted values
+% initialize best transform results with input values
 bestmerged = affinetransform(T, A, tform);
 besterror = errormetrics(bestmerged, errormeasure, '', intmax, minnonzeropercent);
 besttform = tform;

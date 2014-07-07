@@ -1,9 +1,10 @@
 function [ ypeak, xpeak ] = detectpeak( oldC, tempsize, type, class )
 %DETECTPEAKS Detects significant peaks of image in fourier domain.
-%   [ xpeak, ypeak ] = detectpeak( c, tempsize, type ) takes an image in
-%   the fourier domain, c, and evaluates the peak. tempsize specifies the
-%   distribution of the peak it should model. If program finds a potential
-%   error in peak detection, will return -1 for all outputs;
+%   [ xpeak, ypeak ] = detectpeak( oldC, tempsize, type, class ) takes an image in
+%   the fourier domain, oldC, and evaluates the peak. tempsize specifies the
+%   distribution of the peak it should model. Type and class each have choice of
+%   two inputs. If program finds a potential error in peak detection, will return 
+%   -1 for all outputs. 
 
 % validate inputs
 RT = strcmpi(class, 'rt');
@@ -40,6 +41,7 @@ elseif YX
     padsize = 0;
     oldCpad = oldCcropped;
 end
+
 % correlate old image with a peak shaped distribution for new peak
 newCpad = normxcorr2(template, oldCpad);
 bounds = tempsize + padsize;
@@ -49,24 +51,10 @@ newC = padarray(newCcropped, [cropy, cropx], 0);
 [ypeakold, xpeakold] = find(oldC==max(oldC(:)));
 [ypeaknew, xpeaknew] = find(newC==max(newC(:)));
 
-% % debugging
-% size(oldC)
-% size(newC)
-% figure; imshow(oldC,[min(oldC(:)), max(oldC(:))]);
-% title('oldC');
-% hold on;
-% plot(xpeakold,ypeakold,'ro');
-% hold off;
-% figure; imshow(newC,[min(newC(:)), max(newC(:))]);
-% title('newC');
-% hold on;
-% plot(xpeaknew,ypeaknew,'go');
-% hold off;
-
 % enter final values for xpeak and ypeak. if peaks are not unique, then
 % reject unless peaks are really close together. if the distance between
-% old and new peaks are less than a certain realistic distance away, then
-% use the old peak location. Otherwise, use the newer, probably better peak
+% old and new peaks is less than a certain realistic distance away, then
+% use the old peak location. Otherwise, use the newer, probably better, peak
 % location.
 if length(xpeaknew) > 1 && ...  % non-unique maxima
        sqrt((ypeaknew(1)-ypeaknew(2))^2 + (xpeaknew(1)-xpeaknew(2))^2) > 3
