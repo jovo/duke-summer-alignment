@@ -70,3 +70,6 @@ data/*
 *.jpg
 *.tiff
 *.tif
+
+# latex files
+*.aux

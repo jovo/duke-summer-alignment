@@ -2,8 +2,8 @@ function [ Transforms ] = constructimgcubetransforms
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
 % retrieve config variables
-alignvars = configalignvars();
-apivars = configapivars();
+alignvars = configalignvars;
+apivars = configapivars;
 
 imgtoken = apivars.imgtoken;
 resolution = apivars.resolution;
@@ -30,7 +30,7 @@ slicerange = oo.imageInfo.DATASET.SLICERANGE(2);
 % size of specific image cube
 xtotalsize = min(image_size(1)-xoffset, xtotalsize);
 ytotalsize = min(image_size(2)-yoffset, ytotalsize);
-ztotalsize = min(slicerange-zoffset, ztotalsize);
+ztotalsize = min(double(slicerange-zoffset), double(ztotalsize));
 xsubsize = min(image_size(1)-xoffset, xsubsize);
 ysubsize = min(image_size(2)-yoffset, ysubsize);
 zsubsize = min(slicerange-zoffset, zsubsize);
@@ -111,6 +111,7 @@ for i=1:numIterations   % iterate over partitions
         fwrite(fileID, cutout.data, 'uint8');
         fclose(fileID);
         m = memmapfile(filename, 'Format', {'uint8', size(cutout.data), 'data'});
+        clear cutout;
 
         % store sub-cube and its base ids
         MemKeys(j) = {m};
@@ -133,7 +134,7 @@ for i=1:numIterations   % iterate over partitions
     end
 
     % helper to compute transforms in parallel
-    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs, parallelize);
+    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
 
     % update data structure with computed transforms
     KeyCells(i, 1:size(curKeyCells,1)) = curKeyCells';
@@ -182,7 +183,7 @@ delete('data/aligntemp_*.dat');
             % iterate over each sub-cube
             parfor u=1:numParIterations
                 % calculate transformations for affine global alignment
-                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', alignvars);
                 tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
@@ -207,7 +208,7 @@ delete('data/aligntemp_*.dat');
             % iterate over each sub-cube
             for u=1:numParIterations
                 % calculate transformations for affine global alignment
-                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', alignvars);
                 tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
