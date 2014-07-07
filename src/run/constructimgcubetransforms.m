@@ -111,6 +111,7 @@ for i=1:numIterations   % iterate over partitions
         fwrite(fileID, cutout.data, 'uint8');
         fclose(fileID);
         m = memmapfile(filename, 'Format', {'uint8', size(cutout.data), 'data'});
+        clear cutout;
 
         % store sub-cube and its base ids
         MemKeys(j) = {m};
@@ -133,7 +134,7 @@ for i=1:numIterations   % iterate over partitions
     end
 
     % helper to compute transforms in parallel
-    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs, parallelize);
+    [curKeyCells, curValCells] = alignhelper(MemKeys, BaseIDs);
 
     % update data structure with computed transforms
     KeyCells(i, 1:size(curKeyCells,1)) = curKeyCells';
@@ -182,7 +183,7 @@ delete('data/aligntemp_*.dat');
             % iterate over each sub-cube
             parfor u=1:numParIterations
                 % calculate transformations for affine global alignment
-                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', alignvars);
                 tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
@@ -207,7 +208,7 @@ delete('data/aligntemp_*.dat');
             % iterate over each sub-cube
             for u=1:numParIterations
                 % calculate transformations for affine global alignment
-                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', 0.5, alignvars);
+                [tforms, ~] = roughalign(memkeys{u}.Data.data, '', alignvars);
                 tformkeys = keys(tforms.pairwise);
                 valrow = cell(1, numZSlices);
                 keyrow = cell(1, numZSlices);
