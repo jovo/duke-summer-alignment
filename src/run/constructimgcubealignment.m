@@ -103,7 +103,7 @@ for i=1:itLength
         catch
             val = {eye(3)};
         end
-        localkey = indices2key(j, j+1);
+        localkey = localindices2key(j, j+1);
         tforms(localkey) = val{1};
     end
 

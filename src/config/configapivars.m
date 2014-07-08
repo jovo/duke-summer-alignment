@@ -8,13 +8,13 @@ config = struct;
 config.imgtoken = 'kasthuri11cc';
 
  % resolution
-config.resolution = 3;
+config.resolution = 1;
 
 % total size of cube to-be aligned. Any number outside the range of the
 % data set will automatically be ended at the range of the data set.
 config.xtotalsize = intmax;
 config.ytotalsize = intmax;
-config.ztotalsize = intmax;
+config.ztotalsize = 10;
 
 % the size of each cube for processing. 
 config.xsubsize = 10000;
@@ -29,6 +29,6 @@ config.zoffset = 1;
 % if parallelize is true (1), then will use parallel computing using the #
 % of workers specified in workersize.
 config.parallelize = 1;
-config.workersize = 3;
+config.workersize = 6;
 
 end
