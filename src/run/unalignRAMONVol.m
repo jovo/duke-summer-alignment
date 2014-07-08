@@ -4,6 +4,8 @@ function [ RAMONOrig ] = unalignRAMONVol( RAMONAligned, Transforms )
 % object of the transforms that aligned RAMONAligned. RAMONOrig is the
 % original RAMONVolume.
 
+tic
+
 % convert from global to local transforms
 Transforms.pairwise = global2localmap(Transforms.pairwise);
 Transforms.global = global2localmap(Transforms.global);
@@ -15,5 +17,7 @@ inverse = 1;
 % store unaligned data as 
 RAMONOrig = RAMONAligned.clone();
 RAMONOrig.setCutout(unaligned);
+
+toc
 
 end

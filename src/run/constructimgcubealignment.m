@@ -22,6 +22,8 @@ function [ data ] = constructimgcubealignment( ...
 %   the entire data set. totalsize is the size of the image cube, offset is
 %   the offset in relation to the entire image dataset.
 
+tic
+
 % connect to API
 oo = OCP();
 oo.setImageToken(TransformData.imgtoken);
@@ -108,7 +110,9 @@ for i=1:itLength
     end
 
     % apply transformations to sub-cube
-    alignedseg = constructalignment(dataseg, tforms);
+    transforms = struct;
+    transforms.pairwise = tforms;
+    alignedseg = constructalignment(dataseg, transforms);
 
     % find a model image from aligned and unaligned sub-cubes for comparison
     cmpindex = 1;
@@ -171,5 +175,7 @@ for i=1:itLength
 end
 
 data = data(1+yoffset-yoffsetmark:end, 1+xoffset-xoffsetmark:end, :);
+
+toc
 
 end

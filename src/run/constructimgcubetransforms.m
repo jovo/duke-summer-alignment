@@ -1,6 +1,8 @@
 function [ Transforms ] = constructimgcubetransforms
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
+tic
+
 % retrieve config variables
 alignvars = configalignvars;
 apivars = configapivars;
@@ -234,5 +236,7 @@ delete('data/aligntemp_*.dat');
         keycells = keycells(:);
 
     end
+
+toc
 
 end

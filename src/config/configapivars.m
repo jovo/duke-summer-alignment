@@ -17,8 +17,8 @@ config.ytotalsize = intmax;
 config.ztotalsize = 10;
 
 % the size of each cube for processing. 
-config.xsubsize = 10000;
-config.ysubsize = 10000;
+config.xsubsize = 1024;
+config.ysubsize = 1024;
 config.zsubsize = 2;
 
 % the overall offset. Set to 0 for no offset.
