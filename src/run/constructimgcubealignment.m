@@ -1,4 +1,4 @@
-function [ data ] = constructimgcubealignment( ...
+function [ RAMONVol ] = constructimgcubealignment( ...
                                                     TransformData, ...
                                                     xtotalsize, ...
                                                     ytotalsize, ...
@@ -175,6 +175,10 @@ for i=1:itLength
 end
 
 data = data(1+yoffset-yoffsetmark:end, 1+xoffset-xoffsetmark:end, :);
+RAMONVol = RAMONVolume;
+RAMONVol.setXyzOffset([xoffset, yoffset, zoffset]);
+RAMONVol.setResolution(TransformData.resolution);
+RAMONVol.setCutout(data);
 
 toc
 
