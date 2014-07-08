@@ -110,7 +110,9 @@ for i=1:itLength
     end
 
     % apply transformations to sub-cube
-    alignedseg = constructalignment(dataseg, tforms);
+    transforms = struct;
+    transforms.pairwise = tforms;
+    alignedseg = constructalignment(dataseg, transforms);
 
     % find a model image from aligned and unaligned sub-cubes for comparison
     cmpindex = 1;
