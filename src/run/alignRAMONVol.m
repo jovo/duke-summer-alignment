@@ -8,6 +8,8 @@ function [ RAMONAligned, TransformsNew ] = alignRAMONVol( RAMONOrig, Transforms 
 %   calculates the transforms and outputs them in a containers.Map object
 %   TransformsNew. RAMONAligned is the aligned RAMONOrig.
 
+tic
+
 % validate inputs
 narginchk(1,2);
 
@@ -78,5 +80,7 @@ end
 % store aligned stack as RAMONVolume
 RAMONAligned = RAMONOrig.clone();
 RAMONAligned.setCutout(aligned);
+
+toc
 
 end
