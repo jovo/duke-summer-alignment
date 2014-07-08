@@ -20,12 +20,12 @@
 \maketitle
 
 \section{Overview}
-Alignment of 3D electron microscope sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between image slices.  See the README for details about the functions available to the user. This report aims to provide details on the methods and techniques used to achieve the desired outcome. The main concept of this program is using cross-correlation to determine rotatio and translation parameters that maximizes the correlation between pairwise images. This core technique is extended to provide scalable global alignment of terobytes of EM image data with further optimization and error checking steps for robustness, detailed below.
+Alignment of 3D electron microscope sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between image slices.  See the README for details about the functions available to the user. This report aims to provide details on the methods and techniques used to achieve the desired outcome. The main concept of this program is using cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This core technique is extended to provide scalable global alignment of terobytes of EM image data with further optimization and error checking steps for robustness, detailed below.
 
 \section{Global Pairwise Alignment}
-Before an entire 3D image cube can be aligned completely, we first must compete alignment between pairs of images. This is accomplished with using cross-correlation.\\
-Median filtering and histogram equalization are performed before sampling in log-polar coordinates in the fourier domain detects the shift in rho and theta (scale and rotation). This method determines the best rotation required to align pairwise images. Then, normal cross-correlation is used to determine the best translational shift. See the '2D Cross-Correlation' section for more information.\\
-One important step in the cross-correlation process is identifying the transformation parameters from the cross-correlation of two images. The correct transformation between two images is determined by finding the 'correct' peak in their cross-correlation. However trouble arises when the 'correct' peak is NOT the maximum value. Thus, a trained SVM classifier is used to determine the correct peak among potential candidate peaks. See the 'peak Detection' section for more information. \\
+Before an entire 3D image cube can be aligned completely, we first must compute alignment between pairs of images. This is accomplished using cross-correlation.\\
+Median filtering and histogram equalization, which are performed before sampling in log-polar coordinates in the fourier domain, detect the shifts in rho and theta (scale and rotation). This method determines the best rotation required to align pairwise images. Then, normal cross-correlation is used to determine the best translational shift. See the '2D Cross-Correlation' section for more information.\\
+One important step in the cross-correlation process is identifying the transformation parameters from the cross-correlation of two images. The correct transformation between two images is determined by finding the 'correct' peak in their cross-correlation. However, problems arise when the 'correct' peak is NOT the maximum value. Thus, a trained SVM classifier is used to determine the correct peak among potential candidate peaks. See the 'Peak Detection' section for more information. \\
 
 \subsection{2D Cross-Correlation}
 Iterate through image stack, and apply the following procedure to each adjacent pair of images. \\
@@ -35,28 +35,28 @@ Iterate through image stack, and apply the following procedure to each adjacent 
 \item take DFT, then high-pass filter, then resample in log-polar coordinates
 \item compute phase correlation to find best rho (scaling) and theta (rotation angle)
 \item refine initial rotation parameter (computed from feature matching previously) by using the theta value from correlation
-\item rotate the image appropriately, then compute normalized cross correlation to find translation parameters
-\item use support vector machine to identify peak in the cross correlation matrix of images that accurately correspond to the actual translation parameters
+\item rotate the image appropriately, then compute normalized cross-correlation to find translation parameters
+\item use support vector machine to identify peak in the cross-correlation matrix of images that accurately correspond to the actual translation parameters
 \item save pairwise affine transformation matrix
 \end{enumerate}
 
-The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. The upper bound is because of the Fast Fourier Transform computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality. Scaling by 0.5 effectively decreases the constant in front of $nlogn$ in the running time by 4. \\
+The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. This upper bound arises due to the Fast Fourier Transform computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality. Scaling by 0.5 effectively decreases the constant in front of $nlogn$ in the running time by 4. \\
 
 \subsection{Peak Detection}
 
-Uses a SVM to classify a local maxima as a peak or non peak. 
+Uses an SVM to classify a local maxima as a peak or non-peak. 
 Simply picking the maximum values will not always work, as the example on the right demonstrates. The peak is quite obvious, but the maximum values (in red) are clustered elsewhere. The SVM is trained with shape features, and performs the best compared to other methods.\\
 Attempted Methods to find peaks in the cross correlation of two images:
 
 \begin{enumerate}
-\item Identifying maximum values. However, this won't always work, as the example on the right demonstrates.
-\item Correlating the cross correlation of two images with a normal distribution. This is attempting to factor in shape. In theory this should accentuate the true peaks, but this won't always work because artificial peaks may be introduced. Another problem is that this method is quite slow, because it has to perform more cross correlation procedures. 
-\item Support Vector Machine trained on 5 features: number of pixels in image, area of binary thresholded region, max gradient, max laplacian, and skewness of the histogram. The cross correlation images is divided into 9 subsections. The maximum is identified in each, and evaluated with the SVM. The maximum value predicted by the SVM to be a peak is labelled as the actual peak. If no maximum values are predicted by the SVM to be a peak, then no peak exists. This appears to work the best. It accurately identifies peaks even if not the global maximum and the running time is almost instantaneous.
+\item Identify maximum values. However, this will not always work, as the example on the right shows.
+\item Correlate the cross-correlation of two images with a normal distribution. In theory this should accentuate the true peaks, since it takes into account the shape of all possible peaks, but this won't always work because artificial peaks may be introduced. Another problem is that this method is quite slow because it has to perform more cross-correlation procedures. 
+\item Support Vector Machine trained on five features: number of pixels in image, area of binary thresholded region, max gradient, max Laplacian, and skewness of the histogram. The cross-correlation images are divided into nine subsections. The maximum is identified in each, and evaluated with the SVM. The maximum value predicted by the SVM to be a peak is labeled as the actual peak. If no maximum values are predicted by the SVM to be a peak, then no peak exists. This appears be the best method as it accureately identifies peaks which are not the global maxima and its run time is nearly instantaneous. 
 \end{enumerate}
 
 \section{Unused, Functional Code}
 \subsection{RANSAC}
-Originally used to detect folds in the images. We have not encountered them thus far, and this functionality was never included in our pipeline.
+Originally implemented to detect folds in the images. We have not encountered any thus far, and this functionality was never included in our pipeline.
 \subsection{SURF Feature Matching}
 Originally used to first correct large rotations before aligning with cross-correation. Eventually dropped because images are often too different to match features well. Downsampling did not help much for some images.\\
 \begin{enumerate}
@@ -65,9 +65,8 @@ Originally used to first correct large rotations before aligning with cross-corr
 \item match the features and estimate the rotation parameter
 \item save the rotation angle and apply rotation to image for input to 2D cross-correlation step.
 \end{enumerate}
-\textbf{Problems:} effectiveness decreases for images that are more dissimilar. When images have noise and blemishes, it struggles to identify any features at all, or the matches are spurious. Not using this step doesn't seem to make much of a difference right now. \\
-\textbf{Improvements:} Are there ways of using entire cell structure features (such as entire mitochondria and other organelles) to use for feature matching? This is how it appears some humans (or at least how I) visually align these EM sections. The current method isn't that useful, but by incorporating these features I feel like it has the potential to be much better.
-
+\textbf{Problems:} effectiveness decreases for images that are more dissimilar. When images have noise and blemishes, it struggles to identify any features at all, or the matches are spurious. Not using this step doesn't seem to make much of a difference. \\
+\textbf{Improvements:} Are there ways of using entire cell structure features (such as entire mitochondria and other organelles) for feature matching? This is how it appears some humans (or at least how I) visually align these EM sections. The current method isn't that useful, but by incorporating these features I feel like it has the potential to be much better.
 
 
 \subsection{Global Stack Alignment}
@@ -76,10 +75,10 @@ Uses the pairwise transformation parameters to compute global transformation par
 \textbf{Improvements:} Other methods of putting all the aligned images together?
 
 \subsubsection{Tune Transformation Parameters}
-This attempts to improve the estimate of the rotation amount by minimizing an error function (usually mean squared error). This is also important because log-polar sampling to determine the best rotation parameter is discretized, which means the best rotation angle may not be available at the cross correlation step. Thus, this step iterates over a small range of rotation and translation parameters surrounding the original estimated parameters. It then picks the rotation angle and translation amount that minimizes the error function.
+This attempts to improve the estimate of the rotation amount by minimizing an error function (usually mean squared error). This is also important because log-polar sampling to determine the best rotation parameter is discretized, which means the best rotation angle may not be available at the cross correlation step. Thus, this step iterates over a small range of rotation and translation parameters surrounding the original estimated parameters. It then picks the rotation angle and translation shift that minimizes the error function.
 
 \subsubsection{Error Minimization}
-The final (optional) step right now is to use image data outside a specific image pair to align the image pair. This works well by correcting alignments when one pairwise alignment fails for some reason. The specifics of the algorithm are below. The algorithm improves pairwise transformation parameters by computing pairwise transformations from other adjacent images. Different estimates of the transformation parameters between the image pair are computed. The transformation parameter that minimizes an error function is selected. \\
+The final (optional) step right now is to use image data outside a specific image pair to align the image pair. This works well by correcting alignments when one pairwise alignment fails for some reason. The specifics of the algorithm are detailed below. The algorithm improves pairwise transformation parameters by computing pairwise transformations from other adjacent images. Different estimates of the transformation parameters between the image pair are computed. The transformation parameter that minimizes a particular error function is selected. \\
 	\begin{algorithm}
 	\DontPrintSemicolon
 	\textbf{Transform Update/Error Minimization}\\
