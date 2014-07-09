@@ -1,32 +1,17 @@
-function [ Transforms, flag ] = xcorr2imgs( T, A, config )
+function [ Transforms, flag ] = xcorr2imgs( config, T, A )
 %XCORR2IMGS Rough alignment by 2D cross-correlation differing by
 %translation and/or rotation. Assumed for scale to always be 1.
 %   Computes the transformations that result in automated alignment between
 %   template and A. 
-%   [ tform, flag ] = xcorr2imgs( template, A )
-%   [ tform, flag ] = xcorr2imgs( template, A, config )
-%   If the pad parameter is set to 'pad', then program will add extra
-%   padding that helps with the integrity of taking fourier transforms,
-%   though at the cost of more computation time. flag is raised if
-%   alignment is deemed to fail.
+%   [ Transforms, flag ] = xcorr2imgs( config, T, A )
+%   config is the struct of alignment config variables set in
+%   configalignvars. T is the template image, A is the fixed image.
 %   ASSUMPTIONS: template and A are the SAME size, and DO NOT have any
 %   zero pad. These assumptions are consistent with inputs from EM
 %   sections.
 %
 %   Adapted from Reddy, Chatterji, An FFT-Based Technique for Translation,
 %   Rotation, and Scale-Invariant Image Registration, 1996, IEEE Trans.
-
-% validate inputs.
-narginchk(2,3);
-
-% retrieve config variables: dtm whether to use trained classifier
-try
-    peakclassifier = config.peakclassifier;
-    classify = 1;
-catch
-    peakclassifier = [];
-    classify = 0;
-end
 
 % stop program early if one image is flat (all one color).
 if std(double(T(:))) == 0 || std(double(A(:))) == 0
@@ -110,9 +95,9 @@ end
 % pick correct rotation by maximizing cross correlation.
 c1 = normxcorr2(RotatedT1, Atemp1);
 c2 = normxcorr2(RotatedT2, Atemp2);
-if classify
-    [y1, x1] = detectpeaksvm(c1, peakclassifier);
-    [y2, x2] = detectpeaksvm(c2, peakclassifier);
+if config.classify
+    [y1, x1] = detectpeaksvm(c1, config.peakclassifier);
+    [y2, x2] = detectpeaksvm(c2, config.peakclassifier);
 else
     [y1, x1] = find(c1==max(c1(:)));
     [y2, x2] = find(c2==max(c2(:)));
@@ -150,7 +135,9 @@ else
     THETA = 0;
     TranslateX = 0;
     TranslateY = 0;
-    warning('failed alignment.');
+    if ~config.suppressmessages
+        warning('failed alignment.');
+    end
     flag = 1;
 end
 clear RotatedT1 RotatedT2

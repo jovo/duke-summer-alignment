@@ -1,7 +1,7 @@
-function [ FinalTransforms, M_new ] = roughalign( M, varargin )
+function [ FinalTransforms, M_new ] = roughalign( config, M, align )
 %ROUGHALIGN Aligns a stack of images
-%   [ FinalTransforms, M_new ] = roughalign( M )
-%   [ FinalTransforms, M_new ] = roughalign( M, align, config )
+%   [ FinalTransforms, M_new ] = roughalign( config, M )
+%   [ FinalTransforms, M_new ] = roughalign( config, M, align )
 %   M is the image stack. If align variable is 'align', M_new returns 
 %   the aligned image stack; otherwise M_new is nil. scale indicates 
 %   how much the image should be resized during the alignment process. 
@@ -9,10 +9,17 @@ function [ FinalTransforms, M_new ] = roughalign( M, varargin )
 %   0.5 < scale < 1 is an appropriate range. 
 
 % validate inputs
-narginchk(1,3);
+narginchk(2,3);
 if size(M, 3) < 2
     error('Size of stack must be at least 2');
 end
+% parse inputs
+if nargin == 3 && strcmpi(align, 'align')
+    align = 1;
+else
+    align = 0;
+end
+scale = config.downsample;
 
 % remove images that are all one color
 removed = false(size(M, 3),1);
@@ -35,24 +42,11 @@ if size(Mremoved, 3) < 2
     return;
 end
 
-% parse inputs
-align = 0;
-if nargin > 1
-    align = strcmpi(varargin{1}, 'align');
-end
-config = struct;
-scale = 1;
-Mtemp = Mremoved;
-errormeasure = 'mse';
-if nargin > 2
-    config = varargin{2};
-    scale = config.downsample;
-    Mtemp = imresize(Mremoved, scale);
-    errormeasure = config.errormeasure;
-end
+% resize
+Mtemp = imresize(Mremoved, scale);
 
 % compute pairwise transforms
-tformstemp  = constructtransforms(Mtemp, config);
+tformstemp  = constructtransforms(config, Mtemp);
 pairwiseTransforms = tformstemp;
 
 % undo the initial resizing
@@ -101,15 +95,18 @@ if align
         FinalTransforms.global(localindices2key(origIndices(i), origIndices(i))) = curGVal{1};
     end
 
-    % output error report for both original and aligned stacks.
-    format short g;
-    [origE, orig] = errorreport(M, 'Original', errormeasure);
-    [alignedE, aligned] = errorreport(M_new, 'Aligned', errormeasure);
-    disp('Error improvement:');
-    disp([sprintf('\tIndex\tImprovement\t'), '% Improvement']);
-    disp( [(1:size(origE,1))', origE-alignedE, (origE-alignedE)./origE] );
-    disp(orig);
-    disp(aligned);
+     % output error report for both original and aligned stacks if messages
+     % are not suppressed.
+    if ~config.suppressmessages
+        format short g;
+        [origE, orig] = errorreport(config, M, 'Original');
+        [alignedE, aligned] = errorreport(config, M_new, 'Aligned');
+        disp('Error improvement:');
+        disp([sprintf('\tIndex\tImprovement\t'), '% Improvement']);
+        disp( [(1:size(origE,1))', origE-alignedE, (origE-alignedE)./origE] );
+        disp(orig);
+        disp(aligned);
+    end
 end
 
 end
