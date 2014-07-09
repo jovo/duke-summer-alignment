@@ -1,11 +1,16 @@
-function [ Transforms ] = constructimgcubetransforms
+function [ Transforms ] = constructimgcubetransforms( apivars )
 %COMPUTEIMGCUBETRANSFORMS Compute transforms for an entire image database.
 
 tic
 
+narginchk(0,1);
 % retrieve config variables
 alignconfig = configalignvars();
-apiconfig = configapivars();
+if nargin == 1
+    apiconfig = apivars;
+else
+    apiconfig = configapivars();
+end
 
 imgtoken = apiconfig.imgtoken;
 resolution = apiconfig.resolution;

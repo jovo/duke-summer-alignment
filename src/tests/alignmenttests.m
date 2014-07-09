@@ -59,7 +59,8 @@ disp('newRAMONOrig is the unaligned version of RAMONAligned. It should look iden
 %% TESTING CONSTRUCTIMGCUBETRANSFORMS
 
 disp('TESTING CONSTRUCTIMGCUBETRANSFORMS');
-TransformsData = constructimgcubetransforms;
+apivarstest = configapivars_test();
+TransformsData = constructimgcubetransforms(apivarstest);
 
 %% TESTING CONSTRUCTIMGCUBEALIGNMENT
 
