@@ -27,7 +27,7 @@ if nargin == 1
     % retrieve config variables for alignment
     alignconfig = configalignvars();
     % compute alignment transforms and align image cube
-    [ TransformsNew, aligned ] = roughalign(RAMONOrig.data, 'align', alignconfig);
+    [ TransformsNew, aligned ] = roughalign(alignconfig, RAMONOrig.data, 'align');
     % convert from local key back to global key
     TransformsNew.pairwise = local2globalmap( ...
                                         TransformsNew.pairwise, ...
@@ -65,6 +65,7 @@ elseif nargin == 2
                                                 yoffset, ...
                                                 zoffset ...
                                             );
+        aligned = aligned.data;
     % if the Transforms only apply to the current image cube
     else
         % convert from global to local key

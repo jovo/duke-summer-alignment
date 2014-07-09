@@ -20,7 +20,7 @@ for i=1:n1
     d = imrotate(im, rot1(i), 'nearest', 'crop');
     data1(:,:,i) = d(start:finish, start:finish);
 end
-[transforms1, merged1] = roughalign(data1, 'align', config);
+[transforms1, merged1] = roughalign(config, data1, 'align');
 
 % inverse alignment
 original1 = constructalignment(merged1, transforms1, 1);
@@ -38,7 +38,7 @@ original1 = constructalignment(merged1, transforms1, 1);
 % 	d = imrotate(lee14.data(:,:,i), rot2(i), 'nearest', 'crop');
 % 	data2(:,:,i) = d(start:finish, start:finish);
 % end
-% [transforms2, merged2] = roughalign(data2, 'align', config);
+% [transforms2, merged2] = roughalign(config, data2, 'align');
 
 
 

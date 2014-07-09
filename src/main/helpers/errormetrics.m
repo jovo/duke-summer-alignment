@@ -1,33 +1,26 @@
-function [ Error, flag, nonzeropercent ] = errormetrics( M, type, varargin )
+function [ Error, flag, nonzeropercent ] = errormetrics( config, M, maxval )
 %ERRORMETRICS Computes a variety of error metrics for image stack. 
-%   [ Error, flag, nonzeropercent ] = errormetrics( M, type )
-%   [ Error, flag, nonzeropercent ] = errormetrics( M, type, warn, maxval, minimum ) 
-%   M is the image stack, 'type' specifies which type of error you wish to compute.
-%   Error is an array of size [size(M,3)-1]. Error(i) returns the error between 
-%   images i and i+1 in stack. minimum is the smallest percentage of nonzero space 
-%   allowed; default is 0. If set to 0, then that essentially disables this check 
-%   because it allows for the union of two images to be nil. if less than minimum, 
-%   a flag and warning is set. if the maxval parameter is entered, then the error 
-%   will be set to maxval. Otherwise, or if maxval = -1, the error will be 
-%   calculated normally.
+%   [ Error, flag, nonzeropercent ] = errormetrics( config, M )
+%   [ Error, flag, nonzeropercent ] = errormetrics( config, M, maxval )
+%   M is the image stack, config is the struct from configapivars. maxval
+%   is the value assigned if there is a problem. One can override maxval by
+%   assigning maxval to -1, in which case the error will be computed as
+%   usual. Error is the error value, flag is set to true (1) if
+%   minnonzeropercent is less than the proportion of nonzero overlap.
+%   nonzeropercent is the actual proportion of nonzero overlap.
 %   Options: 
 %   'psnr': Signal-to-Noise Ratio (PSNR)
 %   'mse': Mean-Squared Error (MSE)
 %   'pxdiff': Mean Pixel intensity difference
 
 % validate inputs
-narginchk(2,5);
-maxval = NaN;
-warn = 0;
-if nargin > 2
-    warn = strcmpi('warn', varargin{1});
+narginchk(2,3);
+if nargin == 2
+    maxval = NaN;
 end
-if nargin > 3 && varargin{2} ~= -1
-    maxval = varargin{2};
-end
-if nargin > 4
-    minimum = varargin{3};
-end
+suppress = config.suppressmessages;
+minimum = config.minnonzeropercent;
+type = config.errormeasure;
 
 % compute error vector
 M = double(M);
@@ -43,7 +36,7 @@ switch lower(type)
             nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
             if nonzeropercent < minimum;
                 flag(1,i) = 1;
-                if warn
+                if ~suppress
                     warning('majority of elements are zeros');
                 end
             end
@@ -65,7 +58,7 @@ switch lower(type)
             nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
             if nonzeropercent < minimum;
                 flag(1,i) = 1;
-                if warn
+                if ~suppress
                     warning('majority of elements are zeros');
                 end
             end
@@ -87,7 +80,7 @@ switch lower(type)
             nonzeropercent = sum(sum(~zeroE))/sum(sum(imgOR));
             if nonzeropercent < minimum;
                 flag(1,i) = 1;
-                if warn
+                if ~suppress
                     warning('majority of elements are zeros');
                 end
             end
@@ -99,6 +92,6 @@ switch lower(type)
                 Error(i) = mean(mean(abs(i1 - i2)));
             end
         end
-    end
+end
 
 end

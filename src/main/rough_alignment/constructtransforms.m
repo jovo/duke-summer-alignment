@@ -1,25 +1,9 @@
-function [ Transforms ] = constructtransforms( M, config )
+function [ Transforms ] = constructtransforms( config, M )
 %CONSTRUCTTRANSFORMS determines transform parameters to align pairwise
 %images from image cube.
-%   [ Transforms ] = constructtransforms( M )
-%   [ Transforms ] = constructtransforms( M, config) M is the image
-%   stack, the optional improve parameter attempts to correct faulty
-%   alignments by using adjacent images.
-
-% validate inputs
-narginchk(1,2);
-
-% retrieve config variables
-try
-    errormeasure = config.errormeasure;
-    minnonzeropercent = config.minnonzeropercent;
-    minpercenterrorimprovement = config.minpercenterrorimprovement;
-catch
-    config = struct;
-    config.errormeasure = 'mse';
-    config.minnonzeropercent = 0.3;
-    config.minpercenterrorimprovement = 0;
-end
+%   [ Transforms ] = constructtransforms( config, M ) M is the image
+%   stack. config is the struct of alignment configuration parameters set
+%   in setconfigvars.
 
 % initialize data structures
 looplength = size(M, 3) - 1;
@@ -39,11 +23,11 @@ for i=1:looplength
     img2 = M(:,:,i+1);
 
     % compute error metric without any transformations. NOTE: no intmax
-    origerrors(i) = errormetrics(M(:,:,i:i+1), errormeasure, '', -1, minnonzeropercent);
+    origerrors(i) = errormetrics(config, M(:,:,i:i+1));
     % compute transformation for pairwise alignment by cross correlation
-    tformtemp = xcorr2imgs(img2, img1, config);
+    tformtemp = xcorr2imgs(config, img2, img1);
     % refine original tform estimate and save
-    [tform, newerrors(i), ~] = refinetformestimate(img2, img1, tformtemp);
+    [tform, newerrors(i), ~] = refinetformestimate(config, img2, img1, tformtemp);
 
     % store ids and compute error difference
     ids(i) = {localindices2key(i, i+1)};
@@ -52,8 +36,10 @@ for i=1:looplength
     percenterrordiff(i) = errordiff(i)/origerrors(i);
 
     % conditions to update error.
-    if percenterrordiff(i) < minpercenterrorimprovement
-%         disp('CONSTRUCTTRANSFORMS: % error improvement less than threshold; will attempt further optimization.');
+    if percenterrordiff(i) < config.minpercenterrorimprovement
+        if ~config.suppressmessages
+            disp('CONSTRUCTTRANSFORMS: % error improvement less than threshold; will attempt further optimization.');
+        end
         errorupdate = cat(1, errorupdate, [i, i+1]);
     end
 end
@@ -80,13 +66,13 @@ for i=1:size(errorupdate, 1)
     if preindex >= 1 && ~isKey(addtforms, {localindices2key(preindex, index2)})
         img1 = M(:,:, preindex);
         img2 = M(:,:, index2);
-        tform = xcorr2imgs(img2, img1, config);
+        tform = xcorr2imgs(config, img2, img1);
         addtforms(localindices2key(preindex, index2)) = tform;
     end
     if postindex <= looplength+1 && ~isKey(addtforms, {localindices2key(index1, postindex)})
         img1 = M(:,:, index1);
         img2 = M(:,:, postindex);
-        tform = xcorr2imgs(img2, img1, config);
+        tform = xcorr2imgs(config, img2, img1);
         addtforms(localindices2key(index1, postindex)) = tform;
     end
 
@@ -101,7 +87,7 @@ for i=1:size(errorupdate, 1)
         B = val1{1};
         A = val2{1};
         preTtemp = A\B;
-        [preT, preE, ~] = refinetformestimate(M(:,:,index2), M(:,:,index1), preTtemp);
+        [preT, preE, ~] = refinetformestimate(config, M(:,:,index2), M(:,:,index1), preTtemp);
     else
         preT = eye(3);
         preE = intmax;
@@ -112,7 +98,7 @@ for i=1:size(errorupdate, 1)
         B = val1{1};
         A = val2{1};
         postTtemp = B/A;
-        [postT, postE, ~] = refinetformestimate(M(:,:,index2), M(:,:,index1), postTtemp);
+        [postT, postE, ~] = refinetformestimate(config, M(:,:,index2), M(:,:,index1), postTtemp);
     else
         postT = eye(3);
         postE = intmax;
@@ -134,7 +120,8 @@ for i=1:size(errorupdate, 1)
     beq = 1;
     lb = [0; 0; 0; 0];
     ub = [1; 1; 1; 1];
-    x = linprog(f, A, b, Aeq, beq, lb, ub);
+    options = optimset('Display','none');
+    x = linprog(f, A, b, Aeq, beq, lb, ub, 0, options);
 
     % use solution from LP to find optimal transformation parameters.
     Tupparam = x(1)*matrix2params(preT) + x(2)*matrix2params(postT) ...

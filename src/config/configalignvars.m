@@ -13,8 +13,10 @@ svm = load('data/svm/svm1.mat');
 % less than this percent overlap is rejected.
 config.minnonzeropercent = 0.2;
 
-% classifier for detecting peaks. If peakclassifier is unassigned, then
-% don't use a classfier for peak detection.
+% classifier for detecting peaks. If classify is true (1), then alignment
+% program will attempt to use peakclassifier. Otherwise, simple max-picking
+% will determine peaks.
+config.classify = 1;
 config.peakclassifier = svm.classifier;
 
 % specify the error metrics. Default is Mean squared error (mse). Other
@@ -31,5 +33,12 @@ config.minpercenterrorimprovement = 0.1;
 % downsampling before computing alignment on image stack. The
 % transformations are then scaled back to the original sizes.
 config.downsample = 0.5;
+
+% if true (1), then messages that appear during alignment will be
+% suppressed (namely warnings of potential failed alignments). Change to
+% false (0) to receive the warnings. However, this can often be an
+% annoyance for large data sets, and so the default is set to (1) for ones
+% sanity.
+config.suppressmessages = 1;
 
 end
