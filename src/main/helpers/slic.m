@@ -37,9 +37,9 @@ cCenter = [imgtemp(:), xtemp(:), ytemp(:)];
 clear imgtemp xCluster yCluster ycount xcount xtemp ytemp;
 
 % move cluster centers to lowest gradient position in 3x3 neighborhood
-for k=1:size(cCenter, 1)
-    xindex = cCenter(k, 2);
-    yindex = cCenter(k, 3);
+for i=1:size(cCenter, 1)
+    xindex = cCenter(i, 2);
+    yindex = cCenter(i, 3);
     xrange = max(1, xindex-1) : min(size(Image,2), xindex+1);
     yrange = max(1, yindex-1) : min(size(Image,1), yindex+1);
     cropped = Image(yrange, xrange);
@@ -47,7 +47,7 @@ for k=1:size(cCenter, 1)
     [ymin, xmin] = find(grad==min(grad(:)), 1);
     newx = min(xrange) - 1 + xmin;
     newy = min(yrange) - 1 + ymin;
-    cCenter(k, :) = [Image(newy, newx), newx, newy];
+    cCenter(i, :) = [Image(newy, newx), newx, newy];
 end
 
 % iterately find better cluster centers
@@ -55,10 +55,10 @@ E = Inf;
 while(E > errorthreshold)
 
     % distance and label assignment
-    for k=1:size(cCenter, 1)
-        Ck = cCenter(k, :);
-        xindex = cCenter(k, 2);
-        yindex = cCenter(k, 3);
+    for i=1:size(cCenter, 1)
+        Ck = cCenter(i, :);
+        xindex = cCenter(i, 2);
+        yindex = cCenter(i, 3);
         xrange = max(1, xindex-S*2) : min(size(Image,2), xindex+S*2);
         yrange = max(1, yindex-S*2) : min(size(Image,1), yindex+S*2);
         [xtemp, ytemp] = meshgrid(xrange, yrange);
@@ -69,16 +69,16 @@ while(E > errorthreshold)
         D = pairdist(Ck, Ci, S, m);
         update = D < curdist;
         distanceVector(linrange) = min(D, curdist);
-        curlabel(update) = k;
+        curlabel(update) = i;
         labelVector(linrange) = curlabel;
     end
 
     % calculate new cluster centers
     ccNew = cCenter;
-    for k=1:size(ccNew, 1)
-        curpixels = C(labelVector==k,:);
-        ccNew(k, :) = mean(curpixels, 1);
-        ccNew(k, 2:3) = round(ccNew(k, 2:3));
+    for i=1:size(ccNew, 1)
+        curpixels = C(labelVector==i,:);
+        ccNew(i, :) = mean(curpixels, 1);
+        ccNew(i, 2:3) = round(ccNew(i, 2:3));
     end
     % compute residual error (L2)
     E = sum(sqrt((ccNew(:,1)-cCenter(:,1)).^2 + (ccNew(:,2)-cCenter(:,2)).^2 + (ccNew(:,3)-cCenter(:,3)).^2));
@@ -88,23 +88,28 @@ while(E > errorthreshold)
 end
 
 % enforce connectivity (fill in holes)
-se = strel('disk', 1);
 labelMatrix = zeros(size(Image));
 labelMatrix(sub2ind(size(labelMatrix), C(:,3), C(:,2))) = labelVector;
 clear distanceVector labelVector C;
 for i=1:3
     finalMatrix = zeros(size(Image));
-    for k=1:size(cCenter, 1)
-        bwclosed = imclose(labelMatrix==k, se);
-        cc = bwconncomp(bwclosed, 4);
+    for l=1:size(cCenter, 1)
+        bwfill = bwmorph(labelMatrix==l, 'fill');
+        cc = bwconncomp(bwfill, 4);
+        if l==27
+            figure; imshow(bwfill);
+        end
         if cc.NumObjects > 1
             rp = regionprops(cc, 'Area', 'PixelIdxList');
             [~, ind] = sort([rp.Area], 'descend');
             for j=2:cc.NumObjects
-                bwclosed(cc.PixelIdxList{ind(j)}) = 0;
+                bwfill(cc.PixelIdxList{ind(j)}) = 0;
+            end
+            if i==3
+                figure; imshow(bwfill);
             end
         end
-        finalMatrix(bwclosed) = k;
+        finalMatrix(bwfill) = l;
     end
     labelMatrix = finalMatrix;
 end
@@ -126,6 +131,13 @@ for i=1:size(rp, 1)
 end
 L = finalMatrix;
 
+for i=1:k
+    Prp = regionprops(finalMatrix==i, 'Centroid', 'Area');
+    if length([Prp.Area]) > 1
+        figure; imshow(finalMatrix==i);
+    end
+end
+    
     % normalized distance function
     function D2 = pairdist(ck, ci, s, m)
         dc = sqrt( (ci(:,1)-ck(:,1)).^2 );
