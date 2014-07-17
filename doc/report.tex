@@ -20,7 +20,7 @@
 \maketitle
 
 \section{Overview}
-Scalable alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between a cube of EM image slices of the brain. See the README for details about the specific functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data while including additional optimization and error-computation steps for robustness; see below. Future implementation of said method in the connectome estimation pipeline and the Open Connectome Project may also be possibilities. 
+Scalable alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between a cube of EM image slices of the brain. See the README for details about the specific functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data.
 
 \subsection{Computational Complexity}
 \textbf{Time complexity:} $O(nlogn)$, where $n$ is the number of voxels due to the cross-correlation procedures with the Fast Fourier Transform (FFT). The size of $n$ can be greatly reduced by picking a lower resolution image (directly from the API or by downsampling). Thus cross-correlation is the bottleneck of the alignment pipeline.
@@ -31,6 +31,10 @@ Before an entire 3D image cube can be globally aligned, we must compute alignmen
 The procedure uses 2D cross-correlation to identify the degree of rotation and magnitude of translations necessary to a pair of images. See section 2.1 for specifics. 
 \\
 One important step in the cross-correlation process is identifying peaks in the cross-correlation that correspond to the translations necessary to align the two images. Difficulties arise when the 'correct' peak is NOT the maximum value; simply max picking would result in completely inaccurate parameters. Our solution is to use a trained support vector machine (SVM) classifier to determine the correct peak among potential candidate peaks. See section 2.2 for specifics. 
+\\
+Once the rotation and translation transformations are identified, the rotation angle $\theta$ necessary to align two images is refined by varying $\theta$ by $\pm \epsilon$ for small increments of $\epsilon$. The $\theta \pm \epsilon$ that minimizes the error function (MSE) between two images is the improved rotation angle parameter. See section 2.3 for specifics.
+\\
+Finally, to incorporate alignment data from images outside adjacent image pairs $I_i, I_{i+1}$ to refine the alignment transformations, we compute the alignment transformation parameters for $I_{i-1}, I_{i+1}$ and $I_i, I_{i+2}$. When then obtain multiple estimates of the transformations between $I_i, I_{i+1}$ using the additional transformation parameter and pick the best one. See section 2.4 for specifics.
 
 \subsection{Alignment Procedure with Correlation}
 Iterate through image stack, and apply the procedures described below to each adjacent pair of images.
@@ -66,18 +70,13 @@ Once the SVM is trained, it is saved; In the alignment pipeline, the default con
 \item Classify $I$ with point $(x_i, y_i)$ for $i=1...9$ until a true classification.
 The first true classification is determined to be the actual peak with specific translation parameters. If no true classification are obtained, then the image is deemed to be unaligned. 
 \end{enumerate}
-The described method works the bets compared to other methods, briefly described below.\\
+The described method works the best compared to other methods, briefly described below.\\
 
 \textbf{Other Attempted Methods}
 \begin{enumerate}
 \item Identify maximum values. However, this will not always work if the maximum value is not the actual peak as described previously. 
 \item Correlate the cross-correlation of two images with a normal distribution. In theory this should accentuate the true peaks, since it takes into account the shape of all possible peaks, but this won't always produce the desired results because artificial peaks may be introduced. Another problem is that this method is quite slow because it has to perform more cross-correlation procedures. 
 \end{enumerate}
-
-\section{Global Stack Alignment}
-Uses the pairwise transformation parameters to compute global transformation parameters. Starts with the first image and builds the aligned stack iteratively, taking into account the pairwise transformation between two images as well as the previous transformations of the previous images. Can also reverse alignment given an aligned stack of images, again using the iterative nature of alignment transformations. \\
-\textbf{Problem:} One incorrect transformation causes the rest of the image stack to shift by the same amount. Is this the 'right' thing to allow happen? Also, how to deal with all black images? \\
-\textbf{Improvements:} Other methods of putting all the aligned images together?
 
 \subsection{Tune Transformation Parameters}
 Attempts to improve the estimate of the rotation amount by minimizing an error function. While three different error metrics are available to determine 'accuracy' of alignment (peak-signal-to-noise ratio (PSNR), mean-squared error (MSE), and mean pixel intensity difference.), MSE is usually used. This step is important because log-polar sampling to determine the best rotation parameter is discretized so the 'best' rotation angle may not be available at the cross-correlation step. Here, the algorithm iterates over a small range of rotation and translation parameters surrounding the original estimated parameters, and then chooses the rotation angle and translation shift that minimize the error function.
@@ -106,7 +105,14 @@ The final (optional) step right now is to use image data outside a specific imag
 	6) \textbf{return} $T_{2,3}^{*}$ by plugging $x_1, x_2, x_3, x_4$ into $[T_{1,3}^{-1}*T_{1,2}]x_1 + [T_{2,4}*T_{3,4}^{-1}]x_2 + [T_{2,3}]x_3 + [I]x_4$
 	\end{algorithm}\\
 
-\pagebreak
+\section{Global Stack Alignment}
+Uses the pairwise transformation parameters determined previously, the next step is to compute global transformation parameters (i.e. transformations for each image in cube relative to one image). The algorithm is as follows:
+	\begin{algorithm}
+	\DontPrintSemicolon
+	\KwIn{Unaligned Image cube $I$, transformation parameters $T$}
+	\KwOut{Aligned Image Cube $I_{aligned}$}
+	For Julia
+	\end{algorithm}
 
 \section{Attempted, but ultimately unused methods}
 \subsection{RANSAC}
@@ -121,12 +127,13 @@ Originally used to correct large rotations before aligning with cross-correlatio
 \end{enumerate}
 \textbf{Problems:} Effectiveness decreases for more dissimilar images. SURF also struggles to identify features or makes spurious matches when there are noise and blemishes in the images. This step does not seem to lead to drastic improvements. \\
 \subsection{Error metric with superpixels and Earth Mover's Distance}
-A novel idea to use Earth Mover's Distance on superpixels as an alignment error metric between two images.
+A novel idea to use Earth Mover's Distance on superpixels as an alignment error metric between two images $P$ and $Q$.
 \begin{enumerate}
 \item Compute superpixels of each image using the SLIC algorithm.
 \item Identify the coordinates of each cluster center and its associated weight as the sum over all pixels in the cluster $\times$ mean image intensity $/$ 255. 
 \item Let $D$ be the $n \times n$ distance matrix, where $n$ is the number of cluster centers. Let $F$ be the $n \times n$ matrix of total flow. For both $D$ and $F$, the $i,j$ entry indicates the distance or flow, respectively from the $ith$ cluster center to the $jth$ cluster center. 
-\item Solve linear program as detailed in Rubner et al. \cite{rubner00}
+\item Solve transportation problem as a linear program with constraints as detailed in Rubner et al. \cite{rubner00} to find all entries in $F$.
+\item Find the EMD, defined as $EMD(P,Q) = \frac{ \sum_{i=1}^m \sum_{j=1}^n d_{ij} f_{ij} } { \sum_{i=1}^m \sum_{j=1}^n f_{ij} }$.
 \end{enumerate}
 
 \begin{thebibliography}{9}
