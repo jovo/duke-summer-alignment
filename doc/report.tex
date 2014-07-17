@@ -1,5 +1,5 @@
 \documentclass{article}  
-\author{Roger Zou, Julia Ni}  
+\author{Roger Zou and Julia Ni}
 \date{\today}  
 \title{Alignment of Electron Microscope Sections}  
  
@@ -20,52 +20,58 @@
 \maketitle
 
 \section{Overview}
-Alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between image slices. See the README for details about the functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data while including additional optimization and error-computation steps for robustness; see below. Future implementation of said method in the connectome estimation pipeline and the Open Connectome Project may also be possibilities. 
+Scalable alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between a cube of EM image slices of the brain. See the README for details about the specific functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data while including additional optimization and error-computation steps for robustness; see below. Future implementation of said method in the connectome estimation pipeline and the Open Connectome Project may also be possibilities. 
 
-\section{Global Pairwise Alignment}
-Before an entire 3D image cube can be aligned globally, we must compute alignment between pairs of images using cross-correlation.
-\\
-Median filtering and histogram equalization, which are performed before sampling in log-polar coordinates in the Fourier domain, detect the shifts in rho and theta (scale and rotation, respectively). This method determines the best rotation required to align pairwise images. Next, we use normal cross-correlation to determine the best translational shift. See the '2D Cross-Correlation' section for more information.
-\\
-One important step in the cross-correlation process is identifying the transformation parameters from the cross-correlation of two images. The correct transformation between two images is determined by finding the 'correct' peak in their cross-correlation. However, since problems arise when the 'correct' peak is NOT the maximum value, we use a trained support vector machine (SVM) classifier to determine the correct peak among potential candidate peaks. See the 'Peak Detection' section for more information. 
+\subsection{Computational Complexity}
+\textbf{Time complexity:} $O(nlogn)$, where $n$ is the number of voxels due to the cross-correlation procedures with the Fast Fourier Transform (FFT). The size of $n$ can be greatly reduced by picking a lower resolution image (directly from the API or by downsampling). Thus cross-correlation is the bottleneck of the alignment pipeline.
 
-\subsection{2D Cross-Correlation}
-Iterate through image stack, and apply the following procedure to each adjacent pair of images. \\
-\textbf{Alignment with Cross-Correlation Procedure:}
+\section{Pairwise Alignment}
+Before an entire 3D image cube can be globally aligned, we must compute alignment between pairs of images.
+\\
+The procedure uses 2D cross-correlation to identify the degree of rotation and magnitude of translations necessary to a pair of images. See section 2.1 for specifics. 
+\\
+One important step in the cross-correlation process is identifying peaks in the cross-correlation that correspond to the translations necessary to align the two images. Difficulties arise when the 'correct' peak is NOT the maximum value; simply max picking would result in completely inaccurate parameters. Our solution is to use a trained support vector machine (SVM) classifier to determine the correct peak among potential candidate peaks. See section 2.2 for specifics. 
+
+\subsection{Alignment Procedure with Correlation}
+Iterate through image stack, and apply the procedures described below to each adjacent pair of images.
 \begin{enumerate}
+\item Apply median filtering and histogram equalization to both images.
 \item Apply hamming window to both images. 
 \item Take the Discrete Fourier Transform (DFT), apply a high-pass filter, and then resample the images in log-polar coordinates. 
-\item Compute the phase correlation to find the best rho (scaling) and theta (rotation angle). 
-\item Refine the initial rotation parameter, previously computed from feature matching, by using the theta value from correlation. 
-\item Rotate the image appropriately, then compute normalized cross-correlation to find translation parameters. 
-\item Use an SVM to identify the peak in the cross-correlation matrix of images that accurately corresponds to the actual translation parameters.
+\item Correlate the two images to find the best rho (scaling) and theta (rotation angle) parameters by max picking.
+\item Rotate the image appropriately, then correlate the two (rotated) images to find the best translation transformation parameters.
+\item Use an SVM to identify the peak in the cross-correlation of the image pair that accurately corresponds to the actual translation parameters.
 \item Save the pairwise affine transformation matrix. 
-\end{enumerate}The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. This upper bound arises due to the Fast Fourier Transform (FFT) computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality while scaling by 0.5 effectively decreases the constant in front of $nlogn$ in the running time by 4. \\
+\end{enumerate}The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. This upper bound arises due to the Fast Fourier Transform (FFT) computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality (from 1024x1024 original). In practice, this method greatly improves the running time. \\
 
-\subsection{Peak Detection}
-Uses an SVM to classify a local maxima as a peak or non-peak. 
-Picking only the maximum values will not always yield the correct results, as the example on the right demonstrates. The peak is quite obvious, but the maximum values (in red) are clustered elsewhere. The SVM is trained with shape features to distinguish between peaks and non-peaks, and performs the best compared to other methods.\\
+\subsection{Peak Identification in the cross-correlation of two images}
 
-\textbf{Attempted Methods to find peaks in the cross correlation of two images}
+\subsubsection{SVM Training}
+Using a stack of aligned images, do the following procedure:
+\begin{enumerate}
+\item Randomly sample from each image pair a cropped image with specified minimum size.
+\item Generate image from the cross-correlation of the image pair; the image with its associated max value is labeled in the true (aligned) class.
+\item Apply a random noticeable rotation and translation to one of the images. Generate image from the cross-correlation of the image pair (now rotated); this image with its associated max value is labeled in the false (unaligned) class. 
+\item repeat 1,2 as long as needed.
+\item Generate a 1x5 feature vector for each test sample. Use these feature vectors to train SVM with a linear kernel. 
+\end{enumerate}
+Once the SVM is trained, it is saved; In the alignment pipeline, the default config settings automatically load this trained SVM for peak classification.
+
+\subsubsection{Peak Identification with SVM}
+\begin{enumerate}
+\item Divide image $I$, the cross correlation of two images, into 9 equal parts $I_1...I_9$.
+\item Find the coordinate of maximum value in each part, $(x_1,y_1, I(x_1, y_1))...(x_9,y_9, I(x_9,y_9))$, where $I(x,y)$ is the intensity value at coordinate $x,y$. 
+\item Sort the coordinates by order of decreasing intensity.
+\item Classify $I$ with point $(x_i, y_i)$ for $i=1...9$ until a true classification.
+The first true classification is determined to be the actual peak with specific translation parameters. If no true classification are obtained, then the image is deemed to be unaligned. 
+\end{enumerate}
+The described method works the bets compared to other methods, briefly described below.\\
+
+\textbf{Other Attempted Methods}
 \begin{enumerate}
 \item Identify maximum values. However, this will not always work, as the example on the right shows.
 \item Correlate the cross-correlation of two images with a normal distribution. In theory this should accentuate the true peaks, since it takes into account the shape of all possible peaks, but this won't always produce the desired results because artificial peaks may be introduced. Another problem is that this method is quite slow because it has to perform more cross-correlation procedures. 
-\item Use an SVM trained on five features: number of pixels in image, area of binary thresholded region, maximum gradient, maximum Laplacian, and skewness of the histogram. The cross-correlation images are divided into nine subsections. The maximum is identified in each, evaluated with the SVM, and then the maximum value predicted by the SVM to be a peak is labeled as the actual peak. If no maximum values are predicted by the SVM to be peaks, then no peak exists. This appears be the best method as it accurately identifies peaks which are not the global maxima and its run time is nearly instantaneous. 
 \end{enumerate}
-
-\section{Unused, Functional Code}
-\subsection{RANSAC}
-Originally implemented to detect folds in the images and subsequently help split images into pieces to aid in alignment process. We have not encountered any thus far, so this functionality was never included in our pipeline.
-\subsection{SURF Feature Matching}
-Originally used to correct large rotations before aligning with cross-correlation. Eventually discarded because images are often too different to match features well. Downsampling did not help much for some images.\\
-\begin{enumerate}
-\item Use Gaussian blur and then downsample (via MATLAB's $imresize$). Also tried median filtering and anisotropic diffusion without characterizable improvement.
-\item Detect SURF features (experimented with most feature detectors in MATLAB, but SURF appeared to work the best). 
-\item Match the features and estimate the rotation parameter.
-\item Save the rotation angle and apply the rotation to image for input to 2D cross-correlation step.
-\end{enumerate}
-\textbf{Problems:} Effectiveness decreases for more dissimilar images. SURF also struggles to identify features or makes spurious matches when there are noise and blemishes in the images. This step does not seem to lead to drastic improvements. \\
-\textbf{Improvements:} Are there ways of using entire cell structure features such as whole mitochondria and other organelles for feature matching? This is how it appears some humans (or at least how I) visually align these EM sections. The current method isn't that useful, but by incorporating these features I feel like it has the potential to be much better.
 
 \section{Global Stack Alignment}
 Uses the pairwise transformation parameters to compute global transformation parameters. Starts with the first image and builds the aligned stack iteratively, taking into account the pairwise transformation between two images as well as the previous transformations of the previous images. Can also reverse alignment given an aligned stack of images, again using the iterative nature of alignment transformations. \\
@@ -102,4 +108,20 @@ The final (optional) step right now is to use image data outside a specific imag
 
 \textbf{Problems:} None that I know of :-)\\
 \textbf{Improvements:} Other optimization parameters to add? Other constraints that can help to minimize error? Can't think of anything specific at the moment.
+
+
+\section{Attempted, but ultimately unused methods}
+\subsection{RANSAC}
+Originally implemented to detect folds in the images and subsequently help split images into pieces to aid in alignment process. We have not encountered any thus far, so this functionality was never included in our pipeline.
+\subsection{SURF Feature Matching}
+Originally used to correct large rotations before aligning with cross-correlation. Eventually discarded because images are often too different to match features well. Downsampling did not help much for some images.\\
+\begin{enumerate}
+\item Use Gaussian blur and then downsample (via MATLAB's $imresize$). Also tried median filtering and anisotropic diffusion without characterizable improvement.
+\item Detect SURF features (experimented with most feature detectors in MATLAB, but SURF appeared to work the best). 
+\item Match the features and estimate the rotation parameter.
+\item Save the rotation angle and apply the rotation to image for input to 2D cross-correlation step.
+\end{enumerate}
+\textbf{Problems:} Effectiveness decreases for more dissimilar images. SURF also struggles to identify features or makes spurious matches when there are noise and blemishes in the images. This step does not seem to lead to drastic improvements. \\
+\textbf{Improvements:} Are there ways of using entire cell structure features such as whole mitochondria and other organelles for feature matching? This is how it appears some humans (or at least how I) visually align these EM sections. The current method isn't that useful, but by incorporating these features I feel like it has the potential to be much better.
+\subsection{Error metric with superpixels and Earth Mover's Distance}
 \end{document}
