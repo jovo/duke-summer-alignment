@@ -115,7 +115,7 @@ Using the pairwise transformation parameters determined previously, the next ste
 	1) The next image in the cube, $I_{2}$, has $globalT(2,:)$ = $globalT(1,:)$.\\
 	2) The new rotation angle $globalT(2,3)$ is given by $globalT(2,3)$ + $T_{1,2}(3)$, the sum of the cumulative rotations the previous image underwent and the pairwise rotation between those two images.\\
 	3) The new translation parameters $transparam_{1,2}$ are determined by the product of the previous rotation matrix (using $globalT(1,3)$) with the pairwise translation matrix (using $T_{1,2}(1:2)$).\\  
-	4) If $x$-translation $transparam_{1,2}(1)$ > $0$, then $globalT(2,1)$ = $globalT(2,1)$ + $transparam_{1,2}(1)$; if $x$-translation $transparam_{1,2}(1)$ < $0$, then $globalT(2,1)$ is the sume of $globalT(2,1)$ and the absolute value of $transparam_{1,2}(1)$. The same holds for $y$-translation.\\
+	4) If $x$-translation $transparam_{1,2}(1)$ > $0$, then $globalT(2,1)$ = $globalT(2,1)$ + $transparam_{1,2}(1)$; if $x$-translation $transparam_{1,2}(1)$ < $0$, then $globalT(2,1)$ is the sum of $globalT(2,1)$ and the absolute value of $transparam_{1,2}(1)$. The same holds for $y$-translation.\\
 	6) Repeat Steps 1-5 for remaining pairwise, unaligned images, updating and then using the updated $globalT$. 
 	\end{algorithm}
 
