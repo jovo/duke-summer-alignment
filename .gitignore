@@ -73,3 +73,8 @@ data/*
 
 # latex files
 *.aux
+*.nav
+*.out
+*.snm
+*.toc
+*.gz
