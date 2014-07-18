@@ -103,7 +103,7 @@ The final (optional) step right now is to use image data outside a specific imag
 	\end{align*}
 	5) Solve to find $x_1, x_2, x_3, x_4$.\\
 	6) \textbf{return} $T_{2,3}^{*}$ by plugging $x_1, x_2, x_3, x_4$ into $[T_{1,3}^{-1}*T_{1,2}]x_1 + [T_{2,4}*T_{3,4}^{-1}]x_2 + [T_{2,3}]x_3 + [I]x_4$
-	\end{algorithm}\\
+	\end{algorithm}
 
 \section{Global Stack Alignment}
 Using the pairwise transformation parameters determined previously, the next step is to compute global transformation parameters (e.g. transformations for each image in cube relative to one image). The algorithm is as follows:
@@ -111,12 +111,14 @@ Using the pairwise transformation parameters determined previously, the next ste
 	\DontPrintSemicolon
 	\KwIn{Unaligned Image cube $I$, pairwise transformation parameters $T$}
 	\KwOut{Aligned Image Cube $I_{aligned}$}
-	Let the global transformation parameters for an image $i$ be $T_{global}(i,:)$ and for $T_{global}$ to be equal to the zero matrix initially, with $T_{global}(1,:)$ = $[0, 0, 0]$ always true. \\ 
-	1) Subsequent image in the cube, $I_{2}$, has $T_{global}(2,:)$ = $T_{global}(1,:)$. \\
-	2) New rotation angle $T_{global}(2,3)$ is given by $T_{global}(2,3)$ + $T_{1,2}(3)$, the sum of the cumulative rotations the previous image underwent and the pairwise rotation between those two images. \\
-	3) New translation parameters $T_{param,1,2}$ determined by the product of the previous rotation matrix (using $T_{global}(1,3)$) with the pairwise translation matrix (using $T_{1,2}(1:2)$). \\
-	4) If $x$-translation $T_{param,1,2}(1)$ \textgreater\ $0$, then $T_{global}(2,1)$ = $T_{global}(2,1)$ + $T_{param,1,2}(1)$; if $x$-translation $T_{param,1,2}(1)$ \textless\ $0$, then $T_{global}(2,1)$ = $T_{global}(2,1)$ + $|T_{param,1,2}(1)|$. The same holds for $y$-translation. \\
-	6) Repeat Steps 1-5 for remaining pairwise, unaligned images, updating and then using the updated $T_{global}$, to get $I_{aligned}$. 
+	Let the global transformation parameters for an image $i$ be $T_{global}(i,:)$ and for $T_{global}$ to be equal to the zero matrix initially, with $T_{global}(1,:)$ = $[0, 0, 0]$ always true. \\
+	\begin{enumerate}
+	\item Subsequent image in the cube, $I_{2}$, has $T_{global}(2,:)$ = $T_{global}(1,:)$. \\
+	\item New rotation angle $T_{global}(2,3)$ is given by $T_{global}(2,3)$ + $T_{1,2}(3)$, the sum of the cumulative rotations the previous image underwent and the pairwise rotation between those two images. \\
+	\item New translation parameters $T_{param,1,2}$ determined by the product of the previous rotation matrix (using $T_{global}(1,3)$) with the pairwise translation matrix (using $T_{1,2}(1:2)$). \\
+	\item If $x$-translation $T_{param,1,2}(1)$ \textgreater\ $0$, then $T_{global}(2,1)$ = $T_{global}(2,1)$ + $T_{param,1,2}(1)$; if $x$-translation $T_{param,1,2}(1)$ \textless\ $0$, then $T_{global}(2,1)$ = $T_{global}(2,1)$ + $|T_{param,1,2}(1)|$. The same holds for $y$-translation. \\
+	\item Repeat Steps 1-5 for remaining pairwise, unaligned images, updating and then using the updated $T_{global}$, to get $I_{aligned}$. 
+	\end{enumerate}
 	\end{algorithm}
 
 \section{Attempted, But Ultimately Unused, Methods}
