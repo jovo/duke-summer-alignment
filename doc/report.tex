@@ -111,12 +111,12 @@ Using the pairwise transformation parameters determined previously, the next ste
 	\DontPrintSemicolon
 	\KwIn{Unaligned image cube $I$, pairwise transformation parameters $T$}
 	\KwOut{Aligned image cube $I_{aligned}$}
-	Let the global transformation parameters for an $mxn$ image $i$ be $T_{global}(i,:)$ and for $T_{global,m,n}$ = $0_{m,n}$ initially, with $T_{global}(1,:)$ = $[0, 0, 0]$ always true. \\ 
+	Let the global transformation parameters for an $m$x$n$ image $i$ be $T_{global}(i,:)$ and for $T_{global,m,n}$ = $0_{m,n}$ initially, with $T_{global}(1,:)$ = $[0, 0, 0]$ always true. \\ 
 	1) Given $T_{global}(i,:)$, subsequent image $I_{i+1}$ has $T_{global}(i+1,:)$ = $T_{global}(i,:)$. \\
 	2) New rotation angle $T_{global}(i+1,3)$ = $T_{global}(i+1,3)$ + $T_{i,i+1}(3)$, the sum of the cumulative rotations the previous image underwent and the pairwise rotation between those two images. \\
-	3) New translation parameters $T_{param,i,i+1}$ determined by product of previous rotation matrix (using $T_{global}(i,3)$) and pairwise translation matrix (using $T_{i,i+1}(1:2)$). \\
-	4) If $T_{param,i,i+1}(1:2)$ \textgreater\ $0$, then $T_{global}(i+1,1:2)$ = $T_{global}(i+1,1:2)$ + $T_{param,i,i+1}(1:2)$. Otherwise, $T_{global}(i+1,1:2)$ = $T_{global}(1:i,1:2)$ + $\|T_{param,i,i+1}(1:2)\|$.
-	6) Repeat Steps 1-5 for remaining pairwise, unaligned images to generate $I_{aligned}$. 
+	3) New translation parameters $T_{param,i,i+1}$ determined by product of previous rotation matrix using $T_{global}(i,3)$ and pairwise translation matrix using $T_{i,i+1}(1:2)$. \\
+	4) If $T_{param,i,i+1}(1:2)$ \textgreater\ $0$, then $T_{global}(i+1,1:2)$ = $T_{global}(i+1,1:2)$ + $T_{param,i,i+1}(1:2)$. Otherwise, $T_{global}(i+1,1:2)$ = $T_{global}(1:i,1:2)$ + $|T_{param,i,i+1}(1:2)|$. \\
+	5) Repeat Steps 1-4 for remaining pairwise, unaligned images to generate $I_{aligned}$. 
 	\end{algorithm}
 
 \section{Attempted, But Ultimately Unused, Methods}
