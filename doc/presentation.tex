@@ -86,6 +86,94 @@ For each pair of images:
 \end{itemize}
 \end{frame}
 
+\documentclass{beamer}
+\usetheme{Warsaw}
+\usecolortheme{beaver}
+\usepackage[]{algorithm2e}
+\usepackage{amsmath}
+
+\begin{document}
+\title[Scalable EM Alignment] % (optional, only for long titles)
+{Scalable Alignment of Electron Microscope Image Sections}
+\author[Zou, Ni] {Roger Zou \and Julia Ni}
+\date{\today}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Table of Contents}
+\begin{itemize}
+\item Overview
+\item Pairwise Alignment
+\item Global Stack Alignment
+\item Other Attempted Methods
+\item References
+\item Acknowledgements 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview}
+\begin{itemize}
+\item \textbf{Goal:} Alignment of 3D EM sections, integration with CAJAL-3D API \\
+\item \textbf{Method:} Cross-correlation to align pairwise images, then globally align entire image cube \\
+\item \textbf{Complexity:} \textit{O(nlogn)}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\begin{itemize}
+\item Generate transformation parameters via cross-correlation.
+\item Identify peak using Support Vector Machine classifier.
+\item Correct rotation as needed through error minimization.
+\item Refine transformations using image data outside pairwise images.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Using Correlation}
+For each pair of images: 
+\begin{enumerate}
+\item Apply median filtering, histogram equalization, and hamming window. 
+\item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
+\item Find best $\rho$, $\theta$ by correlation and max picking. 
+\item Rotate image, then correlate to find the best translation parameters.
+\item Use SVM to identify peak in cross-correlation of image pair. 
+\item Iterate through image stack. 
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Peak Identification: SVM} 
+\begin{enumerate}
+\item Train SVM classifier with selected peak features. 
+\item Partition cross-correlation of pairwise images. 
+\item Find maximum intensity of each partition. 
+\item Classify as peak/non-peak using SVM! 
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Peak Identification: Other Attempted Methods} 
+\begin{itemize}
+\item Choose maximum values.
+\item Correlate pairwise cross-correlation with normal distribution. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Fine-Tuning Transformation Parameters} 
+\begin{itemize}
+\item Error metrics (PSNR, MSE, PixDif)
+\item Adjust transformation parameters by error minimization.
+\end{itemize}
+\end{frame}
+
 \begin{frame}
 \frametitle{Other Attempted Methods}
 \begin{itemize}
@@ -119,6 +207,7 @@ For each pair of images:
 
 \begin{frame}
 \frametitle{Global Stack Alignment}
+\framesubtitle{Algorithm} 
 	\begin{algorithm}
 	\DontPrintSemicolon
 	\KwIn{Unaligned image cube \textit{I}, pairwise transformation parameters \textit{T}} 
@@ -132,6 +221,53 @@ For each pair of images:
 	5) Repeat Steps 1-4 for remaining pairwise, unaligned images to generate $I_{aligned}$. 
 	\end{algorithm}
 \end{frame}
+\begin{frame}
+\frametitle{References}
+\begin{thebibliography}{9}
+\bibitem{lamport94}
+	B. Srinivasa Reddy and B. N. Chatterji,
+	\emph{An FFT-Based Technique for Translation, Rotation, and Scale-Invariant Image Registration}.
+	IIEEE Transactions on Image Processing Vol. 5, No. 8, 1996
+\bibitem{rubner00}
+	Yossi Rubner, Carlo Tomasi, Leonidas J. Guibas,
+	\emph{The Earth Mover's Distance as a Metric for Image Retrieval}.
+	International Journal of Computer Vision 40(2), 99-121, 2000
+\bibitem{wang13}
+	Peng Wang, Gang Zeng, Rui Gan, Jingdong Wang, Hongbin Zha,
+	\emph{Structure-Sensitive Superpixels via Geodesic Distance}.
+	International Journal of Computer Vision, 103:1-21, 2013
+\end{thebibliography} 
+\end{frame}
+
+\begin{frame}
+\frametitle{Acknowledgements}
+Many thanks to:
+\begin{itemize}
+\item Dr. Paul Bendich 
+\item Dr. Robert Calderbank
+\item Will Gray 
+\item Dr. John Harer
+\item Kunal Lillaney
+\item Kathy Peterson 
+\item Dr. Guillermo Sapiro
+\item Ashleigh Thomas 
+\item Chris Tralie
+\item Dr. Joshua Vogelstein
+\item Duke Math RTG Group 
+\end{itemize}
+\end{frame}
+
+\end{document}
+
+\begin{frame}
+\frametitle{Other Attempted Methods}
+\begin{itemize}
+\item RANSAC
+\item SURF feature matching
+\item Superpixels and Earth Mover's Distance 
+\end{itemize}
+\end{frame}
+
 \begin{frame}
 \frametitle{References}
 \begin{thebibliography}{9}
