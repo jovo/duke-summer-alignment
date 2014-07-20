@@ -40,16 +40,15 @@
 \end{itemize}
 \item \textbf{General Method}
 \begin{enumerate}
-\item Compute the transformations for alignment between adjacent pairs of images using cross-correlation.
-\item Globally align an entire image cube using pairwise transformation parameters.
+\item Compute transformations for alignment between adjacent pairs of images using cross-correlation.
+\item Globally align entire image cube using pairwise transformation parameters.
 \end{enumerate}
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
-\textbf{Objective:} Compute the transformations necessary to align adjacent pairs of images. \\
-Outline of procedure:
+\textbf{Objective:} Compute transformations necessary to align adjacent pairs of images. \\
 \begin{enumerate}
 \item Compute pairwise transformation parameters.
 \item Improve rotation parameter through error minimization.
@@ -60,32 +59,32 @@ Outline of procedure:
 \begin{frame}
 \frametitle{Pairwise Alignment}
 \framesubtitle{Compute Pairwise Transformation Parameters}
-\textbf{Objective:} Determine the transformations necessary to align image pair. \\
+\textbf{Objective:} Determine transformations necessary to align image pair. \\
 \\
 For each pair of images:
 \begin{enumerate}
 \item Apply median filtering, histogram equalization, and hamming window. 
 \item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
 \item Find best $\rho$, $\theta$ by correlation and max picking. 
-\item Rotate image, then correlate to find the best translation parameters.
+\item Rotate image, then correlate to find best translation parameters.
 \item Use Support Vector Machine (SVM) to identify peak in cross-correlation of image pair. 
-\item Save the transformation parameters.
+\item Save transformation parameters.
 \end{enumerate}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
 \framesubtitle{Peak Identification}
-\textbf{Objective:} Determine peaks in the cross-correlation of two images that correspond to translations for correct alignment. \\
+\textbf{Objective:} Determine peaks in cross-correlation of two adjacent images that correspond to translations for correct alignment. \\
 \begin{itemize}
 \item Support Vector Machine (SVM)
 \begin{enumerate}
-\item Train SVM classifier with selected peak features from already aligned images (ground truth).
-\item Partition cross-correlation of pairwise images into 9 equal parts.
-\item Find the coordinate of maximum intensity point in each partition.
-\item Sort the coordinates with respect to maximum intensity.
-\item Classify each of the 9 potential peaks in descending order until a peak is found.
-\item If none of the peaks are classified as peaks, then no peaks detected.
+\item Train SVM classifier with peak features from aligned images (ground truth).
+\item Partition cross-correlation of images into 9 equal parts.
+\item Find point of maximum intensity in each partition.
+\item Sort coordinates from greatest to least maximum intensity.
+\item Classify each potential peak until a peak is found.
+\item If no potential peaks are classified as peaks, then no peaks detected.
 \end{enumerate}
 \item Other Attempted Methods:
 \begin{itemize}
