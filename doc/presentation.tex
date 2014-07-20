@@ -32,11 +32,11 @@
 \item Scalable alignment of 3D Electron Microscope sections of mouse brain.
 \item Integration with CAJAL-3D API for easy image retrieval and upload from database.
 \end{itemize}
-\item \textbf{Difficulties:} 
+\item \textbf{Difficulties} 
 \begin{itemize}
 \item Approach must be scalable.
 \item ($1024 \times 1024 \times 2000$ in the smallest data set $\approx 2B$ voxels.)
-\item most datasets occupy TB of space; infeasible do align all at once.
+\item Most datasets occupy TB of space; infeasible do align all at once.
 \end{itemize}
 \item \textbf{General Method}
 \begin{enumerate}
@@ -77,16 +77,16 @@ For each pair of images:
 \framesubtitle{Peak Identification}
 \textbf{Objective:} Determine peaks in the cross-correlation of two images that correspond to translations for correct alignment. \\
 \begin{enumerate}
-\item Train SVM classifier with selected peak features from already aligned images (ground truth)
+\item Train SVM classifier with selected peak features from already aligned images (ground truth).
 \item Partition cross-correlation of pairwise images into 9 equal parts.
-\item Find the coordinate of maximum intensity of each partition.
+\item Find the coordinate of maximum intensity point in each partition.
 \item Sort the coordinates with respect to maximum intensity.
 \item Classify each of the 9 potential peaks in descending order until a peak is found.
 \item If none of the peaks are classified as peaks, then no peaks detected.
 \end{enumerate}
 Other Attempted Methods:
 \begin{itemize}
-\item Choose maximum values
+\item Choose maximum values. 
 \item Correlate pairwise cross-correlation with normal distribution. 
 \end{itemize}
 \end{frame}
@@ -119,11 +119,11 @@ Other Attempted Methods:
 \frametitle{Global Stack Alignment}
 \textbf{Objective:} Given transformation parameters between all adjacent image pairs, compute transformation to each image in global coordinate frame.
 \begin{enumerate}
-\item Set previous global transformations of previous image to current image. 
-\item Find new rotation angle.
-\item Find new translation parameters.
-\item Positive/negative translations? 
-\item Iterate through image cube. 
+\item Set global transformation parameters of previous image to that of current image. 
+\item Find new rotation angle by adding previous rotation parameter to pairwise rotation angle. 
+\item Find new translation parameters using previous rotation angle and pairwise translations.
+\item Positive translations: shift current image. Negative translations: shift all previous images.
+\item Iterate through image cube to globally align stack. 
 \end{enumerate}
 \end{frame}
 
