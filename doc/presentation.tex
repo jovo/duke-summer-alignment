@@ -77,14 +77,16 @@ For each pair of images:
 \framesubtitle{Peak Identification}
 \textbf{Objective:} Determine peaks in the cross-correlation of two images that correspond to translations for correct alignment. \\
 \begin{enumerate}
-\item Train SVM classifier with selected peak features. 
-\item Partition cross-correlation of pairwise images. 
-\item Find maximum intensity of each partition. 
-\item Classify as peak/non-peak using SVM! 
+\item Train SVM classifier with selected peak features from already aligned images (ground truth)
+\item Partition cross-correlation of pairwise images into 9 equal parts.
+\item Find the coordinate of maximum intensity of each partition.
+\item Sort the coordinates with respect to maximum intensity.
+\item Classify each of the 9 potential peaks in descending order until a peak is found.
+\item If none of the peaks are classified as peaks, then no peaks detected.
 \end{enumerate}
 Other Attempted Methods:
 \begin{itemize}
-\item Choose maximum values.
+\item Choose maximum values
 \item Correlate pairwise cross-correlation with normal distribution. 
 \end{itemize}
 \end{frame}
@@ -95,7 +97,7 @@ Other Attempted Methods:
 \textbf{Objective:} Evaluate the correct alignment rotation with a finer level of discretization. 
 \begin{enumerate}
 \item Given initial estimate of rotation angle $\theta$ necessary to align images...
-\item Iterate over a small window $\theta_{new} = [\theta-k\epsilon, \theta+k\epsilon]$, in increments of $\epsilon$.
+\item Iterate for each $k$ over a small window $\theta_{new} = [\theta-k\epsilon, \theta+k\epsilon]$, in increments of $\epsilon$.
 \item Compute alignment error with $\theta_{new}$ as rotation angle.
 \item Update rotation parameter with angle that minimizes Mean Squared Error (MSE) between image pair.
 \end{enumerate}
