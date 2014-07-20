@@ -76,6 +76,8 @@ For each pair of images:
 \frametitle{Pairwise Alignment}
 \framesubtitle{Peak Identification}
 \textbf{Objective:} Determine peaks in the cross-correlation of two images that correspond to translations for correct alignment. \\
+\begin{itemize}
+\item Support Vector Machine (SVM)
 \begin{enumerate}
 \item Train SVM classifier with selected peak features from already aligned images (ground truth).
 \item Partition cross-correlation of pairwise images into 9 equal parts.
@@ -84,10 +86,11 @@ For each pair of images:
 \item Classify each of the 9 potential peaks in descending order until a peak is found.
 \item If none of the peaks are classified as peaks, then no peaks detected.
 \end{enumerate}
-Other Attempted Methods:
+\item Other Attempted Methods:
 \begin{itemize}
 \item Choose maximum values. 
 \item Correlate pairwise cross-correlation with normal distribution. 
+\end{itemize}
 \end{itemize}
 \end{frame}
 
