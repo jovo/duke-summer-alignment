@@ -1,11 +1,11 @@
 \documentclass{beamer}
-\usetheme{Warsaw}
-\usecolortheme{beaver}
+\usetheme{Luebeck}
+\usecolortheme{whale}
 \usepackage[]{algorithm2e}
 \usepackage{amsmath}
 
 \begin{document}
-\title[Scalable EM Alignment] % (optional, only for long titles)
+\title[Scalable EM Alignment]
 {Scalable Alignment of Electron Microscope Image Sections}
 \author[Zou, Ni] {Roger Zou \and Julia Ni}
 \date{\today}
@@ -27,50 +27,62 @@
 \begin{frame}
 \frametitle{Overview}
 \begin{itemize}
-\item \textbf{Goal:} Alignment of 3D EM sections, integration with CAJAL-3D API \\
-\item \textbf{Method:} Cross-correlation to align pairwise images, then globally align entire image cube \\
-\item \textbf{Complexity:} \textit{O(nlogn)}
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Pairwise Alignment}
+\item \textbf{Goals}
 \begin{itemize}
-\item Generate transformation parameters via cross-correlation.
-\item Identify peak using Support Vector Machine classifier.
-\item Correct rotation as needed through error minimization.
-\item Refine transformations using image data outside pairwise images.
+\item Scalable alignment of 3D Electron Microscope sections of mouse brain.
+\item Integration with CAJAL-3D API for easy image retrieval and upload from database.
+\end{itemize}
+\item \textbf{Difficulties:} 
+\begin{itemize}
+\item Approach must be scalable.
+\item ($1024 \times 1024 \times 2000$ in the smallest data set $\approx 2B$ voxels.)
+\item most datasets occupy TB of space; infeasible do align all at once.
+\end{itemize}
+\item \textbf{General Method}
+\begin{enumerate}
+\item Compute the transformations for alignment between adjacent pairs of images using cross-correlation.
+\item Globally align an entire image cube using pairwise transformation parameters.
+\end{enumerate}
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
-\framesubtitle{Using Correlation}
-For each pair of images: 
+\textbf{Objective:} Compute the transformations necessary to align adjacent pairs of images. \\
+Outline of procedure:
 \begin{enumerate}
-\item Apply median filtering, histogram equalization, and hamming window. 
-\item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
-\item Find best $\rho$, $\theta$ by correlation and max picking. 
-\item Rotate image, then correlate to find the best translation parameters.
-\item Use SVM to identify peak in cross-correlation of image pair. 
-\item Iterate through image stack. 
+\item Compute pairwise transformation parameters.
+\item Improve rotation parameter through error minimization.
+\item Refine transformations using image data outside pairwise images to minimize error.
 \end{enumerate}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
-\framesubtitle{Peak Identification: SVM} 
+\framesubtitle{Compute Pairwise Transformation Parameters}
+\textbf{Objective:} Determine the transformations necessary to align image pair. \\
+For each pair of images:
+\begin{enumerate}
+\item Apply median filtering, histogram equalization, and hamming window. 
+\item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
+\item Find best $\rho$, $\theta$ by correlation and max picking. 
+\item Rotate image, then correlate to find the best translation parameters.
+\item Use Support Vector Machine (SVM) to identify peak in cross-correlation of image pair. 
+\item Save the transformation parameters.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Peak Identification}
+\textbf{Objective:} Determine peaks in the cross-correlation of two images that correspond to translations for correct alignment. \\
 \begin{enumerate}
 \item Train SVM classifier with selected peak features. 
 \item Partition cross-correlation of pairwise images. 
 \item Find maximum intensity of each partition. 
 \item Classify as peak/non-peak using SVM! 
 \end{enumerate}
-\end{frame}
-
-\begin{frame}
-\frametitle{Pairwise Alignment}
-\framesubtitle{Peak Identification: Other Attempted Methods} 
+Other Attempted Methods:
 \begin{itemize}
 \item Choose maximum values.
 \item Correlate pairwise cross-correlation with normal distribution. 
@@ -79,50 +91,53 @@ For each pair of images:
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
-\framesubtitle{Fine-Tuning Transformation Parameters} 
-\begin{itemize}
-\item Error metrics (PSNR, MSE, PixDif)
-\item Adjust transformation parameters by error minimization.
-\end{itemize}
+\framesubtitle{Improve Rotation Parameter} 
+\textbf{Objective:} Evaluate the correct alignment rotation with a finer level of discretization. 
+\begin{enumerate}
+\item Given initial estimate of rotation angle $\theta$ necessary to align images...
+\item Iterate over a small window $\theta_{new} = [\theta-k\epsilon, \theta+k\epsilon]$, in increments of $\epsilon$.
+\item Compute alignment error with $\theta_{new}$ as rotation angle.
+\item Update rotation parameter with angle that minimizes Mean Squared Error (MSE) between image pair.
+\end{enumerate}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
-\begin{itemize}
-\item Solve for $x_1, x_2, x_3, x_4:$
-	\begin{align*}
-	 \text{minimize: } z &= e_{1,2,3}x_1 +  e_{2,3,4}x_2 + e_{2,3}x_3 + e_ix_4\\
-	 \text{constraints: }&x_1 + x_2 + x_3 + x_4 = 1\\
-	 &x_1, x_2, x_3, x_4 \ge 0
-	\end{align*}
-\item Plug into $T_{2,3}^{*} = [T_{1,3}^{-1}*T_{1,2}]x_1 + [T_{2,4}*T_{3,4}^{-1}]x_2 + [T_{2,3}]x_3 + [I]x_4.$
-\end{itemize}
+\framesubtitle{Refine Transformation Parameters}
+\textbf{Objective:} For alignment of image pair $I_2, I_3$, use data from images $I_1$ and $I_4$. \\
+\begin{enumerate}
+\item Calculate pairwise transformation parameters between $I_1,I_3$ and $I_2,I_4$.
+\item Obtain 2 more estimations of transformation parameters between $I_2,I_3$ using new information.
+\item Determine the Mean Squared Error between image pair using all estimates of transformations.
+\item Pick transformation that minimizes error.
+\end{enumerate}
 \end{frame}
 
 \begin{frame}
 \frametitle{Global Stack Alignment}
-\begin{itemize}
+\textbf{Objective:} Given transformation parameters between all adjacent image pairs, compute transformation to each image in global coordinate frame.
+\begin{enumerate}
 \item Set previous global transformations of previous image to current image. 
 \item Find new rotation angle.
 \item Find new translation parameters.
 \item Positive/negative translations? 
 \item Iterate through image cube. 
-\end{itemize}
+\end{enumerate}
 \end{frame}
 
 \begin{frame}
 \frametitle{Other Attempted Methods}
 \begin{itemize}
-\item RANSAC
-\item SURF feature matching
-\item Superpixels and Earth Mover's Distance 
+\item RANSAC to detect linear folds
+\item SURF feature matching to align images
+\item Superpixels and Earth Mover's Distance as a better error metric for image alignment
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{References}
 \begin{thebibliography}{9}
-\bibitem{lamport94}
+\bibitem{reddy96}
 	B. Srinivasa Reddy and B. N. Chatterji,
 	\emph{An FFT-Based Technique for Translation, Rotation, and Scale-Invariant Image Registration}.
 	IIEEE Transactions on Image Processing Vol. 5, No. 8, 1996
@@ -141,16 +156,16 @@ For each pair of images:
 \frametitle{Acknowledgements}
 Many thanks to:
 \begin{itemize}
+\item Chris Tralie
+\item Dr. Joshua Vogelstein
+\item Dr. Guillermo Sapiro
+\item Will Gray 
 \item Dr. Paul Bendich 
 \item Dr. Robert Calderbank
-\item Will Gray 
 \item Dr. John Harer
 \item Kunal Lillaney
 \item Kathy Peterson 
-\item Dr. Guillermo Sapiro
 \item Ashleigh Thomas 
-\item Chris Tralie
-\item Dr. Joshua Vogelstein
 \item Duke Math RTG Group 
 \end{itemize}
 \end{frame}
