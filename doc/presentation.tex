@@ -35,8 +35,8 @@
 \item \textbf{Difficulties} 
 \begin{itemize}
 \item Approach must be scalable.
-\item ($1024 \times 1024 \times 2000$ in the smallest data set $\approx 2B$ voxels.)
-\item Most datasets occupy TB of space; infeasible do align all at once.
+\item $1024 \times 1024 \times 2000$ in the smallest data set $\approx 2B$ voxels.
+\item Most datasets occupy TB of space; infeasible to align all at once.
 \end{itemize}
 \item \textbf{General Method}
 \begin{enumerate}
@@ -61,6 +61,7 @@ Outline of procedure:
 \frametitle{Pairwise Alignment}
 \framesubtitle{Compute Pairwise Transformation Parameters}
 \textbf{Objective:} Determine the transformations necessary to align image pair. \\
+\\
 For each pair of images:
 \begin{enumerate}
 \item Apply median filtering, histogram equalization, and hamming window. 
