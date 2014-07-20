@@ -1,16 +1,178 @@
 \documentclass{beamer}
+\usetheme{Luebeck}
+\usecolortheme{whale}
+\usepackage[]{algorithm2e}
+\usepackage{amsmath}
 
 \begin{document}
-  \begin{frame}
-    \frametitle{This is the first slide}
-    %Content goes here
-  \end{frame}
-  \begin{frame}
-    \frametitle{This is the second slide}
-    \framesubtitle{A bit more information about this}
-    %More content goes here
-  \end{frame}
-% etc
-\end{document}
+\title[Scalable EM Alignment]
+{Scalable Alignment of Electron Microscope Image Sections}
+\author[Zou, Ni] {Roger Zou \and Julia Ni}
+\date{\today}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Table of Contents}
+\begin{itemize}
+\item Overview
+\item Pairwise Alignment
+\item Global Stack Alignment
+\item Other Attempted Methods
+\item References
+\item Acknowledgements 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview}
+\begin{itemize}
+\item \textbf{Goals}
+\begin{itemize}
+\item Scalable alignment of 3D Electron Microscope sections of mouse brain.
+\item Integration with CAJAL-3D API for easy image retrieval and upload from database.
+\end{itemize}
+\item \textbf{Difficulties} 
+\begin{itemize}
+\item Approach must be scalable.
+\item $1024 \times 1024 \times 2000$ in the smallest data set $\approx 2B$ voxels.
+\item Most datasets occupy TB of space; infeasible to align all at once.
+\end{itemize}
+\item \textbf{General Method}
+\begin{enumerate}
+\item Compute transformations for alignment between adjacent pairs of images using cross-correlation.
+\item Globally align entire image cube using pairwise transformation parameters.
+\end{enumerate}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\textbf{Objective:} Compute transformations to align adjacent pairs of images. \\
+\begin{enumerate}
+\item Compute pairwise transformation parameters.
+\item Improve rotation parameter through error minimization.
+\item Refine transformations using image data outside pairwise images to minimize error.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Compute Pairwise Transformation Parameters}
+\textbf{Objective:} Determine transformations to align image pair. \\
+\\
+For each pair of images:
+\begin{enumerate}
+\item Apply median filtering, histogram equalization, and hamming window. 
+\item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
+\item Find best $\rho$, $\theta$ by correlation and max picking. 
+\item Rotate image, then correlate to find best translation parameters.
+\item Use Support Vector Machine (SVM) to identify peak in cross-correlation of image pair. 
+\item Save transformation parameters.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Peak Identification}
+\textbf{Objective:} Determine peaks in cross-correlation of two adjacent images that correspond to translations for correct alignment. \\
+\begin{itemize}
+\item Support Vector Machine (SVM)
+\begin{enumerate}
+\item Train SVM classifier with peak features from aligned images (ground truth).
+\item Partition cross-correlation of images into 9 equal parts.
+\item Find point of maximum intensity in each partition.
+\item Sort coordinates from greatest to least maximum intensity.
+\item Classify each potential peak until a peak is found.
+\item If no potential peaks are classified as peaks, then no peaks detected.
+\end{enumerate}
+\item Other Attempted Methods:
+\begin{itemize}
+\item Choose maximum values. 
+\item Correlate pairwise cross-correlation with normal distribution. 
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Improve Rotation Parameter} 
+\textbf{Objective:} Evaluate correct alignment rotation with finer level of discretization. 
+\begin{enumerate}
+\item Given initial estimate of rotation angle $\theta$ to align images...
+\item For each $k$, iterate over small window $\theta_{new} = [\theta-k\epsilon, \theta+k\epsilon]$ in increments of $\epsilon$.
+\item Compute alignment error with $\theta_{new}$ as rotation angle.
+\item Update rotation parameter with angle minimizing Mean Squared Error (MSE) for image pair.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Refine Transformation Parameters}
+\textbf{Objective:} To align image pair $I_2, I_3$, use data from images $I_1$ and $I_4$. \\
+\begin{enumerate}
+\item Calculate pairwise transformation parameters between $I_1,I_3$ and $I_2,I_4$.
+\item Obtain 2 more estimations of transformation parameters between $I_2,I_3$ using new information.
+\item Determine Mean Squared Error between image pair using all estimates of transformations.
+\item Pick transformation minimizing error.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Global Stack Alignment}
+\textbf{Objective:} Given transformation parameters for all adjacent image pairs, compute transformation for each image in global coordinate frame.
+\begin{enumerate}
+\item Set global transformation parameters of previous image to that of current image. 
+\item Find new rotation angle by adding previous rotation parameter to pairwise rotation angle. 
+\item Find new translation parameters using previous rotation angle and pairwise translations.
+\item Positive translations: shift current image. Negative translations: shift all previous images.
+\item Iterate through image cube to globally align stack. 
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Other Attempted Methods}
+\begin{itemize}
+\item RANSAC: detect linear folds
+\item SURF feature matching: align images
+\item Superpixels and Earth Mover's Distance: 'better' error metric for image alignment
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{References}
+\begin{thebibliography}{9}
+\bibitem{reddy96}
+	B. Srinivasa Reddy and B. N. Chatterji,
+	\emph{An FFT-Based Technique for Translation, Rotation, and Scale-Invariant Image Registration}.
+	IIEEE Transactions on Image Processing Vol. 5, No. 8, 1996
+\bibitem{rubner00}
+	Yossi Rubner, Carlo Tomasi, Leonidas J. Guibas,
+	\emph{The Earth Mover's Distance as a Metric for Image Retrieval}.
+	International Journal of Computer Vision 40(2), 99-121, 2000
+\bibitem{wang13}
+	Peng Wang, Gang Zeng, Rui Gan, Jingdong Wang, Hongbin Zha,
+	\emph{Structure-Sensitive Superpixels via Geodesic Distance}.
+	International Journal of Computer Vision, 103:1-21, 2013
+\end{thebibliography} 
+\end{frame}
+
+\begin{frame}
+\frametitle{Acknowledgements}
+Many thanks to:
+\begin{itemize}
+\item Chris Tralie
+\item Dr. Joshua Vogelstein
+\item Dr. Guillermo Sapiro
+\item Will Gray 
+\item Dr. Paul Bendich 
+\item Dr. Robert Calderbank
+\item Dr. John Harer
+\item Kunal Lillaney
+\item Kathy Peterson 
+\item Ashleigh Thomas 
+\item Duke Math RTG Group 
+\end{itemize}
+\end{frame}
 
 \end{document}

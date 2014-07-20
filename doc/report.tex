@@ -20,21 +20,21 @@
 \maketitle
 
 \section{Overview}
-Scalable alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations between a cube of EM image slices of the brain. See the README for details about the specific functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data.
+Scalable alignment of 3D electron microscope (EM) sections with CAJAL-3D API integration. Its use is domain-specific; namely, the program corrects for translations and rotations within a cube of EM image slices of the brain. See the README for details about the specific functions available to the user. The program primarily uses cross-correlation to determine rotation and translation parameters which maximize the correlation between pairwise images. This report provides details on such alignment methods, and extends the aforementioned core technique to provide scalable global alignment of terobytes of EM image data.
 
 \subsection{Computational Complexity}
-\textbf{Time complexity:} $O(nlogn)$, where $n$ is the number of voxels due to the cross-correlation procedures with the Fast Fourier Transform (FFT). The size of $n$ can be greatly reduced by picking a lower resolution image (directly from the API or by downsampling). Thus cross-correlation is the bottleneck of the alignment pipeline.
+\textbf{Time complexity:} $O(nlogn)$, where $n$ is the number of voxels due to the cross-correlation procedures with the Fast Fourier Transform (FFT). The size of $n$ can be greatly reduced by picking a lower resolution image either directly from the API or by downsampling. Thus cross-correlation is the bottleneck of the alignment pipeline.
 
 \section{Pairwise Alignment}
 Before an entire 3D image cube can be globally aligned, we must compute alignment between pairs of images.
 \\
-The procedure uses 2D cross-correlation to identify the degree of rotation and magnitude of translations necessary to a pair of images. See section 2.1 for specifics. 
+The procedure uses 2D cross-correlation to identify the degree of rotation and magnitude of translations necessary for a pair of images. See section 2.1 for specifics. 
 \\
-One important step in the cross-correlation process is identifying peaks in the cross-correlation that correspond to the translations necessary to align the two images. Difficulties arise when the 'correct' peak is NOT the maximum value; simply max picking would result in completely inaccurate parameters. Our solution is to use a trained support vector machine (SVM) classifier to determine the correct peak among potential candidate peaks. See section 2.2 for specifics. 
+One important step in the cross-correlation process is to identify peaks in the cross-correlation that correspond to the translations necessary to align the two images. Difficulties arise when the 'correct' peak is NOT the maximum value; simply picking the maximum value would result in completely inaccurate parameters. Our solution is to use a trained support vector machine (SVM) classifier to determine the correct peak among potential candidate peaks. See section 2.2 for specifics. 
 \\
 Once the rotation and translation transformations are identified, the rotation angle $\theta$ necessary to align two images is refined by varying $\theta$ by $\pm \epsilon$ for small increments of $\epsilon$. The $\theta \pm \epsilon$ that minimizes the error function (MSE) between two images is the improved rotation angle parameter. See section 2.3 for specifics.
 \\
-Finally, to incorporate alignment data from images outside adjacent image pairs $I_i, I_{i+1}$ to refine the alignment transformations, we compute the alignment transformation parameters for $I_{i-1}, I_{i+1}$ and $I_i, I_{i+2}$. When then obtain multiple estimates of the transformations between $I_i, I_{i+1}$ using the additional transformation parameter and pick the best one. See section 2.4 for specifics.
+Finally, to incorporate alignment data from images outside adjacent image pairs $I_i, I_{i+1}$ to refine the alignment transformations, we compute the alignment transformation parameters for $I_{i-1}, I_{i+1}$ and $I_i, I_{i+2}$. We then obtain multiple estimates of the transformations between $I_i, I_{i+1}$ using the additional transformation parameter and pick the best one. See section 2.4 for specifics.
 
 \subsection{Alignment Procedure with Correlation}
 Iterate through image stack, and apply the procedures described below to each adjacent pair of images.
@@ -48,45 +48,45 @@ Iterate through image stack, and apply the procedures described below to each ad
 \item Save the pairwise affine transformation matrix. 
 \end{enumerate}The time complexity is $O(nlogn)$, where $n$ is the the number of voxels. This upper bound arises due to the Fast Fourier Transform (FFT) computations. The space complexity is linear to the number of voxels. One optimization step is scaling the image stack before determining image transforms. Scaling between 0.5 and 1 does not appear to have much of an effect on alignment quality (from 1024x1024 original). In practice, this method greatly improves the running time. \\
 
-\subsection{Peak Identification in the cross-correlation of two images}
-The cross-correlation of two images is a image. The intensity at the $i,j$ coordinate from the center of the image is the correlation between the two images with one image shifted by $i,j$. At a shift where the two images are aligned, the intensity is much greater. However, it is not always the case that the correct translation parameter is the maximum, or that there is even a correct translation parameter at all. Thus, simple max picking is not sufficient. Our best method uses a Support Vector Machine (SVM) to classify potential peaks as true peaks or non-peaks. The feature space characterizes shape features of the peak, because the peak has a distinctive shape. The SVM method is efficient, accurate, and scalable. 
+\subsection{Peak Identification in the Cross-Correlation of Two Images}
+The cross-correlation of two images is an image. The intensity at the $i,j$ coordinate from the center of the image is the correlation between the two images with one image shifted by $i,j$. At a shift where the two images are aligned, the intensity is much greater. However, it is not always the case that the correct translation parameter is the maximum, or that there is even a correct translation parameter at all. Thus, simple max picking is not sufficient. Our best method uses a Support Vector Machine (SVM) to classify potential peaks as true peaks or non-peaks. The feature space characterizes shape features of the peak because the peak has a distinctive shape. The SVM method is efficient, accurate, and scalable. 
 
 \subsubsection{SVM Training}
-Using a stack of aligned images, do the following procedure:
+Taking a stack of aligned images, perform the following procedure:
 \begin{enumerate}
 \item Randomly sample from each image pair a cropped image with specified minimum size.
 \item Generate image from the cross-correlation of the image pair; the image with its associated max value is labeled in the true (aligned) class.
 \item Apply a random noticeable rotation and translation to one of the images. Generate image from the cross-correlation of the image pair (now rotated); this image with its associated max value is labeled in the false (unaligned) class. 
-\item repeat 1,2 as long as needed.
+\item Repeat 1,2 as necessary.
 \item Generate a 1x5 feature vector for each test sample. Use these feature vectors to train SVM with a linear kernel. 
 \end{enumerate}
-Once the SVM is trained, it is saved; In the alignment pipeline, the default config settings automatically load this trained SVM for peak classification.
+Once the SVM is trained, it is saved; in the alignment pipeline, the default config settings automatically load this trained SVM for peak classification.
 
 \subsubsection{Peak Identification with SVM}
 \begin{enumerate}
-\item Divide image $I$, the cross correlation of two images, into 9 equal parts $I_1...I_9$.
-\item Find the coordinate of maximum value in each part, $(x_1,y_1, I(x_1, y_1))...(x_9,y_9, I(x_9,y_9))$, where $I(x,y)$ is the intensity value at coordinate $x,y$. 
+\item Divide image $I$, the cross correlation of two images, into nine equal sections $I_1...I_9$.
+\item Find the coordinates of the maximum value in each section, $(x_1,y_1, I(x_1,y_1))...(x_9,y_9, I(x_9,y_9))$, where $I(x,y)$ is the intensity value at coordinate $x,y$. 
 \item Sort the coordinates by order of decreasing intensity.
-\item Classify $I$ with point $(x_i, y_i)$ for $i=1...9$ until a true classification.
-The first true classification is determined to be the actual peak with specific translation parameters. If no true classification are obtained, then the image is deemed to be unaligned. 
+\item Classify $I$ with point $(x_i, y_i)$ for $i=1...9$ until a true classification arises.
+The first true classification is determined to be the actual peak with specific translation parameters. If no true classification is obtained, then the image is deemed to be unaligned. 
 \end{enumerate}
-The described method works the best compared to other methods, briefly described below.\\
+The delineated method works the best compared to other methods, briefly described below.\\
 
 \textbf{Other Attempted Methods}
 \begin{enumerate}
 \item Identify maximum values. However, this will not always work if the maximum value is not the actual peak as described previously. 
-\item Correlate the cross-correlation of two images with a normal distribution. In theory this should accentuate the true peaks, since it takes into account the shape of all possible peaks, but this won't always produce the desired results because artificial peaks may be introduced. Another problem is that this method is quite slow because it has to perform more cross-correlation procedures. 
+\item Correlate the cross-correlation of two images with a normal distribution. In theory this should accentuate the true peaks since it takes into account the shape of all possible peaks, but this won't always produce the desired results because artificial peaks may be introduced. Another problem is that this method is quite slow because it has to perform more cross-correlation procedures. 
 \end{enumerate}
 
 \subsection{Tune Transformation Parameters}
-Attempts to improve the estimate of the rotation amount by minimizing an error function. While three different error metrics are available to determine 'accuracy' of alignment (peak-signal-to-noise ratio (PSNR), mean-squared error (MSE), and mean pixel intensity difference.), MSE is usually used. This step is important because log-polar sampling to determine the best rotation parameter is discretized so the 'best' rotation angle may not be available at the cross-correlation step. Here, the algorithm iterates over a small range of rotation and translation parameters surrounding the original estimated parameters, and then chooses the rotation angle and translation shift that minimize the error function.
+Attempts to improve the estimate of the rotation angle by minimizing an error function. While three different error metrics are available to determine 'accuracy' of alignment (peak-signal-to-noise ratio (PSNR), mean-squared error (MSE), and mean pixel intensity difference.), MSE is usually used. This step is important because log-polar sampling to determine the best rotation parameter is discretized so the 'best' rotation angle may not be available at the cross-correlation step. Here, the algorithm iterates over a small range of rotation and translation parameters using the original estimated parameters as its basis, and then chooses the rotation angle and translation shift that minimize the error function.
 
 \subsection{Error Minimization}
-The final (optional) step right now is to use image data outside a specific image pair to align the image pair. This works well by correcting alignments when one pairwise alignment fails for some reason. The specifics of the algorithm are detailed below. The algorithm improves pairwise transformation parameters by computing pairwise transformations from other adjacent images. Different estimates of the transformation parameters between the image pair are computed from solving a linear programming problem. The transformation parameter that minimizes a particular error function is selected.
+The final (optional) step right now is to use image data outside a specific image pair to align the image pair. This works well by correcting alignments when one pairwise alignment fails for some reason. The specifics of the algorithm are detailed below. The algorithm improves pairwise transformation parameters by computing pairwise transformations from other adjacent images. Different estimates of the transformation parameters between an image pair are computed from solving a linear programming problem. The transformation parameter that minimizes a particular error function is selected.
 	\begin{algorithm}
 	\DontPrintSemicolon
 	\textbf{Transform Update/Error Minimization}\\
-	\KwIn{4 adjacent images:$M1,M2,M3,M4$, and table of pairwise transformations and associated error.}
+	\KwIn{Four adjacent images:$M1,M2,M3,M4$, and table of pairwise transformations and associated error.}
 	\KwOut{$T_{2,3}^{*}$, the transformation matrix to align $(M2, M3)$ that minimizes error function $e_{2,3}^{*}$}
 	Let $T_{2,3}$ be the transformation matrix to align $M2, M3$, and $e_{2,3}$ be the associated error.\\
 	1) Compute $T_{1,3}$ and $T_{2,4}$.\\
@@ -106,15 +106,20 @@ The final (optional) step right now is to use image data outside a specific imag
 	\end{algorithm}\\
 
 \section{Global Stack Alignment}
-Uses the pairwise transformation parameters determined previously, the next step is to compute global transformation parameters (i.e. transformations for each image in cube relative to one image). The algorithm is as follows:
+Using the pairwise transformation parameters determined previously, the next step is to compute global transformation parameters (e.g. transformations for each image in cube relative to one image). The algorithm is as follows:
 	\begin{algorithm}
 	\DontPrintSemicolon
-	\KwIn{Unaligned Image cube $I$, transformation parameters $T$}
-	\KwOut{Aligned Image Cube $I_{aligned}$}
-	For Julia
+	\KwIn{Unaligned image cube $I$, pairwise transformation parameters $T$}
+	\KwOut{Aligned image cube $I_{aligned}$}
+	Let the global transformation parameters for an $m$x$n$ image $i$ be $T_{global}(i,:)$ and for $T_{global,m,n}$ = $0_{m,n}$ initially, with $T_{global}(1,:)$ = $[0, 0, 0]$ always true. \\ 
+	1) Given $T_{global}(i,:)$, subsequent image $I_{i+1}$ has $T_{global}(i+1,:)$ = $T_{global}(i,:)$. \\
+	2) New rotation angle $T_{global}(i+1,3)$ = $T_{global}(i+1,3)$ + $T_{i,i+1}(3)$, the sum of the cumulative rotations the previous image underwent and the pairwise rotation between those two images. \\
+	3) New translation parameters $T_{param,i,i+1}$ determined by product of previous rotation matrix using $T_{global}(i,3)$ and pairwise translation matrix using $T_{i,i+1}(1:2)$. \\
+	4) If $T_{param,i,i+1}(1:2)$ \textgreater\ $0$, then $T_{global}(i+1,1:2)$ = $T_{global}(i+1,1:2)$ + $T_{param,i,i+1}(1:2)$. Otherwise, $T_{global}(i+1,1:2)$ = $T_{global}(1:i,1:2)$ + $|T_{param,i,i+1}(1:2)|$. \\
+	5) Repeat Steps 1-4 for remaining pairwise, unaligned images to generate $I_{aligned}$. 
 	\end{algorithm}
 
-\section{Attempted, but ultimately unused methods}
+\section{Attempted, But Ultimately Unused, Methods}
 \subsection{RANSAC}
 Originally implemented to detect folds in the images and subsequently help split images into pieces to aid in alignment process. We have not encountered any thus far, so this functionality was never included in our pipeline.
 \subsection{SURF Feature Matching}
@@ -126,12 +131,12 @@ Originally used to correct large rotations before aligning with cross-correlatio
 \item Save the rotation angle and apply the rotation to image for input to 2D cross-correlation step.
 \end{enumerate}
 \textbf{Problems:} Effectiveness decreases for more dissimilar images. SURF also struggles to identify features or makes spurious matches when there are noise and blemishes in the images. This step does not seem to lead to drastic improvements. \\
-\subsection{Error metric with superpixels and Earth Mover's Distance}
+\subsection{Error Metric with Superpixels and Earth Mover's Distance}
 A novel idea to use Earth Mover's Distance on superpixels as an alignment error metric between two images $P$ and $Q$.
 \begin{enumerate}
 \item Compute superpixels of each image using the SLIC algorithm.
 \item Identify the coordinates of each cluster center and its associated weight as the sum over all pixels in the cluster $\times$ mean image intensity $/$ 255. 
-\item Let $D$ be the $n \times n$ distance matrix, where $n$ is the number of cluster centers. Let $F$ be the $n \times n$ matrix of total flow. For both $D$ and $F$, the $i,j$ entry indicates the distance or flow, respectively from the $ith$ cluster center to the $jth$ cluster center. 
+\item Let $D$ be the $n \times n$ distance matrix, where $n$ is the number of cluster centers. Let $F$ be the $n \times n$ matrix of total flow. For both $D$ and $F$, the $i,j$ entry indicates the distance or flow, respectively, from the $ith$ cluster center to the $jth$ cluster center. 
 \item Solve transportation problem as a linear program with constraints as detailed in Rubner et al. \cite{rubner00} to find all entries in $F$.
 \item Find the EMD, defined as $EMD(P,Q) = \frac{ \sum_{i=1}^m \sum_{j=1}^n d_{ij} f_{ij} } { \sum_{i=1}^m \sum_{j=1}^n f_{ij} }$.
 \end{enumerate}
