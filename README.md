@@ -14,14 +14,14 @@ The script alignmenttests.m downloads a cube from the API. It then performs larg
     image(RAMONAligned)
     image(newRAMONOrig)
 
-newRAMOn nad newRAMONorig should be the same. RAMONAligned is the aligned version of newRAMON.
+newRAMON and newRAMONorig should be the same. RAMONAligned is the aligned version of newRAMON.
 
 ####Usage
 
-The first step in using this program is to open configalignvars and configapivars in src/config/. configalignvars are the configuration settings for pairwise and global alignment. configapivars are the settings for retrieving data from CAJAL3D-API when needing to align an entire data set (ex. kasthuri11cc). Open both files to change the settings. These functions will be called automatically when needed.
+The first step in using this program is to open configalignvars and configapivars in src/config/. configalignvars contains the configuration settings for pairwise and global alignment. configapivars has the settings for retrieving data from CAJAL3D-API when needing to align an entire data set (ex. kasthuri11cc). Open both files to change the settings. These functions will be called automatically when needed.
 
-The function alignRAMONVol performs affine alignment on a RAMONVolume input. Transforms is an optional input that can either be the pairwise transforms for the RAMONVolume, or pairwise transforms for an entire data set.
-unalignRAMONVol takes as input an already aligned RAMONVolume with its pairwise transforms, and returns the original unaligned image stack.
+The function alignRAMONVol performs affine alignment on a RAMONVolume input. Transforms is an optional input that can either be the pairwise transforms for the RAMONVolume or pairwise transforms for an entire data set.
+unalignRAMONVol takes as input an already aligned RAMONVolume with its pairwise transforms and returns the original unaligned image stack.
 
 The function read_api reads data using the CAJAL3D-API. 
 
@@ -55,10 +55,10 @@ To test this function, run the following. The first input is the output of const
 
     cutout = constructimgcubealignment(Transforms, 512, 512, 5, 3000, 5000, 400);
 
-The output of constructimgcubetransforms can also be used by alignRAMONVol. The benefit is that the pairwise alignment parameters are already stored as output from constructimgcubetransforms. Thus, the most memory and time intensive process is already precomputed. All that is required is to read the pairwise transformation parameters and construct the overall alignment.
+The output of constructimgcubetransforms can also be used by alignRAMONVol. The benefit is that the pairwise alignment parameters are already stored as output from constructimgcubetransforms. Thus, the most memory and time-intensive process is already precomputed. All that is required is to read the pairwise transformation parameters and construct the overall alignment.
 
     RAMONAligned2 = alignRAMONVol(cutout);
 
 
-NOTE: as always, make sure the required functions and dependencies are in your matlab path!
+NOTE: As always, make sure the required functions and dependencies are in your MATLAB path!
 
