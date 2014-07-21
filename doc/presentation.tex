@@ -140,6 +140,17 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
+\frametitle{RANSAC}
+\begin{itemize}
+\item \textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
+\item From \textit{P}, chooses points and finds line through them. 
+\item Finds number of inliers within \textit{d}. 
+\item Based on percentage of outliers, adaptively computes number of iterations.
+\item Use to split image above and below single, linear fold line. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
 \frametitle{Superpixels and Earth Mover's Distance}
 \begin{itemize}
 \item \textbf{Objective:} Weigh alignment error at different regions of the image differently.
@@ -157,6 +168,18 @@ For each pair of images:
 \frametitle{Superpixels and Earth Mover's Distance}
 \framesubtitle{Results}
 \includegraphics[height = 4cm]{imgs/emderror.jpg}
+\end{frame}
+
+\begin{frame}
+\frametitle{SURF Feature Detection}
+\begin{itemize}
+\item \textbf{Objective:} Match image features to correct rotations before cross-correlation step. 
+\item Use Gaussian blur on images, then resize.
+\item Detect SURF (Speeded Up Robust Features) features. 
+\item Match features to detect rotation angle. 
+\item Rotate image, input for 2D cross-correlation.
+\item Determine and save transformation parameters. 
+\end{itemize}
 \end{frame}
 
 \begin{frame}
