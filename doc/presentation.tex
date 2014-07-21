@@ -51,6 +51,7 @@
 
 \begin{frame}
 \frametitle{Pairwise Alignment}
+\framesubtitle{Overview}
 \textbf{Objective:} Compute transformations to align adjacent pairs of images. \\
 \begin{enumerate}
 \item Compute pairwise transformation parameters.
@@ -65,7 +66,7 @@
 \textbf{Objective:} Determine transformations to align image pair. \\
 For each pair of images:
 \begin{enumerate}
-\item Apply median filtering, histogram equalization, and hamming window. 
+\item Apply median filtering and histogram equalization. 
 \item Take Discrete Fourier Transform, apply high-pass filter, and resample in log-polar coordinates. 
 \item Find best $\rho$, $\theta$ by correlation and max picking. 
 \item Rotate image, then correlate to find best translation parameters.
@@ -155,9 +156,9 @@ For each pair of images:
 \begin{frame}
 \frametitle{Other Attempted Methods}
 \begin{itemize}
-\item RANSAC: detect linear folds
-\item SURF feature matching: align images
-\item Superpixels and Earth Mover's Distance: 'better' error metric for image alignment
+\item RANSAC: Detect linear folds
+\item SURF Feature Matching: Align images
+\item Superpixels and Earth Mover's Distance: 'Better' error metric for image alignment
 \end{itemize}
 \end{frame}
 
@@ -170,7 +171,7 @@ For each pair of images:
 \item From $P$, chooses points and finds line through them. 
 \item Finds number of inliers within $d$. 
 \item Based on percentage of outliers, adaptively computes number of iterations.
-\item Use to split image above and below single, linear fold line
+\item Use to split image above and below single, linear fold line.
 \end{enumerate}
 \item Did not encounter instances where this method is helpful, so ultimately not included in final pipeline.
 \end{itemize}
@@ -210,8 +211,8 @@ For each pair of images:
 \item Mean Squared Error weighs every part of the image equally.
 \item Proposed method between two images:
 \begin{enumerate}
-\item SLIC Superpixels to construct superpixels in both images
-\item Each super pixel center is associated with weight related to number of pixels and intensity of pixels
+\item SLIC Superpixels to construct superpixels in both images.
+\item Each superpixel center is associated with weight related to number of pixels and intensity of pixels.
 \item Find the Earth Mover's Distance between the cluster centers in image pair.
 \end{enumerate}
 \item Unfortunately, does not appear to have any advantages compared to MSE.
@@ -231,11 +232,16 @@ For each pair of images:
 \begin{frame}
 \frametitle{CAJAL3D-API Integration}
 \begin{itemize}
-\item \textbf{Objective:} Perform affine alignment on RAMONVolume. 
+\item \textbook{Objective:} Perform affine alignment on RAMONVolume.
+\item Pipeline:
+\begin{enumerate}
 \item Configure settings for pairwise and global alignment, and API data retrieval. 
 \item Retrieve data from API. 
 \item Compute pairwise alignment by aligning sub-cubes using parallel computing. 
-\item Align cube! 
+\item Align cube!
+\item Optional: Perform operations on aligned cube (like 3D mitochondria detection).
+\item Optional: Unalign cube to original state. 
+\end{enumerate}
 \end{itemize}
 \end{frame}
 
