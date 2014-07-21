@@ -139,6 +139,25 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
+\frametitle{Superpixels and Earth Mover's Distance}
+\begin{itemize}
+\item \textbf{Objective:} Weigh alignment error at different regions of the image differently.
+\item Mean Squared Error weighs every part of the image equally.
+\item Proposed method between two images:
+\begin{itemize}
+\item SLIC Superpixels to construct superpixels in both images
+\item Each super pixel center is associated with weight related to number of pixels and intensity of pixels
+\item Find the Earth Mover's Distance between the cluster centers in image pair.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Superpixels and Earth Mover's Distance}
+\framesubtitle{Results}
+
+\end{frame}
+
+\begin{frame}
 \frametitle{References}
 \begin{thebibliography}{9}
 \bibitem{reddy96}
