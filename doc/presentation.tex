@@ -139,15 +139,14 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
-\frametitle{Other Attempted Methods}
-\framesubtitle{RANSAC: Fold Detection}
-\textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
-\begin{enumerate}
+\frametitle{RANSAC}
+\begin{itemize}
+\item \textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
 \item From \textit{P}, chooses points and finds line through them. 
 \item Finds number of inliers within \textit{d}. 
 \item Based on percentage of outliers, adaptively computes number of iterations.
 \item Use to split image above and below single, linear fold line. 
-\end{enumerate}
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -161,12 +160,24 @@ For each pair of images:
 \item Each super pixel center is associated with weight related to number of pixels and intensity of pixels
 \item Find the Earth Mover's Distance between the cluster centers in image pair.
 \end{itemize}
+\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Superpixels and Earth Mover's Distance}
 \framesubtitle{Results}
 
+\end{frame}
+
+\begin{frame}
+\frametitle{SURF Feature Detection}
+\begin{itemize}
+\item Use Gaussian blur on images, then resize.
+\item Detect SURF (Speeded Up Robust Features) features. 
+\item Match features to detect rotation angle. 
+\item Rotate image, input for 2D cross-correlation.
+\item Determine and save transformation parameters. 
+\end{itemize}
 \end{frame}
 
 \begin{frame}
