@@ -4,6 +4,7 @@
 \usepackage[]{algorithm2e}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\graphicspath{ {./imgs/} }
 
 \begin{document}
 \title[Scalable EM Alignment]
@@ -140,7 +141,7 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
-\frametitle{RANSAC}
+\frametitle{RANSAC for Fold Detection}
 \begin{itemize}
 \item \textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
 \item From \textit{P}, chooses points and finds line through them. 
@@ -148,6 +149,17 @@ For each pair of images:
 \item Based on percentage of outliers, adaptively computes number of iterations.
 \item Use to split image above and below single, linear fold line. 
 \end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{RANSAC for Fold Detection}
+\framesubtitle{Results}
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=4cm]{folddetection1.jpg}
+    \includegraphics[width=4cm]{folddetection2.jpg}
+    \caption{Fold detection with RANSAC}
+\end{figure}
 \end{frame}
 
 \begin{frame}
@@ -179,7 +191,11 @@ For each pair of images:
 \begin{frame}
 \frametitle{Superpixels and Earth Mover's Distance}
 \framesubtitle{Results}
-\includegraphics[height = 4cm]{imgs/emderror.jpg}
+\begin{figure}[p]
+    \centering
+    \includegraphics[width=11cm]{emderror.jpg}
+    \caption{MSE vs EMD Comparison}
+\end{figure}
 \end{frame}
 
 \begin{frame}
