@@ -139,6 +139,18 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
+\frametitle{Other Attempted Methods}
+\framesubtitle{RANSAC: Fold Detection}
+\textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
+\begin{enumerate}
+\item From \textit{P}, chooses points and finds line through them. 
+\item Finds number of inliers within \textit{d}. 
+\item Based on percentage of outliers, adaptively computes number of iterations.
+\item Use to split image above and below single, linear fold line. 
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
 \frametitle{Superpixels and Earth Mover's Distance}
 \begin{itemize}
 \item \textbf{Objective:} Weigh alignment error at different regions of the image differently.
