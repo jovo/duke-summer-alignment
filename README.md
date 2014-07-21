@@ -62,3 +62,6 @@ The output of constructimgcubetransforms can also be used by alignRAMONVol. The 
 
 NOTE: As always, make sure the required functions and dependencies are in your MATLAB path!
 
+FINAL COMMENTS: The code is designed to be MODULAR. In the scenario of improved pairwise alignment methods, simply replace the code in xcorr2imgs.m. An alternative would be creating a new function and replacing all function calls to xcorr2imgs with the new function. To do so, navigate to src and:
+
+    grep -r xcorr2imgs .
