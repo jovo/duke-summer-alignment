@@ -3,6 +3,7 @@
 \usecolortheme{whale}
 \usepackage[]{algorithm2e}
 \usepackage{amsmath}
+\usepackage{graphicx}
 
 \begin{document}
 \title[Scalable EM Alignment]
@@ -149,12 +150,13 @@ For each pair of images:
 \item Each super pixel center is associated with weight related to number of pixels and intensity of pixels
 \item Find the Earth Mover's Distance between the cluster centers in image pair.
 \end{itemize}
+\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Superpixels and Earth Mover's Distance}
 \framesubtitle{Results}
-
+\includegraphics[height = 4cm]{imgs/emderror.jpg}
 \end{frame}
 
 \begin{frame}
