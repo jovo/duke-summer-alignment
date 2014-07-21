@@ -89,7 +89,7 @@ For each pair of images:
 \end{enumerate}
 \item Other Attempted Methods:
 \begin{itemize}
-\item Choose maximum values. 
+\item Choose maximum values.
 \item Correlate pairwise cross-correlation with normal distribution. 
 \end{itemize}
 \end{itemize}
@@ -120,6 +120,16 @@ For each pair of images:
 \end{frame}
 
 \begin{frame}
+\frametitle{Pairwise Alignment}
+\framesubtitle{Refine Transform Parameter Illustration}
+\begin{figure}[p]
+	\centering
+	\includegraphics[width=10cm]{tparam.jpg}
+	\caption{Refine Transform Parameters}
+\end{figure}
+\end{frame}
+
+\begin{frame}
 \frametitle{Global Stack Alignment}
 \textbf{Objective:} Given transformation parameters for all adjacent image pairs, compute transformation for each image in global coordinate frame.
 \begin{enumerate}
@@ -143,11 +153,15 @@ For each pair of images:
 \begin{frame}
 \frametitle{RANSAC for Fold Detection}
 \begin{itemize}
-\item \textbf{Objective:} Given set of points \textit{P} and inlier distance \textit{d}, outputs line of 'best' fit. 
-\item From \textit{P}, chooses points and finds line through them. 
-\item Finds number of inliers within \textit{d}. 
+\item \textbf{Objective:} Given set of points $P$ and inlier distance $d$, outputs line of 'best' fit.
+\item Procedure: 
+\begin{enumerate}
+\item From $P$, chooses points and finds line through them. 
+\item Finds number of inliers within $d$. 
 \item Based on percentage of outliers, adaptively computes number of iterations.
-\item Use to split image above and below single, linear fold line. 
+\item Use to split image above and below single, linear fold line
+\end{enumerate}
+\item Did not encounter instances where this method is helpful, so ultimately not included in final pipeline.
 \end{itemize}
 \end{frame}
 
@@ -156,8 +170,8 @@ For each pair of images:
 \framesubtitle{Results}
 \begin{figure}[p]
     \centering
-    \includegraphics[width=4cm]{folddetection1.jpg}
-    \includegraphics[width=4cm]{folddetection2.jpg}
+    \includegraphics[width=5cm]{folddetection1.jpg}
+    \includegraphics[width=5cm]{folddetection2.jpg}
     \caption{Fold detection with RANSAC}
 \end{figure}
 \end{frame}
@@ -166,11 +180,15 @@ For each pair of images:
 \frametitle{SURF Feature Detection}
 \begin{itemize}
 \item \textbf{Objective:} Match image features to correct rotations before cross-correlation step. 
+\item Proposed method:
+\begin{enumerate}
 \item Use Gaussian blur on images, then resize.
 \item Detect SURF (Speeded Up Robust Features) features. 
 \item Match features to detect rotation angle. 
 \item Rotate image, input for 2D cross-correlation.
-\item Determine and save transformation parameters. 
+\item Determine and save transformation parameters.
+\end{enumerate}
+\item Unfortunately, noise and structural similarities in EM images reduce its effectiveness.
 \end{itemize}
 \end{frame}
 
@@ -180,11 +198,12 @@ For each pair of images:
 \item \textbf{Objective:} Weigh alignment error at different regions of the image differently.
 \item Mean Squared Error weighs every part of the image equally.
 \item Proposed method between two images:
-\begin{itemize}
+\begin{enumerate}
 \item SLIC Superpixels to construct superpixels in both images
 \item Each super pixel center is associated with weight related to number of pixels and intensity of pixels
 \item Find the Earth Mover's Distance between the cluster centers in image pair.
-\end{itemize}
+\end{enumerate}
+\item Unfortunately, does not appear to have any advantages compared to MSE.
 \end{itemize}
 \end{frame}
 
