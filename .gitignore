@@ -67,9 +67,9 @@ data/*
 
 # image files
 *.png
-*.jpg
 *.tiff
 *.tif
+*.jpg
 
 # latex files
 *.aux
