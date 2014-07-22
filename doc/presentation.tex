@@ -263,11 +263,22 @@ For each pair of images:
 \begin{enumerate}
 \item Configure settings for pairwise and global alignment, and API data retrieval. 
 \item Retrieve data from API. 
-\item Compute pairwise alignment by aligning sub-cubes using parallel computing. 
+\item Compute transformations for pairwise alignment on sub-cubes.
 \item Align cube!
 \item Optional: Perform operations on aligned cube (like 3D mitochondria detection).
 \item Optional: Unalign cube to original state. 
 \end{enumerate}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{User Functions}
+\begin{itemize}
+\item \textbf{read\_api:} Retrieves data from the API and saves as RAMONVolume.
+\item \textbf{alignRAMONVol:} Given a RAMONVolume, computes transformation parameters and aligns image cube.
+\item \textbf{unalignRAMONVol:} Given an aligned image cube and original transformation parameters, takes inverse to revert image cube back to unaligned state.
+\item \textbf{constructimgcubetransforms:} computes transformation parameters for entire data set in manageable sub-cubes.
+\item \textbf{constructimgcubealignment:} Uses transformation parameters from constructimgcubetransforms, to align image cube that that data set of any specified size.
 \end{itemize}
 \end{frame}
 
