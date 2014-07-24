@@ -1,7 +1,7 @@
 alignment
 =========
 
-Code for automated alignment of an image stack. Currently supports rigid affine alignment.
+Code for automated alignment of an image stack. Currently supports rigid affine alignment. See doc/ folder for a final report and presentation.
 
 ###Instructions
 
