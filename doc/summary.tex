@@ -1,0 +1,30 @@
+\documentclass{article}
+\author{Roger Zou and Julia Ni}
+\date{\today}
+\title{Scalable Alignment of Electron Microscope Image Sections}
+
+\usepackage[margin=1.0in]{geometry}
+\usepackage{amsthm,amssymb,amsfonts}
+\usepackage[fleqn]{amsmath}
+\usepackage{mathtools}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usetikzlibrary{arrows,positioning,automata,shapes}
+\usepackage{graphicx}
+\graphicspath{ {imgs/} }
+\usepackage{wrapfig}
+\usepackage[]{algorithm2e}
+
+\begin{document}  
+\maketitle
+ 
+\section{Overview}
+The purpose of this project was to align 3D electron microscope (EM) images of slices of a mouse brain. Since the slices can be rotated, shifted, and have other distortions introduced during slide preparation, and image data often ranges in the terobytes, the method must be robust, efficient, and scalable.\\
+\\
+Our procedure was to align adjacent image pairs first and then use those pairwise transformations to align an image cube in the global coordinate frame. We began our pairwise alignment procedure by applying commonly-used techniques in image processing to reduce the effects of noise and increase contrast in each image pair. The images were then sampled in a different coordinate space to determine an initial rotation estimate. We evaluated the cross-correlation of the image pair to identify the shifts necessary to result in the greatest similarity. These shifts are the ones necessary to properly align the image pair. The rotation shift estimate was refined by iterating over a small range of surrounding angles to minimize an error function, and the pairwise transformation parameters were refined as a whole by using image data surrounding the pairwise images to again minimize error. For global alignment, we used the pairwise transformations and the cumulative rotations previous images underwent to construct new transformation parameters for each image in the global coordinate system. We finally aligned the entire image stack by performed the final, calculated transformations on every image.
+\section{Additional Details}
+To compute the initial pairwise rotation, we took the Discrete Fourier Transform, applied a high-pass filter, and resampled in log-polar coordinates $\rho,\theta$ for each image pair to retain the high-frequency components of our image data. We then used cross-correlation to determine the rotation direction of $\theta$. To identify the peak in the cross-correlation, we used a Support Vector Machine (SVM) classifier trained on already-aligned images as the ground truth. The cross-correlation of each image pair was also sectioned into nine equal parts. In each, the point of maximum intensity was noted and potential peaks were sorted and classified in order of decreasing intensity until a true peak was found. Refining the initial rotation estimate accounted for the discretization of $\theta$ that log-polar sampling introduced. By iterating over a small window of angles surrounding our initial estimate, we could determine the best parameter that minimized the mean-squared-error (MSE). In the final step of pairwise alignment, we used four adjacent images to refine the pairwise transformations for the sandwiched image pair. We computed two other non-adjacent transformation estimations, in addition to the original pairwise and no transformations, and chose the parameters which minimized the MSE between the image pair. Globally, rotation angles were found by adding the pairwise rotation to the rotations the previous image underwent while translations were determined using those cumulative rotations and the pairwise translations. Ultimately, this pipeline can be integrated with the CAJAL-3D API at Johns Hopkins University, which houses terabytes of relevant image data of the brain. Image data can be retrieved from the API, pairwise transformations calculated for sub-cubes, and the whole cube globally aligned.\\
+\\
+Other methods that were attempted, but never adopted for various reasons, were RANSAC for linear fold detection, SURF feature matching for image alignment, and using superpixels and Earth Mover's Distance as a better alignment error metric. 
+\end{document} 
